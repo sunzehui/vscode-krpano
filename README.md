@@ -2,7 +2,7 @@
 
 krpano action high-light code, use textMate syntaxes.
 
-![test](./doc/test.png)
+![test](https://github.com/sunzehui/vscode-krpano/blob/master/doc/test.png?raw=true)
 
 **Enjoy!**
 

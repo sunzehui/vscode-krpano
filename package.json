@@ -1,11 +1,17 @@
 {
   "name": "krpano-lang",
   "displayName": "krpano-lang",
-  "description": "",
-  "version": "0.0.1",
+  "description": "a krpano high-light plugin",
+  "version": "0.0.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sunzehui/vscode-krpano.git"
+  },
+  "publisher": "sunzehui",
   "engines": {
     "vscode": "^1.73.0"
   },
+  "icon": "doc/krpano.ico",
   "categories": [
     "Programming Languages",
     "Snippets"
