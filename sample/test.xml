@@ -1,0 +1,48 @@
+<action name="do_crop_animation" scope="local" args="framewidth, frameheight, framerate">
+	<!-- 纵坐标一共1帧 -->
+	calc(local.xframes, (caller.imagewidth /framewidth) XOR 0);
+	<!-- 算上横坐标一共6帧 -->
+	calc(local.frames, xframes * ((caller.imageheight / frameheight) XOR 0));
+	<!-- 此处frame是所有帧下标 -->
+	def(local.frame, integer, 0);
+	<!-- 设置第一帧 -->
+	calc(caller.crop, '0|0|' + framewidth + '|' + frameheight);
+	
+	<!-- 动画部分 -->
+	setinterval(calc('crop_anim_' + caller.name), calc(1.0 / framerate),
+		if(caller.loaded,
+			<!-- 从第二帧开始 -->
+			inc(frame);
+			if(frame GE frames, if(caller.onlastframe !== null, callwith(caller, onlastframe() ) ); set(frame,0); );
+			<!-- 对当前帧数量取余，得到当前帧的横坐标 -->
+			mod(xpos, frame, xframes);
+			<!-- 对当前帧向总数量做除法，得到当前帧的纵坐标 -->
+			div(ypos, frame, xframes);
+			Math.floor(ypos);
+			mul(xpos, framewidth);
+			mul(ypos, frameheight);
+			<!-- 最终位置(x, y, frameWidth, frameHeight) -->
+			calc(caller.crop, xpos + '|' + ypos + '|' + framewidth + '|' + frameheight);
+			,
+			<!-- 当热点移除时停止动画 -->
+			clearinterval(calc('crop_anim_' + caller.name));
+		);
+	);
+</action>
+<action name="move">
+	<!-- 球面坐标转屏幕坐标，相当于offsetLeft,Top -->
+	spheretoscreen(
+		ath, atv, hotspotcenterx, hotspotcentery, 
+		calc(mouse.stagex LT stagewidth/2 ? 'l' : 'r'));
+	<!-- 计算边到鼠标的间距 -->
+	sub(drag_adjustx, mouse.stagex, hotspotcenterx);
+	sub(drag_adjusty, mouse.stagey, hotspotcentery);
+	<!-- 只有按下的时候执行，相当于 move 事件 -->
+	asyncloop(pressed,
+		<!-- 鼠标位置从左上角计算 -->
+		sub(dx, mouse.stagex, drag_adjustx);
+		sub(dy, mouse.stagey, drag_adjusty);
+		<!-- 转换回球面坐标 -->
+		screentosphere(dx, dy, ath, atv);	
+	  );
+</action>

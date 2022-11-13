@@ -1,0 +1,247 @@
+{
+	"actjspi": {
+		"prefix": "actjspi",
+		"body": "\n<action name=\"${1}\" type=\"javascript\" autorun=\"preinit\"><![CDATA[\n\t${2}\n]]${-1}></action>\n",
+		"description": "Create js action",
+	},
+	"actjs": {
+		"prefix": "actjs",
+		"body": "\n<action name=\"${1}\" type=\"javascript\"><![CDATA[\n\t${2}\n]]${-1}></action>\n",
+		"description": "Create js action",
+		"scope": ""
+	},
+	"action": {
+		"prefix": "action",
+		"body": "\n<action name=\"${1}\">\n\n\t${2}\n\t\n</action>\n",
+		"description": "Create action",
+		"scope": ""
+	},
+	"asynccall": {
+		"prefix": "asynccall",
+		"body": "\nasynccall(${1}, ${2}\n);\n",
+		"description": "Create asynccall",
+		"scope": ""
+	},
+	"asyncfor": {
+		"prefix": "asyncfor",
+		"body": "\nasyncfor(set(${1}, ${2}), ${1} LT count, inc(${1}),${3}\n);\n",
+		"description": "Create asyncfor cycle",
+		"scope": ""
+	},
+	"asyncloop": {
+		"prefix": "asyncloop",
+		"body": "\nasyncloop(${1},${2}\n,\n);\n",
+		"description": "Create asyncloop cycle",
+		"scope": ""
+	},
+	"callwhen": {
+		"prefix": "callwhen",
+		"body": "\ncallwhen(${1},${2}\n);\n",
+		"description": "Create callwhen cycle",
+		"scope": ""
+	},
+	"data": {
+		"prefix": "data",
+		"body": "\n<data name=\"${1}\"><![CDATA[\n\n\t${2}\n\n]]${-1}></data>\n",
+		"description": "Create data tag",
+		"scope": ""
+	},
+	"delayedcall": {
+		"prefix": "delayedcall",
+		"body": "\ndelayedcall (0.1,${1}\n);\n",
+		"description": "Create delayedcall",
+		"scope": ""
+	},
+	"events": {
+		"prefix": "events",
+		"body": "\n<events name=\"${1}\" keep=\"true\"\n\t\n\t${2}\n\n/>\n",
+		"description": "Create events tag",
+		"scope": ""
+	},
+	"for": {
+		"prefix": "for",
+		"body": "\nfor(set(${1}, ${2}), ${1} LT ${3}, inc(${1}),${4}\n);\n",
+		"description": "Create for cycle",
+		"scope": ""
+	},
+	"hs2": {
+		"prefix": "hs2",
+		"body": "<hotspot name=\"${1}\" object=\"${1}\"/>",
+		"description": "Create layer tag (OOP)",
+		"scope": ""
+	},
+	"hs": {
+		"prefix": "hs",
+		"body": "\n<hotspot name=\"${1}\"\n\t${2}\n/>\n",
+		"description": "Create hotspot tag",
+		"scope": ""
+	},
+	"hsi": {
+		"prefix": "hsi",
+		"body": "\n<hotspot name=\"${1}\" style=\"invisible_content\"\n\t${2}\n/>\n",
+		"description": "Create invisible hotspot tag",
+		"scope": ""
+	},
+	"hsiv": {
+		"prefix": "hsiv",
+		"body": "\n<hotspot name=\"${1}\" style=\"invisible_content|visible\"\n\t${2}\n/>\n",
+		"description": "Create invisible hotspot tag",
+		"scope": ""
+	},
+	"ifce": {
+		"prefix": "ifce",
+		"body": "\nif (${1},${2}\n, , \n);\n",
+		"description": "Create conditional if else call",
+		"scope": ""
+	},
+	"ife": {
+		"prefix": "ife",
+		"body": "\nif (${1},${2}\n,\n);\n",
+		"description": "Create if-else call",
+		"scope": ""
+	},
+	"if": {
+		"prefix": "if",
+		"body": "\nif (${1},${2}\n);\n",
+		"description": "Create if call",
+		"scope": ""
+	},
+	"ifnot": {
+		"prefix": "ifnot",
+		"body": "\nifnot (${1},${2}\n);\n",
+		"description": "Create ifnot call",
+		"scope": ""
+	},
+	"hsikt": {
+		"prefix": "hsikt",
+		"body": "\n<hotspot name=\"${1}\" style=\"invisible_content\" keep=\"true\"\n\t${2}\n/>\n",
+		"description": "Create invisible hotspot keep true tag",
+		"scope": ""
+	},
+	"hsivkt": {
+		"prefix": "hsivkt",
+		"body": "\n<hotspot name=\"${1}\" style=\"invisible_content|visible\" keep=\"true\"\n\t${2}\n/>\n",
+		"description": "Create invisible hotspot keep true tag",
+		"scope": ""
+	},
+	"lsikt": {
+		"prefix": "lsikt",
+		"body": "\n<layer name=\"${1}\" style=\"invisible_content\" keep=\"true\"\n\t${2}\n/>\n",
+		"description": "Create invisible layer keep true tag",
+		"scope": ""
+	},
+	"lsivkt": {
+		"prefix": "lsivkt",
+		"body": "\n<layer name=\"${1}\" style=\"invisible_content|visible\" keep=\"true\"\n\t${2}\n/>\n",
+		"description": "Create invisible layer keep true tag",
+		"scope": ""
+	},
+	"krpano": {
+		"prefix": "krpano",
+		"body": "\n<krpano>\n  \n  ${0}\n  \n</krpano>\n\n",
+		"description": "Create krpano tag",
+		"scope": ""
+	},
+	"l2": {
+		"prefix": "l2",
+		"body": "<layer name=\"${1}\" object=\"${1}\"/>",
+		"description": "Create layer tag (OOP)",
+		"scope": ""
+	},
+	"l3": {
+		"prefix": "l3",
+		"body": "\n<layer name=\"${1}\" object=\"${1}\">\n\t${2}\n</layer>\n",
+		"description": "Create layer tag with nesting (OOP)",
+		"scope": ""
+	},
+	"layer": {
+		"prefix": "layer",
+		"body": "\n<layer name=\"${1}\" keep=\"true\" style=\"${2}\"\n\t${3}\n/>\n",
+		"description": "Create layer tag",
+		"scope": ""
+	},
+	"loop": {
+		"prefix": "loop",
+		"body": "\nloop(${1},${2}\n);\n",
+		"description": "Create loop cycle",
+		"scope": ""
+	},
+	"lsi": {
+		"prefix": "lsi",
+		"body": "\n<layer name=\"${1}\" style=\"invisible_content\"\n\t${2}\n/>\n",
+		"description": "Create invisible layer tag",
+		"scope": ""
+	},
+	"lsiv": {
+		"prefix": "lsiv",
+		"body": "\n<layer name=\"${1}\" style=\"invisible_content|visible\"\n\t${2}\n/>\n",
+		"description": "Create invisible layer tag",
+		"scope": ""
+	},
+	"object": {
+		"prefix": "object",
+		"body": "\n<object name=\"${1}\" extends=\"\"\n\t${2}\n/>\n",
+		"description": "Create style tag",
+		"scope": ""
+	},
+	"oeic": {
+		"prefix": "oeic",
+		"body": "\n<object name=\"${1}\" extends=\"InvisibleContent\"\n\t${2}\n/>\n",
+		"description": "Create style tag",
+		"scope": ""
+	},
+	"onsro": {
+		"prefix": "onsro",
+		"body": "\nonnewscene=\"\n\tif(${1},\n\t\tset(${1}, false);\n\n\t\tdelayedcall(0.25, \n\t\t\tset(${1}, true);\n\t\t);\n\n\t\t${2}\n\t);\n\"\n",
+		"description": "Onnewscene run once",
+		"scope": ""
+	},
+	"plugin": {
+		"prefix": "plugin",
+		"body": "\n<plugin name=\"${1}\"\n\t${2}\n/>\n",
+		"description": "Create plugin tag",
+		"scope": ""
+	},
+	"++": {
+		"prefix": "++",
+		"body": "' + $1 + '",
+		"description": "Create style tag",
+		"scope": ""
+	},
+	"prototype": {
+		"prefix": "prototype",
+		"body": "\n<prototype name=\"${1}\"\n\t${2}\n/>\n",
+		"description": "Create style tag",
+		"scope": ""
+	},
+	"\"\"": {
+		"prefix": "\"\"",
+		"body": "\"\n\t$1\n\"",
+		"description": "Create quote code block",
+		"scope": ""
+	},
+	"setinterval": {
+		"prefix": "setinterval",
+		"body": "\nsetinterval(${1}, ${2}, ${3}\n);\n",
+		"description": "Create setinterval cycle",
+		"scope": ""
+	},
+	"style": {
+		"prefix": "style",
+		"body": "\n<style name=\"${1}\"\n\t${2}\n/>\n",
+		"description": "Create style tag",
+		"scope": ""
+	},
+	"tag": {
+		"prefix": "tag",
+		"body": "\n<${1} />\n",
+		"description": "Create tag",
+		"scope": ""
+	},
+	"this": {
+		"prefix": "this",
+		"body": "\n<this />\n",
+		"description": "Create this object",
+		"scope": ""
+	}
+}

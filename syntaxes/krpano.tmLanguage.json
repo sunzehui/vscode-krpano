@@ -1,0 +1,103 @@
+{
+  "name": "krpano",
+  "scopeName": "source.krpano",
+  "patterns": [
+    {
+      "include": "source.krpano-xml#comments"
+    },
+    {
+      "name": "string.quoted.double.krpano-string",
+      "match": "\"(\\\\.|[^\"\\\\])*\""
+    },
+    {
+      "name": "string.quoted.single.krpano-string",
+      "match": "'(\\\\.|[^'\\\\])*'"
+    },
+    {
+      "name": "keyword.control.krpano-statement",
+      "match": "\\b(krpano|if|for|switch|break|loop|asyncloop)\\b"
+    },
+    {
+      "name": "support.class.krpano-global-class",
+      "match": "\\b(Math|caller)\\b"
+    },
+    {
+      "name": "support.variable.krpano-global-variable",
+      "match": "\\b(version|xmlversion|build|events|fullscreen|xml|Math|PI|browser|useragent|platform|device|protocol|flash|flashversion|html5|desktop|normal|tablet|mobile|handheld|mobilevr|css3d|webgl|multiressupport|panovideosupport|fullscreensupport|depthmapsupport|pixelratio|fractionalscaling|maxtexturesize|mouse|touch|ios|iosversion|iosdesktop|iphone|ipod|ipad|android|androidversion|androidstock|chrome|chromemobile|chromeversion|firefox|firefoxversion|ie|ieversion|edge|newedge|safari|safariversion|opera|operaversion|iframe|standalone|windows|mac|linux|stagescale|bgcolor|domain|location|x|y|stagex|stagey|downx|downy|clickx|clicky|keycode|wheeldelta|wheeldelta_raw|wheeldelta_touchscale|idletime|timertick|random|hlookat_moveforce|vlookat_moveforce|fov_moveforce|multireslevel|lockmultireslevel|downloadlockedlevel|Loading information|progress.progress|network.viewerpath|network.htmlpath|network.firstxmlpath|network.currentxmlpath|url|filecontent|content|scene|view|global|local|debugmode|iszoom|debugjsactions|showerrors|lasterror|inlinefunctions)\\b"
+    },
+    {
+      "name": "support.function.krpano-global-function",
+      "match": "\\b(set|get|calc|copy|delete|delayedcall|stopdelayedcall|nexttick|callwhen|stopcallwhen|renderloop|stoprenderloop|setinterval|clearinterval|toggle|switch|break|exitcall|callwith|scope|parentscopeset|linkeventscope|assignstyle|copyattributes|dispatch|add|sub|mul|div|mod|pow|inc|dec|clamp|abs|acos|asin|atan|atan2|ceil|cos|exp|floor|log|max|min|pow|round|sin|sqrt|tan|roundval|tohex|tolower|toupper|txtadd|subtxt|indexoftxt|txtreplace|txtsplit|txtjoin|fromcharcode|escape|unscape|tween|stoptween|loadpano|loadscene|loadpanoscene|loadxml|includexml|includexmlstring|openurl|lookat|lookto|looktohotspot|moveto|zoomto|adjusthlookat|adjust360|getlooktodistance|stoplookto|stopmovements|wait|oninterrupt|Automatic rotation|start|stop|interrupt|pause|resume|Coordinate transformation|screentosphere|spheretoscreen|screentolayer|layertoscreen|spheretospace|spacetosphere|remapfovtype|showtext|updateobject|updatescreen|invalidatescreen|addlayer|addplugin|removelayer|removeplugin|addhotspot|removehotspot|addevent|triggerevent|loadstyle|registercontentsize|resetsize|updatepos|changeorigin|getfullpath|getcenter|js|jscall|jsget|Debugging|strict|showlog|debugvar|debug|trace|warning|error|fatalerror)\\b"
+    },
+    {
+      "name": "storage.type.krpano-def",
+      "match": "\\b(def)\\b"
+    },
+    {
+      "name": "keyword.operator.relational.krpano-operator",
+      "match": "\\b(EQ|NE|LT|LE|GT|GE)\\b"
+    },
+    {
+      "name": "constant.numeric.decimal.krpano-number",
+      "match": "(\\-)?\\b\\d+(\\.\\d*)?\\b%?"
+    },
+    {
+      "name": "constant.language.boolean.true.krpano-boolean",
+      "match": "\\b(true)\\b"
+    },
+    {
+      "name": "constant.language.boolean.false.krpano-boolean",
+      "match": "\\b(false)\\b"
+    },
+    {
+      "name": "constant.language.null.krpano-null",
+      "match": "\\b(null)\\b"
+    },
+    {
+      "name": "punctuation.accessor.krpano-accessor",
+      "match": "\\.(\\w+)",
+      "captures": {
+        "1": {
+          "name": "variable.other.property.krpano-property"
+        }
+      }
+    },
+    {
+      "name": "keyword.operator.logical.krpano-operator",
+      "match": "(\\!)\\b"
+    },
+    {
+      "name": "keyword.operator.logical.krpano-operator",
+      "match": "\\b(OR|AND|\\|\\||\\&\\&|\\!\\=|\\!\\=|\\<|\\>|\\>=|\\<=|\\=\\=\\=|\\!\\=\\=)\\b"
+    },
+    {
+      "name": "keyword.operator.logical.krpano-operator",
+      "match": "\\>=|\\<=|\\|\\||\\&\\&|\\=\\=\\=|\\!\\=\\=|\\!\\=|\\!\\=|\\<|\\>"
+    },
+    {
+      "name": "keyword.operator.krpano-operator",
+      "match": "\\b(XOR|\\+|\\-|\\*|\\/|\\%|\\^|\\=|\\&|\\|)\\b"
+    },
+    {
+      "name": "punctuation.separator.comma.krpano-comma",
+      "match": ","
+    },
+    {
+      "name": "punctuation.definition.krpano-punctuation",
+      "match": "\\(|\\)|\\[|\\]|\\{|\\}|\\.|\\,|\\:|\\;"
+    },
+    {
+      "name": "support.class.krpano-class",
+      "match": "\\b(layer)\\b"
+    },
+    {
+      "name": "variable.other.readwrite.krpano-variable",
+      "match": "(\\w+)",
+      "captures": {
+        "2": {
+          "name": "variable.other.property.krpano-property"
+        }
+      }
+    }
+  ]
+}

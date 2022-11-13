@@ -1,0 +1,418 @@
+{
+  "name": "krpano-xml",
+  "scopeName": "source.krpano-xml",
+  "fileTypes": ["xml"],
+  "patterns": [
+    {
+      "begin": "(<)(?=action.*[^/>]*/>\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.xml"
+        }
+      },
+      "end": "(/>)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.end.xml"
+        }
+      },
+      "patterns": [
+        {
+          "begin": "(action)",
+          "beginCaptures": {
+            "1": {
+              "name": "entity.name.tag.xml.action"
+            }
+          },
+          "end": "(?=/>)",
+          "patterns": [
+            {
+              "include": "#tag-stuff"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "begin": "(<)(action)\\b(?=[^>]*/>$)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "2": {
+          "name": "entity.name.tag.action.html"
+        }
+      },
+      "end": "(/>)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.end.html"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#tag-stuff"
+        }
+      ]
+    },
+    {
+      "begin": "(<)(action)(?=[^>]*>[^/>]*</action>)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "2": {
+          "name": "entity.name.tag.action.html"
+        }
+      },
+      "end": "(</)(action)(>)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "2": {
+          "name": "entity.name.tag.action.html"
+        },
+        "3": {
+          "name": "punctuation.definition.tag.end.html"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#tag-stuff"
+        },
+        {
+          "begin": "(>)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "end": "(?=</action>)"
+        }
+      ]
+    },
+    {
+      "begin": "(<)(action)\\b(?=[^>]*lang=('ts'|\"ts\"))(?![^/>]*/>\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "2": {
+          "name": "entity.name.tag.action.html"
+        }
+      },
+      "end": "(</)(action)(>)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "2": {
+          "name": "entity.name.tag.action.html"
+        },
+        "3": {
+          "name": "punctuation.definition.tag.end.html"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#tag-stuff"
+        },
+        {
+          "contentName": "source.krpano",
+          "begin": "(>)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "end": "(?=</action>)",
+          "patterns": [
+            {
+              "include": "source.krpano"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "begin": "(<)(action)\\b(?=[^>]*lang=('coffee'|\"coffee\"))(?![^/>]*/>\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "2": {
+          "name": "entity.name.tag.action.html"
+        }
+      },
+      "end": "(</)(action)(>)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "2": {
+          "name": "entity.name.tag.action.html"
+        },
+        "3": {
+          "name": "punctuation.definition.tag.end.html"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#tag-stuff"
+        },
+        {
+          "contentName": "source.coffee",
+          "begin": "(>)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "end": "(?=</action>)",
+          "patterns": [
+            {
+              "include": "source.coffee"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "begin": "(<)(action)(?![^/>]*/>\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "2": {
+          "name": "entity.name.tag.action.html"
+        }
+      },
+      "end": "(</)(action)(>)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "2": {
+          "name": "entity.name.tag.action.html"
+        },
+        "3": {
+          "name": "punctuation.definition.tag.end.html"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#tag-stuff"
+        },
+        {
+          "contentName": "source.krpano",
+          "begin": "(>)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "end": "(?=</action>)",
+          "patterns": [
+            {
+              "include": "source.krpano"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "include": "text.xml"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.html",
+          "begin": "<!--",
+          "end": "-->",
+          "captures": {
+            "0": {
+              "name": "punctuation.definition.comment.html"
+            }
+          }
+        }
+      ]
+    },
+    "entities": {
+      "patterns": [
+        {
+          "name": "constant.character.entity.html",
+          "match": "(&)([a-zA-Z0-9]+|#[0-9]+|#x[0-9a-fA-F]+)(;)",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.entity.html"
+            },
+            "3": {
+              "name": "punctuation.definition.entity.html"
+            }
+          }
+        },
+        {
+          "name": "invalid.illegal.bad-ampersand.html",
+          "match": "&"
+        }
+      ]
+    },
+    "string-double-quoted": {
+      "name": "string.quoted.double.html",
+      "begin": "\"",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.html"
+        }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.html"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#krpano-interpolations"
+        },
+        {
+          "include": "#entities"
+        }
+      ]
+    },
+    "string-single-quoted": {
+      "name": "string.quoted.single.html",
+      "begin": "'",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.html"
+        }
+      },
+      "end": "'",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.html"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#krpano-interpolations"
+        },
+        {
+          "include": "#entities"
+        }
+      ]
+    },
+    "tag-generic-attribute": {
+      "name": "entity.other.attribute-name.html",
+      "match": "\\b([a-zA-Z\\-:_]+)"
+    },
+    "tag-id-attribute": {
+      "name": "meta.attribute-with-value.id.html",
+      "begin": "\\b(id)\\b\\s*(=)",
+      "end": "(?<='|\")",
+      "captures": {
+        "1": {
+          "name": "entity.other.attribute-name.id.html"
+        },
+        "2": {
+          "name": "punctuation.separator.key-value.html"
+        }
+      },
+      "patterns": [
+        {
+          "name": "string.quoted.double.html",
+          "contentName": "meta.toc-list.id.html",
+          "begin": "\"",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.begin.html"
+            }
+          },
+          "end": "\"",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.end.html"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#krpano-interpolations"
+            },
+            {
+              "include": "#entities"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.html",
+          "contentName": "meta.toc-list.id.html",
+          "begin": "'",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.begin.html"
+            }
+          },
+          "end": "'",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.end.html"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#krpano-interpolations"
+            },
+            {
+              "include": "#entities"
+            }
+          ]
+        }
+      ]
+    },
+    "tag-stuff": {
+      "patterns": [
+        {
+          "include": "#tag-id-attribute"
+        },
+        {
+          "include": "#tag-generic-attribute"
+        },
+        {
+          "include": "#string-double-quoted"
+        },
+        {
+          "include": "#string-single-quoted"
+        }
+      ]
+    },
+    "krpano-interpolations": {
+      "patterns": [
+        {
+          "name": "expression.embedded.krpano",
+          "begin": "\\{\\{\\{?",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.generic.begin.html"
+            }
+          },
+          "end": "\\}\\}\\}?",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.generic.end.html"
+            }
+          },
+          "patterns": [
+            {
+              "include": "source.krpano#expression"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "name": "krpano-lang",
+  "displayName": "krpano-lang",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.73.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "contributes": {
+    "snippets": [
+      {
+        "language": "krpano-xml",
+        "path": "./snippets/krpano.code-snippets"
+      }
+    ],
+    "languages": [
+      {
+        "id": "krpano",
+        "extensions": [
+          ".xml"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "krpano-xml",
+        "extensions": [
+          ".xml"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "krpano-xml",
+        "scopeName": "source.krpano-xml",
+        "path": "./syntaxes/krpano-xml.tmLanguage.json"
+      },
+      {
+        "language": "krpano",
+        "scopeName": "source.krpano",
+        "path": "./syntaxes/krpano.tmLanguage.json"
+      }
+    ]
+  }
+}
