@@ -13,8 +13,8 @@
                 "--disable-extensions",
                 "--extensionDevelopmentPath=${workspaceFolder}",
 				"${workspaceFolder}/sample",
-                
-            ]
+            ],
+            "preLaunchTask": "npm: dev"
         }
     ]
 }

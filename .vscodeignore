@@ -2,3 +2,11 @@
 .vscode-test/**
 .gitignore
 vsc-extension-quickstart.md
+.github/
+node_modules/
+src/
+.gitignore
+package-lock.json
+.eslintrc.js
+yarn.lock
+tsconfig.json

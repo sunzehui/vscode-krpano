@@ -3,18 +3,39 @@
   "displayName": "krpano-lang",
   "description": "a krpano high-light plugin",
   "version": "0.0.2",
+  "main": "./dist/extension.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/sunzehui/vscode-krpano.git"
   },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "tsup src/extension.ts --dts --external=vscode",
+    "dev": "npm run build -- --watch",
+    "release": "npx bumpp --commit --tag --push"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^0.6.2",
+    "@types/node": "^14.14.37",
+    "@types/vscode": "^1.52.0",
+    "eslint": "^7.23.0",
+    "pkg-up": "^3.1.0",
+    "tsup": "^4.8.21",
+    "types-package-json": "^2.0.31",
+    "typescript": "^4.2.3"
+  },
   "publisher": "sunzehui",
   "engines": {
-    "vscode": "^1.73.0"
+    "vscode": "^1.52.0"
   },
   "icon": "doc/krpano.ico",
   "categories": [
     "Programming Languages",
     "Snippets"
+  ],
+  "activationEvents": [
+    "onLanguage:krpano-xml",
+    "onLanguage:krpano"
   ],
   "contributes": {
     "snippets": [
@@ -51,5 +72,8 @@
         "path": "./syntaxes/krpano.tmLanguage.json"
       }
     ]
+  },
+  "dependencies": {
+    "xml-formatter": "^3.6.2"
   }
 }
