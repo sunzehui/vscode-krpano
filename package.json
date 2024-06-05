@@ -2,7 +2,7 @@
   "name": "krpano-lang",
   "displayName": "krpano-lang",
   "description": "a krpano high-light plugin",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "main": "./dist/extension.js",
   "repository": {
     "type": "git",
