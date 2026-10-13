@@ -14,7 +14,7 @@ All notable changes to the "krpano-lang" extension are documented in this file.
 - Formatting now asks for confirmation before writing changes when the document contains unclosed or mismatched tags (the formatter silently repairs those).
 - Extension settings are declared in the extension manifest (`xml.format.*` now shows up in the Settings UI with descriptions).
 - 12 more snippets (include, scene, preview, cube/multires image, view, autorotate, cssstyles, textstyle, action with args, text layer, onclick).
-- `npm test` test suite: TextMate scope assertions, formatter unit tests, LSP unit tests and an end-to-end language server smoke test over stdio; GitHub Actions CI runs tests and packaging checks.
+- `npm test` test suite: TextMate scope assertions, formatter unit tests, LSP unit tests an end-to-end language server smoke test over stdio, and a packaged-artifact smoke test that loads `dist/extension.js` with a stub `vscode` API; GitHub Actions CI runs tests and packaging checks.
 
 ### Changed
 

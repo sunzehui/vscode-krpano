@@ -16,7 +16,7 @@ pnpm install        # 安装依赖
 | --- | --- |
 | `pnpm build`（或 `npm run build`） | 用 tsup 构建一次，输出 `dist/extension.js`（含 dts，`vscode` 为 external） |
 | `pnpm dev`（或 `npm run dev`） | watch 模式，源文件变更时自动重建，供 F5 调试使用 |
-| `npm test` | 跑全部测试：`build:test`（把纯模块编译到 `test/.tmp`）+ `node --test test/*.test.mjs`（语法 scope、格式化、LSP 纯函数；若已 `npm run build`，还会跑语言服务器 stdio 端到端冒烟） |
+| `npm test` | 跑全部测试：`build:test`（把纯模块编译到 `test/.tmp`）+ `node --test test/*.test.mjs`（语法 scope、格式化、LSP 纯函数；若已 `npm run build`，还会跑语言服务器 stdio 端到端冒烟与打包产物冒烟） |
 | `npm run release` | 通过 bumpp 交互式选择版本号 → commit → tag → push |
 | `npx @vscode/vsce package` | 打包出 `.vsix` |
 | `npx @vscode/vsce publish` | 发布到 VS Code Marketplace（需要 Personal Access Token） |
@@ -74,6 +74,7 @@ npx @vscode/vsce publish
 | 注释、折叠、括号配对等编辑器行为 | `language-configuration.json` |
 | 格式化选项与默认值 | `src/getOptions.ts`、`src/beautifyHtml.ts`、`src/types/options.ts` |
 | 语法 scope 断言 / 格式化断言 / LSP 断言 | `test/grammar.test.mjs`、`test/format.test.mjs`、`test/lsp.test.mjs`、`test/xml.test.mjs`（改行为时同步补用例） |
+| 打包产物行为断言 | `test/artifact.test.mjs`（假 vscode API 加载 `dist/extension.js`）、`test/server.test.mjs`（语言服务器进程） |
 | 语言服务能力（诊断/补全/悬停/跳转） | `src/lsp/features.ts`（纯函数）；服务器接线在 `src/lsp/server.ts` |
 | 元素/属性/内建 action 数据 | `scripts/gen-krpano-data.mjs` → `src/lsp/krpanoData.json`（从官方 XML Reference 抽取；升级 krpano 版本后重跑） |
 | 悬停说明文字 | `src/lsp/krpanoDocs.ts`（手写，不复用官方文档原文） |
