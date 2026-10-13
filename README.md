@@ -6,7 +6,7 @@ krpano 语法高亮插件，使用 textMate 语法。
 ![test](https://github.com/sunzehui/vscode-krpano/blob/master/doc/test.png?raw=true)
 
 - **语法高亮**:krpano XML 与 action 脚本(含 `type="Javascript"` 的 JS action)高亮
-- **语言服务(LSP)**:元素/属性补全与悬停说明、标签配对与未知元素诊断、从 `action_name(...)` 跳转到定义
+- **语言服务(LSP)**:元素/属性补全与悬停说明、标签配对与未知元素诊断、从 `action_name(...)` 跳转到定义(可跨 `<include>` 的文件)
 - **XML 格式化**:按 `Shift+Alt+F` 格式化,选项见下方 Settings
 - **代码片段**:53 个常用写法片段(action、标签结构、image/scene/tour 等)
 
@@ -47,6 +47,12 @@ Here is the list of native vscode settings I pass to xml formatter which control
 - [常见问题](docs/faq.md)
 
 ## Release Notes
+
+### 0.5.0
+
+- 语言服务支持 `<include>` 链:include 进来的动作不再提示"未定义",可直接从调用处跳转到 include 文件里的定义;include 目标不存在会给警告;include 的文件被修改后会自动刷新诊断
+- 打包自包含:运行时依赖(xml-formatter、vscode-languageclient、vscode-languageserver)由 tsup 打进 `dist/`,安装包从 354 个文件/910KB 降到 23 个文件/约 520KB,不再携带 `node_modules`
+- 修复 include 路径未归一化 `..`/`.` 导致的依赖环与归属判断问题
 
 ### 0.4.0
 

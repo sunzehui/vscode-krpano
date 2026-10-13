@@ -54,14 +54,14 @@
 
 | 能力 | 说明 |
 | --- | --- |
-| 诊断 | 标签未闭合/错配（警告）、未知元素与 `<action type>` 非法取值（警告）、当前文件中未定义的动作调用（信息） |
+| 诊断 | 标签未闭合/错配（警告）、未知元素与 `<action type>` 非法取值（警告）、`<include>` 目标不存在（警告）、本文件与 include 链中均未定义的动作调用（信息） |
 | 补全 | 元素名、该元素的属性（插入 `ath="$1"` 形式）、特殊属性 `devices`/`if`、`<action type>` 的取值 |
 | 悬停 | 元素与属性的简短说明（31 个元素、900+ 属性） |
-| 跳转 | 事件属性或 action 体里的 `action_name(...)` → 对应 `name="..."` 声明 |
+| 跳转 | 事件属性或 action 体里的 `action_name(...)` → 对应 `name="..."` 声明（可跨 `<include>` 的文件） |
 
 两点说明：
 
-- "Action ... is not defined in this file" 是 **information** 级别：krpano 常用 `<include>` 拆分文件，动作可能定义在别处，故不做强报错；不想要可在 Problems 面板按级别过滤。
+- "Action ... is not defined" 是 **information** 级别：0.5.0 起会沿 `<include>` 链解析，只有本文件与 include 的文件里都找不到时才会提示（插件提供的动作也可能不在其中）；不想要可在 Problems 面板按级别过滤。
 - "Unknown krpano element" 同样是 **information**：白名单是官方 XML Reference 的 31 个元素，第三方插件自定义的元素可能被标记。
 
 语言服务在独立进程里运行；启动失败只会在扩展宿主控制台打印日志，高亮与格式化不受影响。

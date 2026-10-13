@@ -76,6 +76,7 @@ npx @vscode/vsce publish
 | 语法 scope 断言 / 格式化断言 / LSP 断言 | `test/grammar.test.mjs`、`test/format.test.mjs`、`test/lsp.test.mjs`、`test/xml.test.mjs`（改行为时同步补用例） |
 | 打包产物行为断言 | `test/artifact.test.mjs`（假 vscode API 加载 `dist/extension.js`）、`test/server.test.mjs`（语言服务器进程） |
 | 语言服务能力（诊断/补全/悬停/跳转） | `src/lsp/features.ts`（纯函数）；服务器接线在 `src/lsp/server.ts` |
+| include 链解析与符号索引 | `src/lsp/symbols.ts`（纯逻辑，文件读取注入；断言见 `test/includes.test.mjs`） |
 | 元素/属性/内建 action 数据 | `scripts/gen-krpano-data.mjs` → `src/lsp/krpanoData.json`（从官方 XML Reference 抽取；升级 krpano 版本后重跑） |
 | 悬停说明文字 | `src/lsp/krpanoDocs.ts`（手写，不复用官方文档原文） |
 | 扩展贡献点（语言、语法、设置、激活事件、图标） | `package.json` 的 `contributes` 与 `main` |
@@ -89,7 +90,8 @@ npx @vscode/vsce publish
 
 从当前仓库状态整理出的改进点，供后续维护参考：
 
-- 语言服务不做跨文件解析：`<include>` 进来的动作定义不会被识别，"未定义动作"只给 information 级提示；变量类型推断也未做。
+- include 索引在每次校验时重建（磁盘文件有 mtime 缓存，未做去抖与增量）：超大项目或频繁输入时可能偏重。
+- 变量类型推断、`get:`/`calc:` 表达式校验未做。
 - `krpano` 模式（脚本-only）未内嵌 XML 标签处理（原因见 [syntax-highlighting.md](./syntax-highlighting.md#现状说明030)）；XML 文档统一用 `krpano-xml`。
 - 元素/属性数据来自官方文档的抽取脚本，只在升级 krpano 版本后需要重跑（页面需先 `curl` 到本地，见脚本头部注释）。
 - `krpano.lsp.*` 之类的开关设置尚未提供：语言服务总是启用，启动失败只记录日志。

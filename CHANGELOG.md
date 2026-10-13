@@ -2,6 +2,16 @@
 
 All notable changes to the "krpano-lang" extension are documented in this file.
 
+## 0.5.0
+
+### Added
+
+- Language server resolves `<include url="...">` chains: action calls defined in included files are no longer reported as undefined, "go to definition" jumps across files, and an include target that cannot be found is reported as a warning. Included files are watched, so editing e.g. `actions.xml` refreshes the diagnostics of documents that include it.
+
+### Changed
+
+- The published package is now self-contained: `xml-formatter`, `vscode-languageclient` and `vscode-languageserver` are bundled into `dist/` by tsup (23 files, ~520 KB) instead of being shipped in `node_modules` (354 files, ~910 KB). The extension host bundle and the language server bundle are verified to run with no `node_modules` present.
+
 ## 0.4.0
 
 ### Added
