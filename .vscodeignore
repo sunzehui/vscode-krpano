@@ -4,9 +4,9 @@
 vsc-extension-quickstart.md
 .github/
 docs/
+test/
 node_modules/
 src/
-.gitignore
 package-lock.json
 .eslintrc.js
 yarn.lock

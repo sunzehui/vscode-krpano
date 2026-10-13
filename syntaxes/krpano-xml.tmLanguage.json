@@ -4,38 +4,7 @@
   "fileTypes": ["xml"],
   "patterns": [
     {
-      "begin": "(<)(?=action.*[^/>]*/>\\s*$)",
-      "beginCaptures": {
-        "1": {
-          "name": "punctuation.definition.tag.begin.xml"
-        }
-      },
-      "end": "(/>)",
-      "endCaptures": {
-        "1": {
-          "name": "punctuation.definition.tag.end.xml"
-        }
-      },
-      "patterns": [
-        {
-          "begin": "(action)",
-          "beginCaptures": {
-            "1": {
-              "name": "entity.name.tag.xml.action"
-            }
-          },
-          "end": "(?=/>)",
-          "patterns": [
-            {
-              "include": "#tag-stuff"
-            }
-          ]
-        }
-      ]
-    },
-
-    {
-      "begin": "(<)(action)\\b(?=[^>]*/>$)",
+      "begin": "(<)(action)\\b(?=[^>]*/>\\s*$)",
       "beginCaptures": {
         "1": {
           "name": "punctuation.definition.tag.begin.html"
@@ -57,7 +26,7 @@
       ]
     },
     {
-      "begin": "(<)(action)(?=[^>]*>[^/>]*</action>)",
+      "begin": "(<)(action)\\b(?=[^>]*\\stype\\s*=\\s*[\"'](?:[Jj]avascript|[Jj][Ss])[\"'])(?![^/>]*/>\\s*$)",
       "beginCaptures": {
         "1": {
           "name": "punctuation.definition.tag.begin.html"
@@ -83,18 +52,43 @@
           "include": "#tag-stuff"
         },
         {
+          "contentName": "source.js",
           "begin": "(>)",
           "beginCaptures": {
             "1": {
               "name": "punctuation.definition.tag.end.html"
             }
           },
-          "end": "(?=</action>)"
+          "end": "(?=</action>)",
+          "patterns": [
+            {
+              "begin": "(<!\\[CDATA\\[)",
+              "beginCaptures": {
+                "1": {
+                  "name": "punctuation.definition.cdata.begin.html"
+                }
+              },
+              "end": "(\\]\\]>)",
+              "endCaptures": {
+                "1": {
+                  "name": "punctuation.definition.cdata.end.html"
+                }
+              },
+              "patterns": [
+                {
+                  "include": "source.js"
+                }
+              ]
+            },
+            {
+              "include": "source.js"
+            }
+          ]
         }
       ]
     },
     {
-      "begin": "(<)(action)\\b(?=[^>]*lang=('ts'|\"ts\"))(?![^/>]*/>\\s*$)",
+      "begin": "(<)(action)(?=[^>]*>[^/>]*</action>)",
       "beginCaptures": {
         "1": {
           "name": "punctuation.definition.tag.begin.html"
@@ -131,49 +125,6 @@
           "patterns": [
             {
               "include": "source.krpano"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "begin": "(<)(action)\\b(?=[^>]*lang=('coffee'|\"coffee\"))(?![^/>]*/>\\s*$)",
-      "beginCaptures": {
-        "1": {
-          "name": "punctuation.definition.tag.begin.html"
-        },
-        "2": {
-          "name": "entity.name.tag.action.html"
-        }
-      },
-      "end": "(</)(action)(>)",
-      "endCaptures": {
-        "1": {
-          "name": "punctuation.definition.tag.begin.html"
-        },
-        "2": {
-          "name": "entity.name.tag.action.html"
-        },
-        "3": {
-          "name": "punctuation.definition.tag.end.html"
-        }
-      },
-      "patterns": [
-        {
-          "include": "#tag-stuff"
-        },
-        {
-          "contentName": "source.coffee",
-          "begin": "(>)",
-          "beginCaptures": {
-            "1": {
-              "name": "punctuation.definition.tag.end.html"
-            }
-          },
-          "end": "(?=</action>)",
-          "patterns": [
-            {
-              "include": "source.coffee"
             }
           ]
         }
