@@ -46,3 +46,19 @@
 		screentosphere(dx, dy, ath, atv);	
 	  );
 </action>
+<!-- 回归样例:JS action(krpano 官方写法 type="Javascript"/"js",本体用 CDATA) -->
+<action name="js_demo" type="javascript">
+	<![CDATA[
+	// krpano 不支持 TypeScript,JS action 请用 type="Javascript" 或 type="js"
+	const greet = 'hello'
+	console.log(greet)
+	]]>
+</action>
+<!-- 回归样例:官方内联 JS 写法(无 CDATA) -->
+<action name="js_inline_demo" type="js">
+	console.log('inline js action')
+</action>
+<!-- 回归样例:单行 krpano action -->
+<action name="one_liner">set(one_liner_ok, true);</action>
+<!-- 回归样例:action 属性里的模板插值({{ }} 非 krpano 语法,仅高亮示例) -->
+<action name="tpl_demo" args="{{view.hlookat}}"/>

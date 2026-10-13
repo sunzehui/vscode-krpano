@@ -67,7 +67,7 @@
 	"hs2": {
 		"prefix": "hs2",
 		"body": "<hotspot name=\"${1}\" object=\"${1}\"/>",
-		"description": "Create layer tag (OOP)",
+		"description": "Create hotspot tag (OOP)",
 		"scope": ""
 	},
 	"hs": {
@@ -181,13 +181,13 @@
 	"object": {
 		"prefix": "object",
 		"body": "\n<object name=\"${1}\" extends=\"\"\n\t${2}\n/>\n",
-		"description": "Create style tag",
+		"description": "Create object tag",
 		"scope": ""
 	},
 	"oeic": {
 		"prefix": "oeic",
 		"body": "\n<object name=\"${1}\" extends=\"InvisibleContent\"\n\t${2}\n/>\n",
-		"description": "Create style tag",
+		"description": "Create object tag with InvisibleContent",
 		"scope": ""
 	},
 	"onsro": {
@@ -205,13 +205,13 @@
 	"++": {
 		"prefix": "++",
 		"body": "' + $1 + '",
-		"description": "Create style tag",
+		"description": "Create string concatenation",
 		"scope": ""
 	},
 	"prototype": {
 		"prefix": "prototype",
 		"body": "\n<prototype name=\"${1}\"\n\t${2}\n/>\n",
-		"description": "Create style tag",
+		"description": "Create prototype tag",
 		"scope": ""
 	},
 	"\"\"": {
