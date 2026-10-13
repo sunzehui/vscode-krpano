@@ -10,7 +10,7 @@
 - **`source.krpano`**（`syntaxes/krpano.tmLanguage.json`）
   action 脚本语法。定义 krpano action 语言的关键字、变量、函数、操作符等；自身不处理 XML，只被 `source.krpano-xml` 内嵌调用，同时作为独立语言 ID `krpano` 注册。
 
-两个语言 ID 都声明了 `.xml` 扩展名，VS Code 会为 `.xml` 文件选择其中一个语言模式（可用编辑器右下角状态栏手动切换）。高亮的完整效果要求文件处于 `krpano-xml` 模式，因为只有它内嵌了 `source.krpano`。
+`.xml` 文件由 `krpano-xml` 唯一认领（0.3.0 起 `krpano` 不再声明 `.xml` 关联，避免默认语言归属不确定）；高亮的完整效果要求文件处于 `krpano-xml` 模式，因为只有它内嵌了 `source.krpano`。`krpano` 模式仍可在状态栏手动切换，格式化器对两种模式都可用。
 
 ## krpano-xml：宿主语法
 
@@ -20,13 +20,12 @@
 
 | 顺序 | 匹配形态 | 内容处理 |
 | --- | --- | --- |
-| 1–2 | 自闭合 `<action …/>` | 仅属性高亮。有两条条件高度重叠的规则（对行尾空白、命名 scope 的处理略有差异） |
-| 3 | 单行 `<action …>…</action>`（正文中不含 `/`、`>`） | 内容不做脚本高亮 |
-| 4 | `<action lang="ts" …>` 多行写法 | 当前按 `source.krpano` 高亮（见下方已知问题） |
-| 5 | `<action lang="coffee" …>` 多行写法 | 按 `source.coffee` 高亮（需系统内存在 CoffeeScript 语法） |
-| 6 | 其它多行 `<action …>…</action>` | 按 `source.krpano` 高亮 |
+| 1 | 自闭合 `<action …/>`（容忍行尾空白） | 仅属性高亮 |
+| 2 | `type="Javascript"` / `type="js"`（大小写兼容）且非自闭合 | 正文按 `source.js` 高亮；CDATA 包裹（官方骨架写法）与内联两种写法都支持 |
+| 3 | 单行 `<action …>…</action>`（正文中不含 `/`、`>`） | 正文按 `source.krpano` 高亮 |
+| 4 | 其它多行 `<action …>…</action>` | 正文按 `source.krpano` 高亮 |
 
-由于按序匹配，单行写法会先被第 3 条吃掉，因此 `lang="ts|coffee"` 分支只对多行写法生效。
+krpano 官方只支持 `type=""`（默认）、`type="Javascript"` 与 `type="js"`（krpano XML Reference 的 `action[name].type`，v1.21–v1.24 一致），**不支持 TypeScript**。早期版本里的 `lang="ts"`/`lang="coffee"` 分支是针对不存在写法的模板残留，0.3.0 已删除。
 
 每个分支的写法一致：用 `begin`/`end` 覆盖整个 action 块，`patterns` 里先 `include: "#tag-stuff"` 处理属性，再对 `>` 之后的正文设置 `contentName` 并 `include` 目标语法。例如默认多行分支的正文以 `source.krpano` 为 contentName 递归包含脚本语法。
 
@@ -38,7 +37,7 @@
 - `entities`：HTML 实体（如 `&amp;`）与非法裸 `&`。
 - `string-double-quoted` / `string-single-quoted`：标签属性字符串；内部继续包含 `#krpano-interpolations` 与 `#entities`。
 - `tag-stuff`：属性名（`tag-generic-attribute`）、特殊处理的 `id` 属性（`tag-id-attribute`，带 TOC scope）、两种字符串。
-- `krpano-interpolations`：`{{ … }}` / `{{{ … }}}` 插值定界符，内部引用 `source.krpano#expression`（见已知问题）。
+- `krpano-interpolations`：`{{ … }}` / `{{{ … }}}` 插值定界符，内部引用 `source.krpano#expression`（在 `source.krpano` 的 `repository.expression` 中定义）。注意 `{{ }}` **不是 krpano 官方语法**（官方用 `get:`/`calc:`/`link:` 属性前缀与 `%0`–`%99` 参数占位符），这里是为使用 Vue/Handlebars 等模板生成 XML 的工程保留的高亮；又因为非 action 标签由内置 XML 语法处理，插值高亮只在 `<action>` 标签的属性字符串中生效。
 
 ### 兜底
 
@@ -69,10 +68,10 @@
 
 - 规则顺序即优先级（TextMate 先声明先匹配），新词加到已有规则里比新建规则更安全；
 - 单词用 `|` 分隔、`\b` 包围，注意词边界；
-- 列表中混有一些来自 krpano 文档章节标题的中文/带空格条目（如 `Loading information`、`Coordinate transformation`），它们不构成有效分支（单独出现的 "Loading" 并不会命中），清理时可直接删除；
+- 0.3.0 已清理混入列表的 krpano 文档章节标题（`Loading information`、`Coordinate transformation` 等，属死分支）；新增词条时不要把多词短语当单词加进去；
 - 全局变量列表中含单字母 `x`、`y`，加上末尾的变量兜底规则会匹配任意单词，个别上下文可能误高亮。调整时优先改规则顺序或收窄正则，而不是简单删词。
 
-**新增嵌入了其它语言的 action 分支**：复制 `lang="coffee"` 分支，修改语言判定正则、`contentName` 与 `include` 三处即可。
+**新增嵌入了其它语言的 action 分支**：复制 `type="Javascript"` 分支（含 CDATA 处理），修改语言判定正则、`contentName` 与 `include` 三处即可。
 
 **新增 XML 层结构**：在 `krpano-xml.tmLanguage.json` 的 `patterns` 前部加 `begin`/`end` 规则；能落到 `text.xml` 的部分不需要自己写。
 
@@ -82,9 +81,10 @@
 2. 打开 `sample/test.xml`，光标放到目标位置，命令面板执行 **Developer: Inspect Editor Tokens and Scopes**，查看命中的 scope 与语法规则。
 3. 修改 `syntaxes/*.json` 后，在扩展开发宿主里执行 **Developer: Reload Window** 即可生效，不需要重新构建（语法文件在运行时按需加载）。
 
-## 已知问题
+## 现状说明（0.3.0）
 
-- **`lang="ts"` 分支未接入 TypeScript 语法**：该分支的 `patterns` 引用的是 `source.krpano` 而非 `source.ts`，与 `lang="coffee"` 分支的处理方式不对称，疑似遗留问题。
-- **`{{…}}` 插值内部无脚本高亮**：`krpano-interpolations` 引用 `source.krpano#expression`，但 `source.krpano` 中并未定义名为 `expression` 的 repository 项，引用不会生效，目前只会高亮插值定界符本身。
-- **兜底变量规则的 captures 键有误**：`source.krpano` 末条规则 `(\w+)` 的 `captures` 写成 `"2"`，而正则只有一个捕获组，该捕获项不会生效（对整体效果影响不大）。
-- **单行 `<action>…</action>` 无脚本高亮**：见分支表第 3 条，这是当前的设计边界。
+- `type="Javascript"`/`"js"` 的 action 正文按 VS Code 内置 JS 语法高亮，CDATA 标记单独标为 punctuation；krpano 不支持 TypeScript，`lang="ts"` 写法不再特殊处理。
+- 单行 `<action>…</action>` 正文与多行写法一致，按 krpano 脚本高亮。
+- `{{…}}` 插值内部按 krpano 语法高亮，但只对 `<action>` 标签的属性字符串生效（非 action 标签的属性由内置 XML 语法处理，规则进不去）。
+- 变量兜底规则不再带无效 captures；`x`、`y` 两个单字母全局变量仍保留（可能是真实变量），确认误高亮后可单独移除。
+- 以上行为均有 `test/grammar.test.mjs` 的词法断言覆盖，改动语法后请跑 `npm test`。

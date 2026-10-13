@@ -2,7 +2,7 @@
 
 全部片段定义在 `snippets/krpano.code-snippets`（JSON 格式，key 为标识符，`prefix` 为触发词），通过 `package.json` 的 `contributes.snippets` 绑定到 **krpano-xml** 语言。只有文件处于该语言模式时片段才会出现。
 
-在编辑器中输入前缀后按 Tab 展开，再用 Tab 在占位符之间跳转。
+在编辑器中输入前缀后按 Tab 展开，再用 Tab 在占位符之间跳转。`actjs`/`actjspi` 生成的 JavaScript action 会按 VS Code 内置 JS 语法高亮（0.3.0 起）。
 
 ## action 与脚本语句
 
@@ -58,6 +58,6 @@
 
 ## 维护说明
 
-- 新增片段：在 `snippets/krpano.code-snippets` 顶层加一个 key，填写 `prefix`、`body`、`description`（现有片段的描述为英文，保持一致即可）。
+- 新增片段：在 `snippets/krpano.code-snippets` 顶层加一个 key，填写 `prefix`、`body`、`description`（现有片段的描述为英文，保持一致即可）；`description` 会显示在补全列表中，务必与实际生成内容一致（0.3.0 修正过一批误导描述）。
 - `body` 中的 `\n`、`\t` 需转义；`${1}`、`${2}`… 为 Tab 跳转位，`$0`/`${-1}` 为最后停留位。
 - 文件中大多数片段带有 `"scope": ""`，表示不额外限定语言（片段文件本身已绑定 krpano-xml）。

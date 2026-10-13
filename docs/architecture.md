@@ -11,7 +11,7 @@ graph TD
   P --> S[snippets<br/>krpano.code-snippets]
   P --> A[activationEvents<br/>onLanguage:krpano-xml / onLanguage:krpano]
   A --> E[src/extension.ts · activate()]
-  E --> F[DocumentFormattingEditProvider<br/>语言: krpano-xml]
+  E --> F[DocumentFormattingEditProvider<br/>语言: krpano-xml / krpano]
   F --> O[src/getOptions.ts<br/>读取 VS Code 配置]
   F --> B[src/beautifyHtml.ts<br/>封装 xml-formatter]
 ```
@@ -34,6 +34,10 @@ graph TD
 │   └── format.xml              # 格式化示例（krpano 官方 animated hotspots）
 ├── doc/                        # 图片与扩展图标（krpano.ico 会随扩展打包）
 ├── docs/                       # 本开发文档（已加入 .vscodeignore，不打包进 vsix）
+├── test/                       # 测试（node --test；grammar 为 vscode-textmate 词法断言）
+│   ├── grammar.test.mjs        # 语法 scope 断言（含 sample 中的各种 action 写法）
+│   ├── format.test.mjs         # getOptions/beautify 纯函数断言
+│   └── helpers/grammar.mjs     # 语法加载与 tokenize/scope 定位工具
 └── .vscode/                    # 调试与构建任务配置（launch.json / tasks.json）
 ```
 
@@ -43,7 +47,7 @@ graph TD
 
 `package.json` 声明了两个激活事件：`onLanguage:krpano-xml` 与 `onLanguage:krpano`。当打开的 `.xml` 文件处于这两种语言模式之一时，VS Code 加载 `dist/extension.js`。
 
-`activate()` 中只注册了一件事：为 `krpano-xml` 语言提供 `DocumentFormattingEditProvider`（src/extension.ts:6）。目前没有为 `krpano` 语言注册任何 provider，因此仅当文件处于 `krpano-xml` 模式时格式化功能才可用。
+`activate()` 中只注册了一件事：为 `krpano-xml` 与 `krpano` 两个语言模式都提供 `DocumentFormattingEditProvider`（同一个 provider 实例注册两次，见 src/extension.ts）。
 
 ### 2. 语法高亮
 
@@ -51,7 +55,7 @@ graph TD
 
 | 语言 ID | scopeName | 语法文件 | 角色 |
 | --- | --- | --- | --- |
-| krpano-xml | source.krpano-xml | syntaxes/krpano-xml.tmLanguage.json | 宿主：XML 标签、属性、注释、字符串（其余交给内置 `text.xml` 兜底），并把 `<action>` 的内容分发给脚本语法 |
+| krpano-xml | source.krpano-xml | syntaxes/krpano-xml.tmLanguage.json | 宿主：XML 标签、属性、注释、字符串（其余交给内置 `text.xml` 兜底），并按 `<action>` 的 `type` 把正文分发给 krpano 或 JS 语法 |
 | krpano | source.krpano | syntaxes/krpano.tmLanguage.json | action 脚本：关键字、全局变量、函数、操作符、数字等 |
 
 机制细节（分支匹配顺序、scope 命名、如何扩展）见 [syntax-highlighting.md](./syntax-highlighting.md)。
@@ -76,6 +80,7 @@ graph TD
 - 包管理器为 pnpm（仓库有 `pnpm-lock.yaml`）；脚本里写的是 `npm run build`，两者均可。
 - `npm run build`：tsup 把 `src/extension.ts` 打包为 `dist/extension.js`（`--external=vscode`，同时生成 dts）。
 - `npm run dev`：watch 模式，供 F5 调试使用（`preLaunchTask` 已配置）。
+- `npm test`：词法断言 + 格式化纯函数测试（见 [development.md](./development.md)）。
 - `dist/` 被 `.gitignore` 排除，但会进入 vsix（`.vscodeignore` 未排除它）。
 - `vscode:prepublish` 钩子在打包前自动执行构建，保证发布产物存在。
 
@@ -83,4 +88,4 @@ graph TD
 
 - **用 TextMate 而不是 LSP**：实现成本低、没有语言服务器进程，足以满足高亮需求；代价是无法做语义级校验（如变量未定义、标签是否合法）。LSP 在 TODO 中。
 - **复用 `xml.format.*` 命名**：格式化选项沿用 vscode-xml 扩展的配置风格，键名与 xml-formatter 的选项一一对应。需要说明的是这些键并未在 `package.json` 中声明（没有 `contributes.configuration`），详见 [formatting.md](./formatting.md#配置项)。
-- **格式化失败不破坏文件**：`beautify` 捕获解析异常，完全无法解析时原样返回输入文本。注意 xml-formatter 对标签未闭合/错配是容错"修复"而非报错，可能静默改变结构，详见 [formatting.md](./formatting.md)。
+- **格式化失败不破坏文件**：`beautify` 捕获解析异常，完全无法解析时原样返回输入文本并通过 `failed` 标记让调用方给出警告。注意 xml-formatter 对标签未闭合/错配是容错"修复"而非报错，可能静默改变结构，详见 [formatting.md](./formatting.md)。
