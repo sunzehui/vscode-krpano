@@ -53,9 +53,6 @@
     "languages": [
       {
         "id": "krpano",
-        "extensions": [
-          ".xml"
-        ],
         "configuration": "./language-configuration.json"
       },
       {
