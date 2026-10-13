@@ -1,22 +1,22 @@
 'use strict'
-import { xmlOptions } from './types/options'
+import type { xmlOptions } from './types/options'
 
 export default function getOptions(config: any): xmlOptions {
-  let indenation = config?.xml?.format.indentation
-  if (indenation === undefined)
-    indenation = ' '.repeat(config.editor.tabSize)
+  const xmlFormat = config?.xml?.format ?? {}
+  const editor = config?.editor ?? {}
+  const tabSize = Number.isInteger(editor.tabSize) && editor.tabSize > 0 ? editor.tabSize : 4
+  // 缩进只由 xml.format.indentation 与 editor.tabSize/insertSpaces 决定,未配置时与 VS Code 默认(空格、tabSize)一致
+  const indentation = xmlFormat.indentation ?? (editor.insertSpaces === false ? '\t' : ' '.repeat(tabSize))
 
-  const options: xmlOptions = {
+  return {
     // xml 格式化选项
-    ignoredPaths: config?.xml?.format.ignoredPaths,
-    indentation: indenation,
-    collapseContent: config?.xml?.format.collapseContent,
-    lineSeparator: config?.xml?.format.lineSeparator,
-    whiteSpaceAtEndOfSelfclosingTag: config?.xml?.format.whiteSpaceAtEndOfSelfclosingTag,
-    forceSelfClosingEmptyTag: config?.xml?.format.forceSelfClosingEmptyTag,
+    ignoredPaths: xmlFormat.ignoredPaths,
+    indentation,
+    collapseContent: xmlFormat.collapseContent,
+    lineSeparator: xmlFormat.lineSeparator,
+    whiteSpaceAtEndOfSelfclosingTag: xmlFormat.whiteSpaceAtEndOfSelfclosingTag,
+    forceSelfClosingEmptyTag: xmlFormat.forceSelfClosingEmptyTag,
     // 自定义选项
-    handleRootNode: config?.xml?.format.handleRootNode,
+    handleRootNode: xmlFormat.handleRootNode,
   }
-
-  return options
 }
