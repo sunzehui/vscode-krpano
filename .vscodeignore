@@ -5,7 +5,9 @@ vsc-extension-quickstart.md
 .github/
 docs/
 test/
-node_modules/
+.workbuddy/
+.zcode/
+krpano-upgrade-plan.html
 src/
 package-lock.json
 .eslintrc.js
