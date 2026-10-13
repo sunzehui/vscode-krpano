@@ -2,7 +2,7 @@
   "name": "krpano-lang",
   "displayName": "krpano-lang",
   "description": "a krpano high-light plugin",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "main": "./dist/extension.js",
   "repository": {
     "type": "git",
@@ -13,8 +13,8 @@
     "build": "tsup src/extension.ts src/lsp/client.ts src/lsp/server.ts --dts --external=vscode",
     "dev": "npm run build -- --watch",
     "release": "npx bumpp --commit --tag --push",
-    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/shared/xml.ts --format=cjs --out-dir=test/.tmp --clean",
-    "test": "npm run build:test && node --test test/*.test.mjs"
+    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/symbols.ts src/shared/xml.ts --format=cjs --out-dir=test/.tmp --clean",
+    "test": "npm run build && npm run build:test && node --test test/*.test.mjs"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^0.6.2",
@@ -25,8 +25,12 @@
     "tsup": "^4.8.21",
     "types-package-json": "^2.0.31",
     "typescript": "^4.2.3",
+    "vscode-languageclient": "^7.0.0",
+    "vscode-languageserver": "^7.0.0",
+    "vscode-languageserver-textdocument": "^1.0.15",
     "vscode-oniguruma": "^2.0.1",
-    "vscode-textmate": "^9.3.2"
+    "vscode-textmate": "^9.3.2",
+    "xml-formatter": "^3.6.2"
   },
   "publisher": "sunzehui",
   "engines": {
@@ -125,11 +129,5 @@
         "path": "./syntaxes/krpano.tmLanguage.json"
       }
     ]
-  },
-  "dependencies": {
-    "vscode-languageclient": "^7.0.0",
-    "vscode-languageserver": "^7.0.0",
-    "vscode-languageserver-textdocument": "^1.0.15",
-    "xml-formatter": "^3.6.2"
   }
 }

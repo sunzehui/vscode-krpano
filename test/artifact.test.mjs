@@ -39,9 +39,14 @@ function loadWithFakeVscode() {
   const require = createRequire(import.meta.url)
   const Module = require('node:module')
   const originalResolve = Module._resolveFilename
+  const isBareSpecifier = request => !request.startsWith('.') && !request.startsWith('/') && !request.startsWith('node:') && !Module.builtinModules.includes(request)
   Module._resolveFilename = function (request, ...args) {
     if (request === 'vscode')
       return FAKE_MODULE
+    // 产物必须自包含:除了 vscode 与 Node 内置模块,不允许在运行时 require 任何外部包
+    // (依赖应被 tsup 打进 dist,否则装到用户机器上会因缺少 node_modules 而失效)
+    if (isBareSpecifier(request))
+      throw new Error(`extension bundle must not require external package "${request}" at runtime`)
     return originalResolve.apply(this, [request, ...args])
   }
   try {

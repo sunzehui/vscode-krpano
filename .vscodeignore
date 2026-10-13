@@ -8,7 +8,10 @@ test/
 .workbuddy/
 .zcode/
 krpano-upgrade-plan.html
+node_modules/
 src/
+scripts/
+pnpm-lock.yaml
 package-lock.json
 .eslintrc.js
 yarn.lock
