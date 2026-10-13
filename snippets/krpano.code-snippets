@@ -244,4 +244,77 @@
 		"description": "Create this object",
 		"scope": ""
 	}
+,
+	"include": {
+		"prefix": "include",
+		"body": "\n<include url=\"${1}\"/>\n",
+		"description": "Create include tag",
+		"scope": ""
+	},
+	"scene": {
+		"prefix": "scene",
+		"body": "\n<scene name=\"${1}\" title=\"${2}\">\n\t${0}\n</scene>\n",
+		"description": "Create scene tag",
+		"scope": ""
+	},
+	"preview": {
+		"prefix": "preview",
+		"body": "\n<preview url=\"${1}\"/>\n",
+		"description": "Create preview tag",
+		"scope": ""
+	},
+	"imgcube": {
+		"prefix": "imgcube",
+		"body": "\n<image type=\"cube\">\n\t<cube url=\"${1}\"/>\n</image>\n",
+		"description": "Create cube image tag",
+		"scope": ""
+	},
+	"cubemr": {
+		"prefix": "cubemr",
+		"body": "\n<image>\n\t<cube multires=\"true\" tilesize=\"512\">\n\t\t<level tiledimagewidth=\"${1}\" tiledimageheight=\"${2}\"/>\n\t</cube>\n</image>\n",
+		"description": "Create multiresolution cube image (tiles)",
+		"scope": ""
+	},
+	"view": {
+		"prefix": "view",
+		"body": "\n<view hlookat=\"0\" vlookat=\"0\" fovtype=\"MFOV\" fov=\"90\" fovmin=\"20\" fovmax=\"120\"/>\n",
+		"description": "Create view tag",
+		"scope": ""
+	},
+	"autorotate": {
+		"prefix": "autorotate",
+		"body": "\n<autorotate enabled=\"true\" speed=\"10\" horizon=\"0\"/>\n",
+		"description": "Create autorotate tag",
+		"scope": ""
+	},
+	"cssstyles": {
+		"prefix": "cssstyles",
+		"body": "\n<cssstyles>\n\t<style name=\"${1}\">\n\t\t${2}\n\t</style>\n</cssstyles>\n",
+		"description": "Create cssstyles tag",
+		"scope": ""
+	},
+	"textstyle": {
+		"prefix": "textstyle",
+		"body": "\n<textstyle>\n\t<${1} font=\"${2}\"/>\n</textstyle>\n",
+		"description": "Create textstyle tag",
+		"scope": ""
+	},
+	"actionargs": {
+		"prefix": "actionargs",
+		"body": "\n<action name=\"${1}\" args=\"${2}\">\n\n\t${3}\n\n</action>\n",
+		"description": "Create action with arguments",
+		"scope": ""
+	},
+	"layertext": {
+		"prefix": "layertext",
+		"body": "\n<layer name=\"${1}\" type=\"text\" html=\"${2}\"/>\n",
+		"description": "Create text layer tag",
+		"scope": ""
+	},
+	"onclick": {
+		"prefix": "onclick",
+		"body": "onclick=\"${1}();\"",
+		"description": "Create onclick handler",
+		"scope": ""
+	}
 }

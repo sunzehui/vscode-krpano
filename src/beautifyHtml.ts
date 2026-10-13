@@ -1,10 +1,13 @@
 'use strict'
 import xmlFormat from 'xml-formatter'
 import type { xmlOptions as xmlOptionsType } from './types/options'
+import { signaturesDiffer } from './shared/xml'
 
 export interface BeautifyResult {
   text: string
   failed: boolean
+  /** 格式化改变了标签结构(未闭合/错配标签被容错修复),调用方应提示用户 */
+  structureChanged?: boolean
 }
 
 const XML_PROLOG = /^\s*<\?xml[^>]*\?>/
@@ -26,7 +29,8 @@ export function beautify(originalText: string, xmlOptions: xmlOptionsType): Beau
     return { text: originalText, failed: false }
 
   try {
-    return { text: xmlFormat(originalText, options), failed: false }
+    const formatted = xmlFormat(originalText, options)
+    return { text: formatted, failed: false, structureChanged: signaturesDiffer(originalText, formatted) }
   }
   catch (e: any) {
     if (options.handleRootNode && e?.message?.includes('Found multiple root nodes')) {
@@ -35,6 +39,7 @@ export function beautify(originalText: string, xmlOptions: xmlOptionsType): Beau
       const body = prolog ? originalText.slice(prolog[0].length) : originalText
       try {
         const formatted = xmlFormat(`<krpano>${body}</krpano>`, options)
+        // 补根本身会新增一层 krpano 标签,不做结构差异比较
         return { text: prolog ? `${prolog[0].trim()}\n${formatted}` : formatted, failed: false }
       }
       catch {

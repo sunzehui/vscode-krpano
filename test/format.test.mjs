@@ -77,3 +77,35 @@ test('回归: 默认忽略 action 内容(保留内部换行与缩进)', () => {
   assert.equal(r.failed, false)
   assert.ok(r.text.includes('set(x,1);\n\n   calc(y, 2);'), `action 内容应原样保留:\n${r.text}`)
 })
+
+test('C1: xml.format.indentation 为空串时按 editor 设置自动换算', () => {
+  const opts = getOptions({ editor: { tabSize: 3, insertSpaces: true }, xml: { format: { indentation: '' } } })
+  assert.equal(opts.indentation, '   ')
+})
+
+test('项8: 标签结构被容错修复时标记 structureChanged', () => {
+  const mismatched = beautify('<krpano><a></b></krpano>', base)
+  assert.equal(mismatched.failed, false)
+  assert.equal(mismatched.structureChanged, true, '错配标签应触发结构变化提示')
+
+  const unclosed = beautify('<krpano><a></krpano>', base)
+  assert.equal(unclosed.structureChanged, true, '未闭合标签应触发结构变化提示')
+
+  const wellFormed = beautify('<krpano>\n  <view hlookat="0"/>\n  <hotspot name="a"/>\n</krpano>', base)
+  assert.equal(wellFormed.failed, false)
+  assert.equal(Boolean(wellFormed.structureChanged), false, '正常文档仅缩进变化不应提示')
+
+  const emptyPair = beautify('<krpano><a></a></krpano>', { ...base, forceSelfClosingEmptyTag: true })
+  assert.equal(Boolean(emptyPair.structureChanged), false, '空标签两种写法等价,不应提示')
+
+  const wrapped = beautify('<a/>\n<b/>', base)
+  assert.equal(wrapped.failed, false)
+  assert.equal(wrapped.structureChanged, undefined, '自动补根路径不做结构差异比较')
+})
+
+test('项8: 属性值里的 > 与引号不影响结构判断', () => {
+  const src = '<krpano>\n  <hotspot name="a" onclick="if(x &gt; 1, looktohotspot(get(name),65));"/>\n</krpano>'
+  const r = beautify(src, base)
+  assert.equal(r.failed, false)
+  assert.equal(Boolean(r.structureChanged), false)
+})

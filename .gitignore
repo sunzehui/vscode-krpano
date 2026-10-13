@@ -6,7 +6,6 @@ node_modules
 .DS_Store
 dist
 test/.tmp
-package-lock.json
 
 # 工具/会话产物
 .zcode/

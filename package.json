@@ -2,7 +2,7 @@
   "name": "krpano-lang",
   "displayName": "krpano-lang",
   "description": "a krpano high-light plugin",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "main": "./dist/extension.js",
   "repository": {
     "type": "git",
@@ -10,13 +10,11 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "build": "tsup src/extension.ts --dts --external=vscode",
+    "build": "tsup src/extension.ts src/lsp/client.ts src/lsp/server.ts --dts --external=vscode",
     "dev": "npm run build -- --watch",
     "release": "npx bumpp --commit --tag --push",
-    "test": "npm run test:grammar && npm run test:format",
-    "test:grammar": "node --test test/grammar.test.mjs",
-    "test:build": "tsup src/getOptions.ts src/beautifyHtml.ts --format=cjs --out-dir=test/.tmp --clean",
-    "test:format": "npm run test:build && node --test test/format.test.mjs"
+    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/shared/xml.ts --format=cjs --out-dir=test/.tmp --clean",
+    "test": "npm run build:test && node --test test/*.test.mjs"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^0.6.2",
@@ -44,6 +42,55 @@
     "onLanguage:krpano"
   ],
   "contributes": {
+    "configuration": {
+      "title": "krpano-lang",
+      "properties": {
+        "xml.format.indentation": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "缩进字符串(如 `\"  \"` 或 `\"\\t\"`)。留空时按 `editor.insertSpaces` / `editor.tabSize` 自动换算。\n\nIndentation string (e.g. `\"  \"` or `\"\\t\"`). Leave empty to derive it from `editor.insertSpaces` / `editor.tabSize`."
+        },
+        "xml.format.ignoredPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "action"
+          ],
+          "markdownDescription": "不参与格式化的元素路径,内容原样保留(默认忽略 `action`,以免重排脚本)。\n\nElement paths that are not formatted; their content is kept as-is."
+        },
+        "xml.format.collapseContent": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "元素内容只有文本且不含换行时,保持与标签同行。\n\nKeep element content on the same line when it only contains text."
+        },
+        "xml.format.lineSeparator": {
+          "type": "string",
+          "enum": [
+            "\n",
+            "\r\n"
+          ],
+          "default": "\n",
+          "markdownDescription": "格式化使用的换行符。\n\nLine separator used when formatting."
+        },
+        "xml.format.whiteSpaceAtEndOfSelfclosingTag": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "自闭合标签写成 `<tag />`(带空格)。\n\nEnd self-closing tags with a space, e.g. `<tag />`."
+        },
+        "xml.format.forceSelfClosingEmptyTag": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "空元素写成自闭合形式 `<tag/>`。\n\nForce empty tags to be self-closing."
+        },
+        "xml.format.handleRootNode": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "文档没有唯一根节点时,自动包裹 `<krpano>…</krpano>` 后重新格式化。\n\nWrap the document in `<krpano>…</krpano>` and format again when it has no single root element."
+        }
+      }
+    },
     "snippets": [
       {
         "language": "krpano-xml",
@@ -53,6 +100,9 @@
     "languages": [
       {
         "id": "krpano",
+        "aliases": [
+          "krpano Action Script"
+        ],
         "configuration": "./language-configuration.json"
       },
       {
@@ -77,6 +127,9 @@
     ]
   },
   "dependencies": {
+    "vscode-languageclient": "^7.0.0",
+    "vscode-languageserver": "^7.0.0",
+    "vscode-languageserver-textdocument": "^1.0.15",
     "xml-formatter": "^3.6.2"
   }
 }

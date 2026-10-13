@@ -5,8 +5,11 @@ export default function getOptions(config: any): xmlOptions {
   const xmlFormat = config?.xml?.format ?? {}
   const editor = config?.editor ?? {}
   const tabSize = Number.isInteger(editor.tabSize) && editor.tabSize > 0 ? editor.tabSize : 4
-  // 缩进只由 xml.format.indentation 与 editor.tabSize/insertSpaces 决定,未配置时与 VS Code 默认(空格、tabSize)一致
-  const indentation = xmlFormat.indentation ?? (editor.insertSpaces === false ? '\t' : ' '.repeat(tabSize))
+  // 缩进优先级:xml.format.indentation(留空视为未设置)> editor.insertSpaces/tabSize
+  const configured = typeof xmlFormat.indentation === 'string' && xmlFormat.indentation !== ''
+    ? xmlFormat.indentation
+    : undefined
+  const indentation = configured ?? (editor.insertSpaces === false ? '\t' : ' '.repeat(tabSize))
 
   return {
     // xml 格式化选项
