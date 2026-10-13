@@ -31,6 +31,16 @@ Here is the list of native vscode settings I pass to xml formatter which control
 "xml.format.handleRootNode": true, // when format error, auto add krpano tag
 ```
 
+## 文档
+
+- [文档索引](docs/README.md)
+- [架构说明](docs/architecture.md)
+- [语法高亮实现](docs/syntax-highlighting.md)
+- [XML 格式化](docs/formatting.md)
+- [代码片段速查](docs/snippets.md)
+- [开发与发布](docs/development.md)
+- [常见问题](docs/faq.md)
+
 ## Release Notes
 
 ### 0.1.0
