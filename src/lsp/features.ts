@@ -1,38 +1,12 @@
 // krpano XML 语言特性实现(纯函数,不依赖 vscode / vscode-languageserver,便于单元测试)。
 import krpanoData from './krpanoData.json'
 import { docForAttribute, docForElement } from './krpanoDocs'
+import { collectDefinitions } from './symbols'
 import { attributeAtOffset, offsetToPosition, scanXml, tagAtOffset } from '../shared/xml'
-import type { XmlDocumentScan, XmlTag } from '../shared/xml'
+import type { XmlTag } from '../shared/xml'
+import type { PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
 
-export interface PlainRange {
-  start: { line: number, character: number }
-  end: { line: number, character: number }
-}
-
-export interface PlainDiagnostic {
-  message: string
-  severity: 'error' | 'warning' | 'information'
-  range: PlainRange
-  source: string
-}
-
-export interface PlainCompletion {
-  label: string
-  kind: 'element' | 'attribute' | 'value'
-  detail: string
-  documentation: string
-  insertText?: string
-  snippet?: boolean
-}
-
-export interface PlainHover {
-  contents: string
-  range: PlainRange
-}
-
-export interface PlainLocation {
-  range: PlainRange
-}
+export type { PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
 
 interface KrpanoData {
   elements: Record<string, string[]>
@@ -45,13 +19,10 @@ const elements: Record<string, string[]> = data.elements
 const elementNames = Object.keys(elements).sort()
 const builtins = new Set([...data.builtinActions, ...data.controlKeywords, 'parent', 'caller', 'global', 'local', 'Math'])
 
-/** 定义 name 的元素(可被事件/动作引用) */
-const NAME_DEFINING = new Set(['action', 'hotspot', 'layer', 'plugin', 'scene', 'style', 'events', 'data'])
 /** 允许任意子标签的元素(其子元素名不是 krpano 元素) */
 const FREE_FORM = new Set(['textstyle', 'cssstyles', 'style'])
 /** 特殊 XML 属性,任何元素都可以使用 */
 const SPECIAL_ATTRIBUTES = ['devices', 'if']
-const EVENT_ATTRIBUTES = /^on[a-z]+$/
 
 const SOURCE = 'krpano-lang'
 
@@ -63,21 +34,15 @@ function tagDisplayName(tag: XmlTag): string {
   return `<${tag.name}>`
 }
 
-/** 收集 name 定义:名称 → 取值范围 */
-function collectDeclarations(scan: XmlDocumentScan): Map<string, { tag: XmlTag, start: number, end: number }> {
-  const declarations = new Map<string, { tag: XmlTag, start: number, end: number }>()
-  for (const tag of scan.tags) {
-    if (!NAME_DEFINING.has(tag.name.toLowerCase()))
-      continue
-    const nameAttr = tag.attributes.find(attr => attr.name.toLowerCase() === 'name')
-    if (!nameAttr || nameAttr.value === undefined || nameAttr.valueStart === undefined)
-      continue
-    if (!nameAttr.value.trim())
-      continue
-    if (!declarations.has(nameAttr.value))
-      declarations.set(nameAttr.value, { tag, start: nameAttr.valueStart, end: nameAttr.valueEnd ?? nameAttr.valueStart })
-  }
-  return declarations
+function offsetInRange(text: string, range: PlainRange, offset: number): boolean {
+  const position = offsetToPosition(text, offset)
+  if (position.line < range.start.line || position.line > range.end.line)
+    return false
+  if (position.line === range.start.line && position.character < range.start.character)
+    return false
+  if (position.line === range.end.line && position.character > range.end.character)
+    return false
+  return true
 }
 
 /** 是否为 JavaScript 动作(type="Javascript"/"js") */
@@ -87,27 +52,7 @@ function isJavascriptTag(tag: XmlTag): boolean {
   return value === 'javascript' || value === 'js'
 }
 
-/** 找到包含偏移的 <action> 标签(用于跳过 JS 动作体) */
-function enclosingAction(scan: XmlDocumentScan, offset: number): XmlTag | undefined {
-  const stack: XmlTag[] = []
-  for (const tag of scan.tags) {
-    if (tag.start > offset)
-      break
-    if (tag.kind === 'open')
-      stack.push(tag)
-    else if (tag.kind === 'close')
-      stack.pop()
-    else if (tag.start <= offset && offset <= tag.end)
-      return tag.name.toLowerCase() === 'action' ? tag : undefined
-  }
-  for (let i = stack.length - 1; i >= 0; i--) {
-    if (stack[i].name.toLowerCase() === 'action')
-      return stack[i]
-  }
-  return undefined
-}
-
-export function getDiagnostics(text: string): PlainDiagnostic[] {
+export function getDiagnostics(text: string, context: ProjectContext = {}): PlainDiagnostic[] {
   const diagnostics: PlainDiagnostic[] = []
   const scan = scanXml(text)
 
@@ -200,13 +145,14 @@ export function getDiagnostics(text: string): PlainDiagnostic[] {
     }
   }
 
-  // 4) 未定义的动作引用(本文件范围;可能是 include 进来的,故用 information)
-  const declarations = collectDeclarations(scan)
+  // 4) 未定义的动作引用(本文件 + include 链;仍可能是插件提供的,故用 information)
+  const declared = new Set(collectDefinitions(text).map(definition => definition.name))
+  const external = context.externalDefinitions ?? new Map()
   const reportReference = (name: string, start: number, end: number) => {
-    if (declarations.has(name) || builtins.has(name) || name in elements)
+    if (declared.has(name) || external.has(name) || builtins.has(name) || name in elements)
       return
     diagnostics.push({
-      message: `Action "${name}" is not defined in this file (it may be defined in an included file).`,
+      message: `Action "${name}" is not defined in this file or in the files it includes (it may be provided by a plugin).`,
       severity: 'information',
       range: rangeOf(text, start, end),
       source: SOURCE,
@@ -244,6 +190,16 @@ export function getDiagnostics(text: string): PlainDiagnostic[] {
       const offset = bodyStart + (call.index ?? 0) + call[0].length - name.length - 1
       reportReference(name, offset, offset + name.length)
     }
+  }
+
+  // 5) include 目标不存在(相对当前文件解析;krpano 同样会因此报错)
+  for (const item of context.unresolvedIncludes ?? []) {
+    diagnostics.push({
+      message: `Included file "${item.url}" was not found (include paths are resolved relative to this file).`,
+      severity: 'warning',
+      range: item.range,
+      source: SOURCE,
+    })
   }
 
   return dedupe(diagnostics)
@@ -378,10 +334,10 @@ export function getHover(text: string, offset: number): PlainHover | null {
   return null
 }
 
-export function getDefinition(text: string, offset: number): PlainLocation | null {
-  const scan = scanXml(text)
-  const declarations = collectDeclarations(scan)
-  if (!declarations.size)
+export function getDefinition(text: string, offset: number, context: ProjectContext = {}): PlainLocation | null {
+  const definitions = collectDefinitions(text)
+  const external = context.externalDefinitions ?? new Map()
+  if (!definitions.length && !external.size)
     return null
 
   // 光标处的标识符
@@ -394,9 +350,6 @@ export function getDefinition(text: string, offset: number): PlainLocation | nul
   const word = text.slice(start, end)
   if (!word)
     return null
-  const declaration = declarations.get(word)
-  if (!declaration)
-    return null
 
   // 只在"引用"场景跳转:标识符后跟 ( 视为动作调用
   let probe = end
@@ -405,11 +358,16 @@ export function getDefinition(text: string, offset: number): PlainLocation | nul
   if (text[probe] !== '(')
     return null
 
-  // 光标本身就在定义处时不跳转
-  if (declaration.start <= offset && offset <= declaration.end)
-    return null
+  const local = definitions.find(definition => definition.name === word)
+  if (local) {
+    // 光标本身就在定义处时不跳转
+    if (offsetInRange(text, local.range, offset))
+      return null
+    return { range: local.range }
+  }
 
-  return { range: rangeOf(text, declaration.start, declaration.end) }
+  // include 链中的定义(跨文件跳转)
+  return external.get(word) ?? null
 }
 
 export const krpanoElementNames = elementNames

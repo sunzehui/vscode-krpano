@@ -1,11 +1,14 @@
 // LSP 服务器端到端冒烟:以 stdio 传输启动真实构建产物,走一遍 initialize / 诊断 / 补全 / 悬停 / 跳转。
 // 需要先 `npm run build`(dist/lsp/server.js);未构建时跳过,便于单独跑 npm test。
+// 进程以临时目录为 cwd 启动:产物必须自包含,不依赖 node_modules。
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import { test } from 'node:test'
 
-const SERVER = 'dist/lsp/server.js'
+const SERVER = path.resolve('dist/lsp/server.js')
 const hasServer = existsSync(SERVER)
 
 function createClient(child) {
@@ -72,7 +75,7 @@ function createClient(child) {
 }
 
 test('LSP server:initialize 与能力声明', { skip: hasServer ? false : 'dist/lsp/server.js 未构建,先运行 npm run build' }, async () => {
-  const child = spawn(process.execPath, [SERVER, '--stdio'], { stdio: ['pipe', 'pipe', 'inherit'] })
+  const child = spawn(process.execPath, [SERVER, '--stdio'], { stdio: ['pipe', 'pipe', 'inherit'], cwd: tmpdir() })
   const client = createClient(child)
   try {
     const response = await client.request(1, 'initialize', { processId: process.pid, rootUri: null, capabilities: {} })
@@ -126,5 +129,64 @@ test('LSP server:initialize 与能力声明', { skip: hasServer ? false : 'dist/
   }
   finally {
     child.kill()
+  }
+})
+
+test('LSP server:跨文件 include(诊断不再噪音 + 跨文件跳转)', { skip: hasServer ? false : 'dist/lsp/server.js 未构建,先运行 npm run build' }, async () => {
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs')
+  const dir = mkdtempSync(path.join(tmpdir(), 'krpano-lsp-'))
+  const entry = path.join(dir, 'tour.xml')
+  const actions = path.join(dir, 'actions.xml')
+  writeFileSync(actions, '<krpano>\n  <action name="from_include" args="v">\n    trace(v);\n  </action>\n</krpano>\n')
+  const entryText = [
+    '<krpano>',
+    '  <include url="actions.xml"/>',
+    '  <include url="missing_actions.xml"/>',
+    '  <action name="local_action" autorun="onstart">',
+    '    from_include(1);',
+    '    really_missing(2);',
+    '  </action>',
+    '</krpano>',
+  ].join('\n')
+  writeFileSync(entry, `${entryText}\n`)
+
+  const child = spawn(process.execPath, [SERVER, '--stdio'], { stdio: ['pipe', 'pipe', 'inherit'], cwd: tmpdir() })
+  const client = createClient(child)
+  try {
+    await client.request(1, 'initialize', { processId: process.pid, rootUri: null, capabilities: {} })
+    client.send({ jsonrpc: '2.0', method: 'initialized', params: {} })
+
+    const uri = `file://${entry}`
+    client.send({
+      jsonrpc: '2.0',
+      method: 'textDocument/didOpen',
+      params: { textDocument: { uri, languageId: 'krpano-xml', version: 1, text: entryText } },
+    })
+
+    const publish = await client.waitFor(
+      n => n.method === 'textDocument/publishDiagnostics' && n.params.uri === uri && n.params.diagnostics.length > 0,
+      'diagnostics',
+    )
+    const messages = publish.params.diagnostics.map(d => d.message)
+    assert.ok(!messages.some(m => m.includes('from_include')), `include 里的动作不应被报:${messages.join(' | ')}`)
+    assert.ok(messages.some(m => m.includes('really_missing')), messages.join(' | '))
+    assert.ok(
+      publish.params.diagnostics.some(d => d.severity === 2 && d.message.includes('missing_actions.xml')),
+      `缺失的 include 应给警告:${messages.join(' | ')}`,
+    )
+
+    // 跨文件跳转:from_include( → actions.xml 中的定义
+    const offset = entryText.indexOf('from_include')
+    const definition = await client.request(2, 'textDocument/definition', {
+      textDocument: { uri },
+      position: { line: 4, character: offset - entryText.lastIndexOf('\n', offset) - 1 + 3 },
+    })
+    assert.ok(definition.result, JSON.stringify(definition))
+    assert.equal(definition.result.uri, `file://${actions}`)
+    assert.deepEqual(definition.result.range.start, { line: 1, character: 16 }, 'name 值 from_include 的起始列')
+  }
+  finally {
+    child.kill()
+    rmSync(dir, { recursive: true, force: true })
   }
 })

@@ -113,6 +113,7 @@ test('跳转:从事件属性中的调用跳到 action 定义', () => {
   assert.ok(location, '应能找到定义')
   assert.deepEqual(location.range.start, { line: 1, character: 14 })
   assert.deepEqual(location.range.end, { line: 1, character: 22 })
+  assert.equal(location.uri, undefined, '同文件定义不带 uri')
 
   // 定义处自身不跳转;内建动作不跳转
   assert.equal(getDefinition(text, offsetOf(text, 'do_thing') + 2), null)
@@ -121,4 +122,47 @@ test('跳转:从事件属性中的调用跳到 action 定义', () => {
   // 非调用场景(属性值里没有括号)不跳转
   const plain = '<krpano>\n<action name="a"/>\n<hotspot name="a" url="a"/>\n</krpano>'
   assert.equal(getDefinition(plain, offsetOf(plain, '"a"', 2) + 1), null)
+})
+
+const externalContext = () => ({
+  externalDefinitions: new Map([
+    ['from_include', { uri: 'file:///pano/actions.xml', range: { start: { line: 2, character: 14 }, end: { line: 2, character: 26 } } }],
+  ]),
+})
+
+test('跨文件:include 链中的动作不再报"未定义",真笔误仍报', () => {
+  const text = [
+    '<krpano>',
+    '  <include url="actions.xml"/>',
+    '  <action name="local_action" autorun="onstart">',
+    '    from_include(1);',
+    '    really_missing(2);',
+    '  </action>',
+    '</krpano>',
+  ].join('\n')
+  const messages = getDiagnostics(text, externalContext()).map(d => d.message)
+  assert.ok(!messages.some(m => m.includes('from_include')), `include 中的定义不应被报:${messages.join(' | ')}`)
+  assert.ok(messages.some(m => m.includes('really_missing')), messages.join(' | '))
+})
+
+test('跨文件:无法解析的 include 目标给出警告', () => {
+  const text = '<krpano>\n  <include url="nope.xml"/>\n</krpano>'
+  const diagnostics = getDiagnostics(text, {
+    unresolvedIncludes: [{ url: 'nope.xml', range: { start: { line: 1, character: 17 }, end: { line: 1, character: 25 } } }],
+  })
+  const warning = diagnostics.find(d => d.severity === 'warning' && d.message.includes('nope.xml'))
+  assert.ok(warning, diagnostics.map(d => `${d.severity}:${d.message}`).join(' | '))
+})
+
+test('跨文件:跳转到 include 文件中的定义', () => {
+  const text = '<krpano>\n  <action name="local_action" autorun="onstart">\n    from_include(1);\n  </action>\n</krpano>'
+  const location = getDefinition(text, offsetOf(text, 'from_include') + 2, externalContext())
+  assert.ok(location, '应能找到跨文件定义')
+  assert.equal(location.uri, 'file:///pano/actions.xml')
+  assert.deepEqual(location.range.start, { line: 2, character: 14 })
+
+  // 同文件定义优先于 include 链
+  const sameName = '<krpano>\n  <action name="from_include">trace(1);</action>\n  <hotspot name="h" onclick="from_include();"/>\n</krpano>'
+  const local = getDefinition(sameName, offsetOf(sameName, 'from_include', 2) + 2, externalContext())
+  assert.ok(local && local.uri === undefined, '同文件定义应优先且不带 uri')
 })
