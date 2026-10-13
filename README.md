@@ -5,6 +5,11 @@ krpano action high-light code, use textMate syntaxes.
 krpano 语法高亮插件，使用 textMate 语法。
 ![test](https://github.com/sunzehui/vscode-krpano/blob/master/doc/test.png?raw=true)
 
+- **语法高亮**:krpano XML 与 action 脚本(含 `type="Javascript"` 的 JS action)高亮
+- **语言服务(LSP)**:元素/属性补全与悬停说明、标签配对与未知元素诊断、从 `action_name(...)` 跳转到定义
+- **XML 格式化**:按 `Shift+Alt+F` 格式化,选项见下方 Settings
+- **代码片段**:53 个常用写法片段(action、标签结构、image/scene/tour 等)
+
 推荐配合 auto-close-tag 插件使用，可以自动补全标签。
 需要在 settings.json 中添加如下配置，以支持krpano：
 ```json
@@ -42,6 +47,19 @@ Here is the list of native vscode settings I pass to xml formatter which control
 - [常见问题](docs/faq.md)
 
 ## Release Notes
+
+### 0.4.0
+
+- 新增语言服务(LSP):
+  - 诊断:标签未闭合/错配、未知元素、`<action type>` 取值、当前文件中未定义的动作调用
+  - 补全:元素名、元素属性(插入 `attr="$1"`)、特殊属性 `devices`/`if`、`<action type>` 取值
+  - 悬停:元素与属性的简短说明(基于 krpano XML Reference 的 31 个元素、900+ 属性)
+  - 跳转:事件属性或 action 体中的 `action_name(...)` → 对应 `name="..."` 声明
+- 格式化前检测到标签未闭合/错配时会先弹窗确认(格式化器会容错修复标签结构)
+- 设置项 `xml.format.*` 已在清单中声明,设置界面有补全与说明
+- 新增 12 个片段(include、scene、preview、cube/多分辨率 image、view、autorotate、cssstyles、textstyle、带参数的 action、文本 layer、onclick 等)
+- 新增 `npm test` 测试体系(语法 scope 断言、格式化与 LSP 单测、语言服务器 stdio 端到端冒烟)与 GitHub Actions CI
+- 编辑器缩进规则改为 XML 语义;`krpano` 语言模式明确标注为脚本模式(选 "krpano Action Script")
 
 ### 0.3.0
 

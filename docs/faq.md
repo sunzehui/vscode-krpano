@@ -2,7 +2,7 @@
 
 ## 打开 .xml 文件没有高亮
 
-1. 看编辑器右下角状态栏的语言模式，应为 **krpano-xml** 或 **krpano**；不是的话点击切换。
+1. 看编辑器右下角状态栏的语言模式，应为 **krpano-xml**（XML 文档用）或 **krpano Action Script**（0.4.0 起 `krpano` 模式的别名，只做脚本高亮，不含 XML 标签处理；XML 文档请用 `krpano-xml`）；不是的话点击切换。
 2. 若想固定关联，在 `settings.json` 中配置：
 
    ```json
@@ -15,6 +15,7 @@
 ## 格式化没有反应，文件内容没变化
 
 - 确认语言模式是 **krpano-xml** 或 **krpano**（0.3.0 起两种模式都注册了格式化器）。
+- 格式化前如果检测到标签未闭合/错配,会弹出 "unclosed or mismatched XML tags" 确认框——格式化器会容错修复标签结构,继续前请确认。取消后文档不变。
 - 只有当文档完全无法解析为 XML（不含标签的纯文本等）时才会返回原文，此时会弹出 `krpano: formatting failed …` 警告；空文档/纯空白是 no-op，不提示。
 - 反过来，标签未闭合、错配**不会**导致失败：xml-formatter 会容错修复（例如把 `<a></b>` 改成 `<a></a>`）并照常输出。如果格式化后结构变了，先检查原文档是否是合法 XML。
 - 如果安装了多个提供 XML 格式化的扩展，用 **Format Document With…** 明确选择本扩展。
@@ -47,9 +48,27 @@
 - `{{ }}` **不是 krpano 官方语法**（官方用 `get:`/`calc:`/`link:` 属性前缀、`%0`–`%99` 参数占位符），这个高亮是为用 Vue/Handlebars 等模板生成 XML 的工程保留的便利特性。
 - 该高亮只在 `<action>` 标签的属性字符串中生效；`<hotspot>`、`<layer>` 等标签的属性由 VS Code 内置 XML 语法处理，插件规则进不去。详见 [syntax-highlighting.md](./syntax-highlighting.md)。
 
-## settings.json 里写 `xml.format.*` 出现"未知配置项"警告
+## 语言服务（LSP）提供哪些能力？会不会误报？
 
-正常现象。这些键未在 `package.json` 的 `contributes.configuration` 中声明，但值会被扩展正常读取（键名对齐 Red Hat vscode-xml 扩展的风格）。详见 [formatting.md](./formatting.md#配置项)。
+0.4.0 起内置语言服务，在 `krpano-xml` / `krpano` 模式下自动生效：
+
+| 能力 | 说明 |
+| --- | --- |
+| 诊断 | 标签未闭合/错配（警告）、未知元素与 `<action type>` 非法取值（警告）、当前文件中未定义的动作调用（信息） |
+| 补全 | 元素名、该元素的属性（插入 `ath="$1"` 形式）、特殊属性 `devices`/`if`、`<action type>` 的取值 |
+| 悬停 | 元素与属性的简短说明（31 个元素、900+ 属性） |
+| 跳转 | 事件属性或 action 体里的 `action_name(...)` → 对应 `name="..."` 声明 |
+
+两点说明：
+
+- "Action ... is not defined in this file" 是 **information** 级别：krpano 常用 `<include>` 拆分文件，动作可能定义在别处，故不做强报错；不想要可在 Problems 面板按级别过滤。
+- "Unknown krpano element" 同样是 **information**：白名单是官方 XML Reference 的 31 个元素，第三方插件自定义的元素可能被标记。
+
+语言服务在独立进程里运行；启动失败只会在扩展宿主控制台打印日志，高亮与格式化不受影响。
+
+## 设置里怎么配置格式化选项？
+
+0.4.0 起 `xml.format.*` 已在扩展清单中声明（含中英文说明），在设置界面搜索 `krpano` 或 `xml.format` 即可获得补全与校验；旧版本写入 `settings.json` 也可以，但会显示"未知配置项"提示。详见 [formatting.md](./formatting.md#配置项)。
 
 ## 代码片段（snippets）不出现
 

@@ -15,8 +15,9 @@ krpano-lang 是一个 VS Code 扩展，为 krpano 全景项目提供 **语法高
 
 ## 项目速览
 
-- **类型**：VS Code 扩展。大部分能力通过 `package.json` 的 `contributes` 静态声明（语法、语言、代码片段），只有 XML 格式化需要运行时代码（`src/`）。
-- **语言 ID**：`krpano-xml`（宿主，承载 XML 高亮与格式化）、`krpano`（action 脚本语法，被前者内嵌复用）。
-- **核心依赖**：[xml-formatter](https://github.com/chrisbottin/xml-formatter)（格式化）、tsup（构建）。
-- **运行环境**：VS Code `^1.52.0`，扩展入口 `dist/extension.js`。
-- **尚未实现**：LSP 支持、更多代码片段（见根 README 的 TODO）。
+- **类型**：VS Code 扩展。高亮、语言配置、片段由 `package.json` 的 `contributes` 静态声明；格式化与语言服务（LSP）需要运行时代码（`src/`，语言服务器为独立进程）。
+- **语言 ID**：`krpano-xml`（唯一认领 `.xml` 的宿主语言）、`krpano`（别名 "krpano Action Script"，脚本模式）。
+- **能力**：TextMate 语法高亮、XML 格式化（xml-formatter）、语言服务（诊断/补全/悬停/跳转）、53 个代码片段。
+- **核心依赖**：[xml-formatter](https://github.com/chrisbottin/xml-formatter)（格式化）、vscode-languageclient / vscode-languageserver（语言服务，client 7.x 对应 VS Code ^1.52）。
+- **测试**：`npm test`（TextMate 词法断言 + 格式化/LSP 纯函数断言 + 语言服务器 stdio 端到端冒烟）；CI 见 `.github/workflows/ci.yml`。
+- **尚未实现**：更深入的语义校验（跨文件 include 解析、变量类型推断）。

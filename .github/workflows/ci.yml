@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # 打包依赖收集(vsce 内部走 npm)需要 npm 形态的 node_modules,因此 CI 用 npm 而非 pnpm
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      # 先构建:test/ 里的语言服务器冒烟测试会启动 dist/lsp/server.js
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Package vsix
+        run: npx --yes @vscode/vsce package --out krpano-lang.vsix
+
+      # 发布阻断过的回归点:运行时依赖必须真的进包
+      - name: Verify runtime dependencies are packaged
+        run: |
+          unzip -l krpano-lang.vsix | grep -q 'extension/node_modules/xml-formatter/'
+          unzip -l krpano-lang.vsix | grep -q 'extension/node_modules/vscode-languageclient/'
+          unzip -l krpano-lang.vsix | grep -q 'extension/dist/lsp/server.js'
+          unzip -l krpano-lang.vsix | grep -q 'extension/dist/lsp/client.js'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: krpano-lang.vsix
+          if-no-files-found: error

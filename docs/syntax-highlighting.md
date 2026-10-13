@@ -10,7 +10,7 @@
 - **`source.krpano`**（`syntaxes/krpano.tmLanguage.json`）
   action 脚本语法。定义 krpano action 语言的关键字、变量、函数、操作符等；自身不处理 XML，只被 `source.krpano-xml` 内嵌调用，同时作为独立语言 ID `krpano` 注册。
 
-`.xml` 文件由 `krpano-xml` 唯一认领（0.3.0 起 `krpano` 不再声明 `.xml` 关联，避免默认语言归属不确定）；高亮的完整效果要求文件处于 `krpano-xml` 模式，因为只有它内嵌了 `source.krpano`。`krpano` 模式仍可在状态栏手动切换，格式化器对两种模式都可用。
+`.xml` 文件由 `krpano-xml` 唯一认领（0.3.0 起 `krpano` 不再声明 `.xml` 关联，避免默认语言归属不确定）；高亮的完整效果要求文件处于 `krpano-xml` 模式，因为只有它内嵌了 `source.krpano`。`krpano` 模式（0.4.0 起别名 "krpano Action Script"）只做脚本高亮、不处理 XML 标签，定位是查看/编辑单独的 action 片段；格式化器对两种模式都可用。语义特性（补全/诊断/跳转）见 [architecture.md](./architecture.md#5-语言服务lsp)。
 
 ## krpano-xml：宿主语法
 
@@ -87,4 +87,5 @@ krpano 官方只支持 `type=""`（默认）、`type="Javascript"` 与 `type="js
 - 单行 `<action>…</action>` 正文与多行写法一致，按 krpano 脚本高亮。
 - `{{…}}` 插值内部按 krpano 语法高亮，但只对 `<action>` 标签的属性字符串生效（非 action 标签的属性由内置 XML 语法处理，规则进不去）。
 - 变量兜底规则不再带无效 captures；`x`、`y` 两个单字母全局变量仍保留（可能是真实变量），确认误高亮后可单独移除。
+- `krpano` 模式（脚本-only）未内嵌 XML 标签处理：给 `source.krpano` 追加宿主语法会让 action 体内的 `x<b`（无空格比较）被当作标签并吞掉后续高亮，属于可见回归，因此维持现状——XML 文档请用 `krpano-xml` 模式。
 - 以上行为均有 `test/grammar.test.mjs` 的词法断言覆盖，改动语法后请跑 `npm test`。

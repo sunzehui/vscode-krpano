@@ -16,7 +16,7 @@ pnpm install        # 安装依赖
 | --- | --- |
 | `pnpm build`（或 `npm run build`） | 用 tsup 构建一次，输出 `dist/extension.js`（含 dts，`vscode` 为 external） |
 | `pnpm dev`（或 `npm run dev`） | watch 模式，源文件变更时自动重建，供 F5 调试使用 |
-| `npm test` | 跑全部测试：`test:grammar`（vscode-textmate 词法断言）+ `test:format`（getOptions/beautify 纯函数断言） |
+| `npm test` | 跑全部测试：`build:test`（把纯模块编译到 `test/.tmp`）+ `node --test test/*.test.mjs`（语法 scope、格式化、LSP 纯函数；若已 `npm run build`，还会跑语言服务器 stdio 端到端冒烟） |
 | `npm run release` | 通过 bumpp 交互式选择版本号 → commit → tag → push |
 | `npx @vscode/vsce package` | 打包出 `.vsix` |
 | `npx @vscode/vsce publish` | 发布到 VS Code Marketplace（需要 Personal Access Token） |
@@ -34,6 +34,20 @@ pnpm install        # 安装依赖
 - 修改 `syntaxes/`、`snippets/`、`language-configuration.json` 后，在开发宿主窗口执行 **Developer: Reload Window** 即可生效；修改 `src/` 后等 watch 构建完成再 Reload。
 - 验证格式化：在 `sample/format.xml` 上执行格式化文档（`Shift+Alt+F`）。
 
+## CI
+
+`.github/workflows/ci.yml`（push 到 master / PR / tag 时触发）依次执行：
+
+```bash
+npm ci --legacy-peer-deps      # 打包依赖收集需要 npm 形态的 node_modules
+npm run build                  # 先生成 dist(含 dist/lsp/server.js,server 冒烟测试需要)
+npm test
+npx @vscode/vsce package --out krpano-lang.vsix
+unzip -l krpano-lang.vsix | grep -q 'extension/node_modules/xml-formatter/'   # 回归检查:运行时依赖必须进包
+```
+
+最后把 vsix 作为构建产物上传（Actions 页面可下载）。
+
 ## 打包与发布
 
 ```bash
@@ -48,7 +62,7 @@ npx @vscode/vsce publish
 
 版本号流程：`npm run release`（bumpp）会更新 `package.json` 版本、打 tag 并推送。发布前请确认目标版本高于 Marketplace 上的现有版本（本仓库首次修复发布时为 0.1.0 → 0.3.0），并保持 tag 与 `package.json` 一致。
 
-`.vscodeignore` 控制哪些文件不进包：`src/`、`.vscode/`、`test/`、配置文件与 `docs/` 等被排除。**注意不要排除 `node_modules/`**：扩展运行时会 `require('xml-formatter')`（tsup 把 `dependencies` 视为 external），vsce 会自动只把生产依赖树打包进去（`xml-formatter`、`xml-parser-xo`）；一旦把 `node_modules/` 加进 `.vscodeignore`，打出的 vsix 缺失依赖，安装后格式化功能会直接失效（发布前用 `unzip -l xxx.vsix | grep xml-formatter` 可快速自检）。`dist/`、`snippets/`、`syntaxes/`、`language-configuration.json`、`doc/krpano.ico`（扩展图标）会进入 vsix。
+`.vscodeignore` 控制哪些文件不进包：`src/`、`.vscode/`、`test/`、配置文件与 `docs/` 等被排除。**注意不要排除 `node_modules/`**：扩展运行时需要 `xml-formatter`，语言客户端需要 `vscode-languageclient`（tsup 把 `dependencies` 视为 external），vsce 会自动只把生产依赖树打包进去；一旦把 `node_modules/` 加进 `.vscodeignore`，打出的 vsix 缺失依赖，安装后格式化与语言服务都会失效（发布前用 `unzip -l xxx.vsix | grep xml-formatter` 可快速自检）。`dist/`（含 `dist/lsp/server.js` 语言服务器与 `dist/lsp/client.js` 客户端入口）、`snippets/`、`syntaxes/`、`language-configuration.json`、`doc/krpano.ico`（扩展图标）会进入 vsix。
 
 ## 改动指南
 
@@ -59,8 +73,11 @@ npx @vscode/vsce publish
 | 代码片段 | `snippets/krpano.code-snippets` |
 | 注释、折叠、括号配对等编辑器行为 | `language-configuration.json` |
 | 格式化选项与默认值 | `src/getOptions.ts`、`src/beautifyHtml.ts`、`src/types/options.ts` |
-| 语法 scope 断言 / 格式化断言 | `test/grammar.test.mjs`、`test/format.test.mjs`（改行为时同步补用例） |
-| 扩展贡献点（语言、语法、激活事件、图标） | `package.json` 的 `contributes` 与 `main` |
+| 语法 scope 断言 / 格式化断言 / LSP 断言 | `test/grammar.test.mjs`、`test/format.test.mjs`、`test/lsp.test.mjs`、`test/xml.test.mjs`（改行为时同步补用例） |
+| 语言服务能力（诊断/补全/悬停/跳转） | `src/lsp/features.ts`（纯函数）；服务器接线在 `src/lsp/server.ts` |
+| 元素/属性/内建 action 数据 | `scripts/gen-krpano-data.mjs` → `src/lsp/krpanoData.json`（从官方 XML Reference 抽取；升级 krpano 版本后重跑） |
+| 悬停说明文字 | `src/lsp/krpanoDocs.ts`（手写，不复用官方文档原文） |
+| 扩展贡献点（语言、语法、设置、激活事件、图标） | `package.json` 的 `contributes` 与 `main` |
 
 ## 代码风格与提交约定
 
@@ -71,6 +88,7 @@ npx @vscode/vsce publish
 
 从当前仓库状态整理出的改进点，供后续维护参考：
 
-- 无 CI（无 `.github/`）与 CHANGELOG；版本发布依赖本地手工执行（`npm test` 可放进 CI）。
-- README TODO 中列出的 LSP 支持、更多代码片段尚未实现。
-- `package.json` 未声明 `contributes.configuration`，格式化选项在设置编辑器中会有未知设置提示（见 [formatting.md](./formatting.md#配置项)）。
+- 语言服务不做跨文件解析：`<include>` 进来的动作定义不会被识别，"未定义动作"只给 information 级提示；变量类型推断也未做。
+- `krpano` 模式（脚本-only）未内嵌 XML 标签处理（原因见 [syntax-highlighting.md](./syntax-highlighting.md#现状说明030)）；XML 文档统一用 `krpano-xml`。
+- 元素/属性数据来自官方文档的抽取脚本，只在升级 krpano 版本后需要重跑（页面需先 `curl` 到本地，见脚本头部注释）。
+- `krpano.lsp.*` 之类的开关设置尚未提供：语言服务总是启用，启动失败只记录日志。

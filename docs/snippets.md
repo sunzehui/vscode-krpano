@@ -1,6 +1,6 @@
 # 代码片段速查
 
-全部片段定义在 `snippets/krpano.code-snippets`（JSON 格式，key 为标识符，`prefix` 为触发词），通过 `package.json` 的 `contributes.snippets` 绑定到 **krpano-xml** 语言。只有文件处于该语言模式时片段才会出现。
+全部片段定义在 `snippets/krpano.code-snippets`（JSON 格式，key 为标识符，`prefix` 为触发词），共 53 个，通过 `package.json` 的 `contributes.snippets` 绑定到 **krpano-xml** 语言。只有文件处于该语言模式时片段才会出现。
 
 在编辑器中输入前缀后按 Tab 展开，再用 Tab 在占位符之间跳转。`actjs`/`actjspi` 生成的 JavaScript action 会按 VS Code 内置 JS 语法高亮（0.3.0 起）。
 
@@ -44,6 +44,16 @@
 | `object` | `<object name="" extends="">` 骨架 |
 | `oeic` | `<object name="" extends="InvisibleContent">` |
 | `events` | `<events name="" keep="true">` 骨架 |
+| `include` | `<include url=""/>` |
+| `scene` | `<scene name="" title="">…</scene>` 骨架 |
+| `preview` | `<preview url=""/>` |
+| `imgcube` | `<image type="cube"><cube url=""/></image>` |
+| `cubemr` | 多分辨率(切片)cube 图像骨架:`<cube multires="true" tilesize>` + `<level>` |
+| `view` | `<view hlookat vlookat fovtype fov fovmin fovmax/>` |
+| `autorotate` | `<autorotate enabled speed horizon/>` |
+| `cssstyles` | `<cssstyles><style name="">…</style></cssstyles>` |
+| `textstyle` | `<textstyle><自定义样式名 font=""/>…</textstyle>` |
+| `layertext` | `<layer type="text" html=""/>` |
 | `data` | `<data name=""><![CDATA[…]]></data>` |
 | `tag` | 任意标签空骨架 `<… />` |
 | `this` | `<this />` |
@@ -52,6 +62,8 @@
 
 | 前缀 | 生成内容 |
 | --- | --- |
+| `actionargs` | `<action name="" args="">…</action>`，带参数的 action 骨架 |
+| `onclick` | `onclick="…();"` 事件属性片段 |
 | `onsro` | `onnewscene` 防重入模板：先用标志位拦住重复触发，`delayedcall` 延迟复位后再执行逻辑 |
 | `++` | 字符串拼接片段 `' + … + '` |
 | `""` | 多行引号代码块（引号起一行、内容缩进、引号收尾） |

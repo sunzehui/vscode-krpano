@@ -40,7 +40,7 @@
 
 格式化选项通过 `vscode.workspace.getConfiguration()` 读取，因此 VS Code 的配置优先级（工作区 > 用户等）照常生效。
 
-> 注意：这些键**没有**在 `package.json` 的 `contributes.configuration` 中声明（键名与 Red Hat vscode-xml 扩展的风格保持一致）。写入 `settings.json` 时值会被正常读取，但设置编辑器可能出现 "Unknown Configuration Setting" 提示，也没有补全。
+这些键已在 `package.json` 的 `contributes.configuration` 中声明（0.4.0 起，中英文说明），设置界面可获得补全与校验；键名沿用 vscode-xml 扩展的风格，但与本仓库实际使用的 xml-formatter 选项一一对应。
 
 | 设置 | 代码中的默认值 | 说明 |
 | --- | --- | --- |
@@ -56,7 +56,7 @@
 
 各选项的完整语义以 [xml-formatter 文档](https://github.com/chrisbottin/xml-formatter#options) 为准。两点补充说明：
 
-- **缩进取值的优先级**：`xml.format.indentation` > `editor.insertSpaces`（`false` 用 `\t`）> 按 `editor.tabSize`（兜底 4）生成空格。
+- **缩进取值的优先级**：`xml.format.indentation`（留空视为未设置）> `editor.insertSpaces`（`false` 用 `\t`）> 按 `editor.tabSize`（兜底 4）生成空格。
 - 未设置 `whiteSpaceAtEndOfSelfclosingTag` / `forceSelfClosingEmptyTag` 时使用库默认值 `false`，即自闭合标签写成 `<tag/>`、空元素保持 `<tag></tag>`。
 
 ### 推荐配置（来自根 README）
@@ -78,7 +78,9 @@
 
 **多根节点自动补根**：krpano XML 片段（如只有若干 `<action>` 的文件）可能没有根节点，xml-formatter 会报 `Found multiple root nodes`。当 `handleRootNode` 为 `true`（默认）时，扩展会把正文用 `<krpano>` 包裹后重新格式化，因此结果会**多出**一层 `<krpano>` 根标签；文档开头的 `<?xml?>` 声明会被单独提取并留在文件最前，不会被包进根节点。
 
-**失败会给出提示**：解析器只在少数情况下真正失败（不含标签的纯文本等），此时内容原样保留，并在编辑器右下角弹出 `krpano: formatting failed …` 警告；空文档/纯空白则视为 no-op，不提示。注意标签未闭合、错配这类"半合法"文档**不会**失败——xml-formatter 会容错修复并照常输出（见上一节的提示），这是使用时最需要留意的行为差异。排查时可参考 `sample/format.xml` 这类标准结构。
+**结构变化会先确认**：`beautify` 会比较格式化前后的标签结构签名（`src/shared/xml.ts`）。当文档存在未闭合或错配标签、格式化会"修复"结构时，返回 `structureChanged: true`，扩展弹出模态确认框（Format anyway / 取消），取消则不修改文档。仅缩进变化、空标签的 `<a></a>` 与 `<a/>` 两种写法都不会触发确认。
+
+**失败会给出提示**：解析器只在少数情况下真正失败（不含标签的纯文本等），此时内容原样保留，并在编辑器右下角弹出 `krpano: formatting failed …` 警告；空文档/纯空白则视为 no-op，不提示。注意标签未闭合、错配这类"半合法"文档**不会**失败——xml-formatter 会容错修复并照常输出（见上一节的提示），这时由上一条的确认框兜底。排查时可参考 `sample/format.xml` 这类标准结构。
 
 ## 示例
 
