@@ -2,9 +2,9 @@
 
 All notable changes to the "krpano-lang" extension are documented in this file.
 
-## 0.13.0 (pre-release)
+## 0.13.0
 
-内容与 1.0.0 相同,通过 Marketplace 的 **pre-release** 通道发布(次版本号为奇数,见 `Release` workflow 的判定规则),用于在正式版之前验证安装与升级路径。
+**预发布版本(pre-release)**:内容与 1.0.0 相同,通过 Marketplace 的 pre-release 通道发布(次版本号为奇数,判定规则见 `Release` workflow),用于在正式版之前验证安装与升级路径。
 
 ## 1.0.0
 
