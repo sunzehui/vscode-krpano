@@ -23,6 +23,7 @@ All notable changes to the "krpano-lang" extension are documented in this file.
 ### Changed
 
 - The formatter now honours the `tabSize`/`insertSpaces` of the formatting request (matching the behaviour of other language formatters); `xml.format.indentation` still wins when set.
+- Minimum VS Code version raised from 1.52 to **1.63**: the Marketplace only supports pre-release versions (needed for `1.0.0-rc.*`) for extensions declaring `engines.vscode >= 1.63`; the extension itself does not use any API newer than that.
 
 ## 0.12.0
 
