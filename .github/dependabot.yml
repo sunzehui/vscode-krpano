@@ -8,6 +8,33 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: development
+    # 工具链的大版本需要人工迁移(eslint 10 与 eslint-plugin-unicorn 不兼容、
+    # TypeScript 7 + tsup 8 的 dts 构建需要改造等),这里只接收 minor/patch
+    ignore:
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      - dependency-name: eslint
+        update-types: ['version-update:semver-major']
+      - dependency-name: tsup
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@vscode/test-electron'
+        update-types: ['version-update:semver-major']
+      - dependency-name: vscode-languageclient
+        update-types: ['version-update:semver-major']
+      - dependency-name: vscode-languageserver
+        update-types: ['version-update:semver-major']
+      - dependency-name: vscode-languageserver-textdocument
+        update-types: ['version-update:semver-major']
+      - dependency-name: vscode-textmate
+        update-types: ['version-update:semver-major']
+      - dependency-name: vscode-oniguruma
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@antfu/eslint-config'
+        update-types: ['version-update:semver-major']
+      - dependency-name: xml-formatter
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
