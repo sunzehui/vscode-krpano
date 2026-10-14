@@ -43,7 +43,14 @@ function loadWithFakeVscode() {
   const require = createRequire(import.meta.url)
   const Module = require('node:module')
   const originalResolve = Module._resolveFilename
-  const isBareSpecifier = request => !request.startsWith('.') && !request.startsWith('/') && !request.startsWith('node:') && !Module.builtinModules.includes(request)
+  // 绝对路径(macOS 的 /、Windows 的 D:\ 与 UNC \\server)都不是外部包名
+  const isBareSpecifier = request =>
+    !request.startsWith('.')
+    && !request.startsWith('/')
+    && !/^[a-z]:[\\/]/i.test(request)
+    && !request.startsWith('\\\\')
+    && !request.startsWith('node:')
+    && !Module.builtinModules.includes(request)
   Module._resolveFilename = function (request, ...args) {
     if (request === 'vscode')
       return FAKE_MODULE
