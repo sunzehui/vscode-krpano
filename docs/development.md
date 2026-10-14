@@ -16,6 +16,7 @@ pnpm install        # 安装依赖
 | --- | --- |
 | `pnpm build`（或 `npm run build`） | 用 tsup 构建一次，输出 `dist/extension.js`（含 dts，`vscode` 为 external） |
 | `pnpm dev`（或 `npm run dev`） | watch 模式，源文件变更时自动重建，供 F5 调试使用 |
+| `npm run bench` | 生成合成大文档跑语言服务关键路径(含预算断言;CI 也会跑) |
 | `npm run lint` / `npm run lint:fix` | ESLint 9 + @antfu/eslint-config 9(flat config);CI 会跑 `npm run lint` |
 | `npm run coverage` | 在测试之上统计 `src/` 纯逻辑模块的覆盖率（c8，阈值 90% 语句 / 88% 函数 / 75% 分支） |
 | `npm test` | 跑全部测试：`build:test`（把纯模块编译到 `test/build`）+ `node --test test/*.test.mjs`（语法 scope、格式化、LSP 纯函数；若已 `npm run build`，还会跑语言服务器 stdio 端到端冒烟与打包产物冒烟） |
@@ -46,11 +47,12 @@ npm run build                  # 先生成 dist(含 dist/lsp/server.js,server �
 npm run lint
 npm test
 npm run coverage               # 纯逻辑模块覆盖率(带阈值)
+npm run bench                  # 性能基准(合成 0.9MB 文档 + 200 文件索引)
 npx @vscode/vsce package --out krpano-lang.vsix
 unzip -l krpano-lang.vsix | grep -q 'extension/node_modules/xml-formatter/'   # 回归检查:运行时依赖必须进包
 ```
 
-最后把 vsix 作为构建产物上传（Actions 页面可下载）。
+最后把 vsix 作为构建产物上传（Actions 页面可下载）。CI 跑在 ubuntu / macos / windows 三平台矩阵上；另有 `CodeQL` 静态分析与 `Dependabot` 依赖更新。
 
 ## 打包与发布
 
@@ -63,6 +65,8 @@ npx @vscode/vsce package          # 生成 krpano-lang-<version>.vsix
 # 3. 发布
 npx @vscode/vsce publish
 ```
+
+预发布：`Pre-Release` workflow（手动触发，需输入 `publish` 确认）以 `--pre-release` 上传，用户需显式选择加入；Open VSX（Cursor/VSCodium）在配置 `OVSX_PAT` 后由 Release workflow 同步发布。
 
 发布自动化：`.github/workflows/release.yml` 在推送 `v*` tag 时校验 tag 与 `package.json` 版本一致、跑测试、打包并发布到 Marketplace（读 `VSCE_PAT` secret；未配置时只打包上传 vsix）。配置命令：`gh secret set VSCE_PAT`。手动发布仍可用 `npx @vscode/vsce publish --packagePath krpano-lang-<version>.vsix`。
 
@@ -100,9 +104,10 @@ npx @vscode/vsce publish
 
 从当前仓库状态整理出的改进点，供后续维护参考：
 
-- include 索引在每次校验时重建（磁盘文件有 mtime 缓存、校验有 250ms 去抖，仍未做增量解析）：超大项目偏重。
+- include 索引在每次校验时重建（磁盘文件有 mtime 缓存与按文件版本增量解析、校验有 250ms 去抖；offset→行列位置已改为行索引 + 二分）。
 - 覆盖率只统计 `src/` 纯逻辑模块（扩展宿主与语言服务器进程内的代码由冒烟测试覆盖，不计入百分比）；测试构建产物在 `test/build/`（V8 覆盖率不采集 `test/` 下的文件）。
-- 变量类型推断、`get:`/`calc:` 表达式校验未做。
+- 变量类型推断、`get:`/`calc:` 表达式校验未做：属性值的 `calc:`/`get:`/`link:` 前缀与 `%s` 占位符只在 `<action>` 标签的属性里着色，其它标签由内置 XML 语法处理（避免自研标签解析带来的回归）。
+- 未实现（评估后放弃或不划算）：krpano 版本/废弃项感知（官方文档没有可靠的废弃标记，不编造数据）、属性排版选项（每行一个属性 + 等号对齐）、krpano 脚本语句重排缩进、LSP 消息本地化（设置项说明已是中英双写）。
 - `krpano` 模式（脚本-only）未内嵌 XML 标签处理（原因见 [syntax-highlighting.md](./syntax-highlighting.md#现状说明030)）；XML 文档统一用 `krpano-xml`。
 - 元素/属性数据来自官方文档的抽取脚本，只在升级 krpano 版本后需要重跑（页面需先 `curl` 到本地，见脚本头部注释）。
 - `krpano.lsp.*` 之类的开关设置尚未提供：语言服务总是启用，启动失败只记录日志。

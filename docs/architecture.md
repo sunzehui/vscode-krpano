@@ -104,6 +104,7 @@ graph TD
   - 补全（元素名、属性名、`type`/`style`/`linkedscene` 取值、事件属性里的动作名、`layer[…]` 括号索引）、悬停、跳转、引用与重命名（跨文件）、文档大纲与工作区符号、快速修复
 - `src/lsp/symbols.ts` 沿 `<include url="...">` 链收集动作/热点/场景等 `name` 定义（广度优先、带环检测与深度上限、路径归一化），磁盘文件按 mtime+size 缓存；因此"未定义动作"只在**本文件与 include 链都没有**时提示，跳转可跨文件。客户端注册了 `**/*.xml` 文件监听，include 的文件被改动时会重新校验打开的文档。
 - 数据来源：`krpanoData.json`（由 `scripts/gen-krpano-data.mjs` 从官方 XML Reference 抽取元素/属性名，并按 Actions 文档补充内建 action 清单）+ `krpanoDocs.ts`（手写说明，不复用官方文档原文）。
+- `src/shared/xml.ts` 的 `createLineIndex` 预建行起点并用二分查找做 offset→行列换算：早期实现每次线性扫描，1MB 级文档会让诊断退化成 O(n²)（基准见 `npm run bench`）。
 - `krpano.lsp.*` 设置(是否启用诊断、未定义动作的级别、忽略名单)由服务器在初始化与配置变化时读取;文档变更的校验带 250ms 去抖。
 - 纯函数不依赖 vscode/lsp 类型，因此可以直接用 `node --test` 断言（见 `test/lsp.test.mjs`），另有 `test/server.test.mjs` 以真实进程走 stdio 协议做端到端冒烟。
 

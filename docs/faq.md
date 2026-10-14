@@ -55,7 +55,7 @@
 | 能力 | 说明 |
 | --- | --- |
 | 诊断 | 标签未闭合/错配、`<action type>` 非法取值、`<include>` 目标不存在、`linkedscene` 指向不存在的 scene、同一容器内重名（均为警告）；未知元素、未定义的 `style`、本文件与 include 链中均未定义的动作调用（信息级） |
-| 补全 | 元素名、该元素的属性（插入 `ath="$1"` 形式）、特殊属性 `devices`/`if`、`<action type>` 的取值、`style`/`linkedscene` 的已定义名字、事件属性里的动作名 |
+| 补全 | 元素名、该元素的属性（插入 `ath="$1"` 形式）、特殊属性 `devices`/`if`、`<action type>` 的取值、`style`/`linkedscene` 的已定义名字、事件属性里的动作名、`layer[…]` 括号索引、`layer[info].` 后的属性、`loadscene(` 等名字参数 |
 | 悬停 | 元素与属性的简短说明（31 个元素、858 个属性） |
 | 跳转 | 事件属性或 action 体里的 `action_name(...)` → 对应 `name="..."` 声明（可跨 `<include>` 的文件） |
 
@@ -75,6 +75,16 @@
 | `krpano.lsp.diagnostics.enable` | 关掉全部诊断(补全/悬停/跳转仍可用) |
 | `krpano.lsp.diagnostics.undefinedActions` | "未定义动作"的级别:`information`(默认)/ `warning` / `off` |
 | `krpano.lsp.diagnostics.ignoredNames` | 不再提示的名字(动作、元素、style、scene),用于压掉插件或动态名字的噪音 |
+
+## 怎么让某段内容不被格式化？
+
+在不想被触碰的区域两侧写上注释标记，格式化时会逐字保留其中的内容（跨多个元素也有效）：
+
+```xml
+<!-- krpano-lang-format: off -->
+<action name="keep_my_style">if(x,  set(y,1)  );</action>
+<!-- krpano-lang-format: on -->
+```
 
 ## 选区格式化（Format Selection）与整篇格式化有什么区别？
 

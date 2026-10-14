@@ -2,6 +2,26 @@
 
 All notable changes to the "krpano-lang" extension are documented in this file.
 
+## 0.10.0
+
+### Fixed
+
+- Major performance fix: converting character offsets to line/column positions was a linear scan per call, which made diagnostics and the outline quadratic on large documents. A prebuilt line index with binary search replaces it (measured on a synthetic 0.91 MB tour: diagnostics 108 s → 0.6 s, outline 50 s → 38 ms, workspace index of 200 files 4.1 s → 0.39 s).
+
+### Added
+
+- Name-argument validation and completion: `loadscene(`, `loadstyle(`, `removehotspot(`, `callwith(caller, ...)` and friends complete the names defined in the file or its includes, and point out names that do not exist.
+- `layer[info].` completion: attributes of the referenced element (858 attributes) after an index expression.
+- `%N` placeholder validation: placeholders beyond the declared `args` count are reported as information.
+- Formatting: `<!-- krpano-lang-format: off -->` … `<!-- krpano-lang-format: on -->` regions are protected verbatim (also when they span several elements).
+- Welcome walkthrough with four steps (open, diagnostics, navigation, formatting).
+- `npm run bench` performance benchmark (synthetic large tour, with budget assertions) and a benchmark step in CI.
+- Engineering: CI matrix across ubuntu/macos/windows, Dependabot, CodeQL analysis, a manual pre-release workflow (`--pre-release`) and an optional Open VSX publishing step (`OVSX_PAT`).
+
+### Notes
+
+- Deliberately not implemented (documented in `docs/development.md`): krpano version awareness (the official documentation has no reliable deprecation data), an attribute-layout formatting option, krpano script re-indentation and LSP message localization.
+
 ## 0.9.0
 
 ### Added
