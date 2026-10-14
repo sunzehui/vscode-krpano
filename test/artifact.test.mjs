@@ -8,7 +8,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 
 const EXTENSION = path.resolve('dist/extension.js')
-const FAKE_DIR = path.resolve('test/.tmp/fake-vscode')
+const FAKE_DIR = path.resolve('test/build/fake-vscode')
 const FAKE_MODULE = path.join(FAKE_DIR, 'index.js')
 
 const FAKE_SOURCE = `const state = { registered: {}, rangeProviders: {}, messages: [], config: null, modalAnswer: undefined }

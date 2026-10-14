@@ -2,6 +2,7 @@
 // 页面获取:curl -sSL "https://krpano.com/docu/xml/" -o /tmp/krpano_xml_ref.html
 // 用法:node scripts/gen-krpano-data.mjs [页面缓存路径] [输出路径]
 import { readFileSync, writeFileSync } from 'node:fs'
+import process from 'node:process'
 
 const src = process.argv[2] ?? '/tmp/krpano_xml_ref.html'
 const out = process.argv[3] ?? 'src/lsp/krpanoData.json'
@@ -9,9 +10,37 @@ const html = readFileSync(src, 'utf8')
 
 // krpano 的真实 XML 元素白名单(文档里 network/memory/security/debug/set/if 等是变量命名空间或特殊属性,排除)
 const ELEMENTS = [
-  'krpano', 'include', 'preview', 'image', 'cube', 'cubestrip', 'level', 'sphere', 'cylinder', 'flat', 'fisheye',
-  'depthmap', 'view', 'area', 'display', 'control', 'cursors', 'autorotate', 'contextmenu', 'textstyle', 'cssstyles',
-  'events', 'action', 'data', 'hotspot', 'layer', 'plugin', 'style', 'scene', 'model', 'splats',
+  'krpano',
+  'include',
+  'preview',
+  'image',
+  'cube',
+  'cubestrip',
+  'level',
+  'sphere',
+  'cylinder',
+  'flat',
+  'fisheye',
+  'depthmap',
+  'view',
+  'area',
+  'display',
+  'control',
+  'cursors',
+  'autorotate',
+  'contextmenu',
+  'textstyle',
+  'cssstyles',
+  'events',
+  'action',
+  'data',
+  'hotspot',
+  'layer',
+  'plugin',
+  'style',
+  'scene',
+  'model',
+  'splats',
 ]
 
 // 文档对这两个元素的属性写法特殊(style 允许任意属性,include 只列了 url),手工补齐
@@ -20,9 +49,14 @@ const EXTRA = {
   style: ['name'],
 }
 
+// 文档把少数 krpano API 方法混排在属性表里(它们只能以函数形式调用,不是 XML 属性)
+const API_METHODS = new Set(['addevent', 'removeevent', 'getchildzorder', 'getfullpath', 'getxml', 'getcenter', 'getnormalvec', 'loadstyle', 'registercontentsize', 'resetsize', 'remove'])
+
 const attrs = new Map(ELEMENTS.map(el => [el, new Set(Object.entries(EXTRA).find(([k]) => k === el)?.[1] ?? [])]))
-const add = (path, attr) => {
+function add(path, attr) {
   const tag = path.split('.').pop()
+  if (API_METHODS.has(attr))
+    return
   if (attrs.has(tag) && /^[a-z][a-z0-9_]*$/.test(attr))
     attrs.get(tag).add(attr)
 }
@@ -36,6 +70,9 @@ for (const m of html.matchAll(/<a href="#([A-Za-z][\w.-]*)\.([a-z][\w-]*)"[^>]*>
 for (const row of html.matchAll(/<tr class="xmlattrdocdesc">([\s\S]{0,2000}?)<\/tr>/g)) {
   const anchors = [...row[1].matchAll(/<a name="([A-Za-z][\w.-]*)"><\/a>/g)].map(a => a[1])
   const label = row[1].replace(/<[^>]*>/g, ' ')
+  // "Function name" 行记录的是 krpano API 函数(如 layer.getfullpath()),不是 XML 属性
+  if (/Function\s*name/i.test(label))
+    continue
   const shared = []
   if (/Hotspot/i.test(label))
     shared.push('hotspot')
@@ -60,18 +97,20 @@ for (const el of ELEMENTS)
 
 // 从仓库内的 TextMate 语法提取内建 action 与关键字,供"未定义动作"诊断排除误报
 const grammar = JSON.parse(readFileSync('syntaxes/krpano.tmLanguage.json', 'utf8'))
-const wordsOf = (ruleName) => {
+function wordsOf(ruleName) {
   const rule = grammar.patterns.find(p => p.name === ruleName)
   if (!rule)
     return []
-  const alternation = (rule.match.match(/\\b\(([^)]*)\)\\b/) ?? [, ''])[1]
-  return alternation.split('|').map(w => w.trim()).filter(w => /^[A-Za-z_]\w*$/.test(w))
+  const alternation = rule.match.match(/\\b\(([^)]*)\)\\b/)
+  if (!alternation)
+    return []
+  return alternation[1].split('|').map(w => w.trim()).filter(w => /^[A-Z_]\w*$/i.test(w))
 }
 // 语法文件里未收录、但确实是 krpano 动作的名字(避免"未定义动作"误报)
 const EXTRA_ACTIONS = ['ifnot', 'asynccall', 'asyncfor']
 
 // 官方 Actions 文档里的示例块(<div id="<action>examples" class="xmlexamplecontent">)用于补全语法文件的清单
-const actionNamesFromDocs = () => {
+function actionNamesFromDocs() {
   const actionsPage = process.argv[4] ?? '/tmp/krpano_actions_page.html'
   try {
     const page = readFileSync(actionsPage, 'utf8')

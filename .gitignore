@@ -5,7 +5,8 @@ node_modules
 .vscode/.as-fs
 .DS_Store
 dist
-test/.tmp
+test/build
+coverage/
 
 # 工具/会话产物
 .zcode/

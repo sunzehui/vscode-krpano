@@ -1,7 +1,7 @@
+import type { ExternalDefinition, PlainRange } from './types'
 // krpano 文件的符号提取与 <include> 依赖解析(纯逻辑,文件读取通过参数注入,便于测试)。
 import path from 'node:path'
 import { offsetToPosition, scanXml } from '../shared/xml'
-import type { ExternalDefinition, PlainRange } from './types'
 
 /** 可以定义 name 的元素(其名字可被动作/事件引用) */
 export const NAME_DEFINING_ELEMENTS = ['action', 'hotspot', 'layer', 'plugin', 'scene', 'style', 'events', 'data']
@@ -28,15 +28,33 @@ export interface IncludeIndex {
   unresolved: Array<{ path: string, url: string, range: PlainRange }>
 }
 
-/** 依赖注入:读取文件内容(找不到时返回 undefined) */
-export type ReadFile = (path: string) => string | undefined
+/** 单个文件的读取结果:内容 + 版本(用于增量解析) */
+export interface FileContent {
+  text: string
+  /** 版本标识(如 mtime:size 或 文档版本号),变化时才会重新解析 */
+  version: string
+}
+
+/** 依赖注入:读取文件(找不到时返回 undefined);允许直接返回字符串(视为无版本) */
+export type ReadFile = (path: string) => string | FileContent | undefined
+
+/** 单文件的解析结果(定义与 include 引用) */
+export interface ParsedFile {
+  definitions: SymbolDefinition[]
+  includes: IncludeReference[]
+}
+
+/** 跨次调用复用的解析缓存:路径 → { 版本, 解析结果 } */
+export type ParseCache = Map<string, { version: string, parsed: ParsedFile }>
 
 function rangeOf(text: string, start: number, end: number): PlainRange {
   return { start: offsetToPosition(text, start), end: offsetToPosition(text, end) }
 }
 
-/** 收集文件中所有 name 定义(action/hotspot/layer/plugin/scene/style/events/data),
- *  并记录它所属的容器(scene 名字;不在 scene 内则为 krpano 根) */
+/**
+ * 收集文件中所有 name 定义(action/hotspot/layer/plugin/scene/style/events/data),
+ *  并记录它所属的容器(scene 名字;不在 scene 内则为 krpano 根)
+ */
 export function collectDefinitions(text: string): SymbolDefinition[] {
   const definitions: SymbolDefinition[] = []
   const stack: Array<{ element: string, name?: string }> = []
@@ -118,7 +136,7 @@ export function uriToPath(uri: string): string | undefined {
     return undefined
   let path = decodeURIComponent(uri.slice('file://'.length))
   // Windows 形如 file:///C:/x → 去掉前导斜杠
-  if (/^\/[A-Za-z]:/.test(path))
+  if (/^\/[A-Z]:/i.test(path))
     path = path.slice(1)
   return path
 }
@@ -129,8 +147,21 @@ export function pathToUri(path: string): string {
   return `file://${normalized.startsWith('/') ? '' : '/'}${encodeURI(normalized)}`
 }
 
-/** 沿 include 链收集定义(广度优先,带环检测与深度上限) */
-export function buildIncludeIndex(entryPath: string, readFile: ReadFile, maxDepth = 16): IncludeIndex {
+/** 解析一个文件(带缓存:版本未变则复用上次结果) */
+function parseFile(path: string, content: FileContent, cache?: ParseCache): ParsedFile {
+  const cached = cache?.get(path)
+  if (cached && cached.version === content.version)
+    return cached.parsed
+  const parsed: ParsedFile = {
+    definitions: collectDefinitions(content.text),
+    includes: extractIncludes(content.text),
+  }
+  cache?.set(path, { version: content.version, parsed })
+  return parsed
+}
+
+/** 沿 include 链收集定义(广度优先,带环检测、深度上限与按文件版本的增量解析) */
+export function buildIncludeIndex(entryPath: string, readFile: ReadFile, maxDepth = 16, cache?: ParseCache): IncludeIndex {
   const definitions = new Map<string, { path: string, range: PlainRange }>()
   const unresolved: IncludeIndex['unresolved'] = []
   const visited = new Set<string>()
@@ -142,16 +173,21 @@ export function buildIncludeIndex(entryPath: string, readFile: ReadFile, maxDept
       if (visited.has(path))
         continue
       visited.add(path)
-      const text = readFile(path)
-      if (text === undefined)
+      const content = readFile(path)
+      if (content === undefined)
         continue
-      for (const definition of collectDefinitions(text)) {
+      const normalized: FileContent = typeof content === 'string' ? { text: content, version: '' } : content
+      // 空版本表示调用方不提供版本信息:直接解析,不读也不写缓存
+      const parsed = normalized.version === ''
+        ? { definitions: collectDefinitions(normalized.text), includes: extractIncludes(normalized.text) }
+        : parseFile(path, normalized, cache)
+      for (const definition of parsed.definitions) {
         if (!definitions.has(definition.name))
           definitions.set(definition.name, { path, range: definition.range })
       }
       if (depth >= maxDepth)
         continue
-      for (const include of extractIncludes(text)) {
+      for (const include of parsed.includes) {
         const resolved = resolveIncludePath(path, include.url)
         if (!resolved)
           continue

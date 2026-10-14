@@ -56,8 +56,9 @@ function netDepthDelta(line: string): number {
 export function selectionLineBounds(text: string, startOffset: number, endOffset: number): { start: number, end: number } {
   const start = text.lastIndexOf('\n', Math.max(0, startOffset - 1)) + 1
   let end: number
-  if (endOffset > 0 && text[endOffset - 1] === '\n')
+  if (endOffset > 0 && text[endOffset - 1] === '\n') {
     end = endOffset - 1
+  }
   else {
     const nextBreak = text.indexOf('\n', endOffset)
     end = nextBreak === -1 ? text.length : nextBreak

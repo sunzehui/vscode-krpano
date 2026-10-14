@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
 import { createRequire } from 'node:module'
+import { test } from 'node:test'
 
 const require = createRequire(import.meta.url)
-const { scanXml, signaturesDiffer, structureSignature, offsetToPosition, tagAtOffset } = require('./.tmp/shared/xml.js')
+const { scanXml, signaturesDiffer, structureSignature, offsetToPosition, tagAtOffset } = require('./build/shared/xml.js')
 
 test('扫描:标签、属性、引号内的大于号', () => {
   const text = '<hotspot name="a" onclick="if(x &gt; 1, lookto(0,0));"/>'

@@ -7,6 +7,7 @@ const require = createRequire(import.meta.url)
 // 两个库都是 CJS,用 require 拿到标准的 module.exports 形状
 const oniguruma = require('vscode-oniguruma')
 const vsctm = require('vscode-textmate')
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 
 // 仓库里只有 krpano 的两个语法,外部依赖语法(内置 XML/JS、CoffeeScript)用最小替身,
@@ -19,7 +20,7 @@ const stubs = {
       { match: '\\b(?:const|let|var|function|return|if|else|new|this|console)\\b', name: 'keyword.test.js' },
       { match: '\\b\\d+\\b', name: 'constant.numeric.test.js' },
       { match: '//.*$', name: 'comment.line.test.js' },
-      { name: 'string.quoted.single.test.js', begin: "'", end: "'" },
+      { name: 'string.quoted.single.test.js', begin: '\'', end: '\'' },
     ],
   },
   'source.coffee': { scopeName: 'source.coffee', patterns: [{ match: '->', name: 'keyword.test.coffee' }] },

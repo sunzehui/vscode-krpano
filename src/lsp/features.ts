@@ -1,11 +1,11 @@
+import type { XmlTag } from '../shared/xml'
+import type { SymbolDefinition } from './symbols'
+import type { DiagnosticSettings, ExternalDefinition, PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
+import { attributeAtOffset, offsetToPosition, scanXml, tagAtOffset } from '../shared/xml'
 // krpano XML 语言特性实现(纯函数,不依赖 vscode / vscode-languageserver,便于单元测试)。
 import krpanoData from './krpanoData.json'
 import { docForAttribute, docForElement } from './krpanoDocs'
 import { collectDefinitions } from './symbols'
-import type { SymbolDefinition } from './symbols'
-import { attributeAtOffset, offsetToPosition, scanXml, tagAtOffset } from '../shared/xml'
-import type { XmlTag } from '../shared/xml'
-import type { DiagnosticSettings, ExternalDefinition, PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
 
 export type { DiagnosticSettings, PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
 
@@ -152,7 +152,7 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
   const definitions = collectDefinitions(text)
   const declared = new Set(definitions.map(definition => definition.name))
   const external: Map<string, ExternalDefinition> = context.externalDefinitions ?? new Map()
-  const reportReference = (name: string, start: number, end: number) => {
+  const reportReference = (name: string, start: number, end: number): void => {
     if (undefinedActions === 'off' || ignoredNames.has(name))
       return
     if (declared.has(name) || external.has(name) || builtins.has(name) || name in elements)
@@ -173,7 +173,7 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
       if (attr.value === undefined || attr.valueStart === undefined)
         continue
       const value = attr.value
-      for (const m of value.matchAll(/(?:^|[^\w.$])([A-Za-z_][\w]*)\(/g)) {
+      for (const m of value.matchAll(/(?:^|[^\w.$])([A-Z_]\w*)\(/gi)) {
         const name = m[1]
         const offset = attr.valueStart + (m.index ?? 0) + m[0].length - name.length - 1
         reportReference(name, offset, offset + name.length)
@@ -185,13 +185,13 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
   const actionBodyRe = /<action\b([^>]*)>([\s\S]*?)<\/action>/g
   for (const m of text.matchAll(actionBodyRe)) {
     const attrText = m[1]
-    const typeMatch = /\btype\s*=\s*("([^"]*)"|'([^']*)')/.exec(attrText)
-    const type = (typeMatch?.[2] ?? typeMatch?.[3] ?? '').toLowerCase()
+    const typeMatch = /\btype\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(attrText)
+    const type = (typeMatch?.[1] ?? typeMatch?.[2] ?? '').toLowerCase()
     if (type === 'javascript' || type === 'js')
       continue
     const bodyStart = m.index! + m[0].indexOf(m[2])
     const body = m[2]
-    for (const call of body.matchAll(/(?:^|[^\w.$])([A-Za-z_][\w]*)\(/g)) {
+    for (const call of body.matchAll(/(?:^|[^\w.$])([A-Z_]\w*)\(/gi)) {
       const name = call[1]
       const offset = bodyStart + (call.index ?? 0) + call[0].length - name.length - 1
       reportReference(name, offset, offset + name.length)

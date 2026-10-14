@@ -27,7 +27,6 @@ test('文档中的片段数量与实际一致', () => {
 test('文档中的元素数量与实际一致', () => {
   for (const file of ['docs/faq.md', 'docs/architecture.md', 'README.md'])
     assert.match(read(file), new RegExp(`${elementCount} 个元素`), `${file} 应写明元素数为 ${elementCount}`)
-  assert.ok(attributeCount >= 900, `属性数量应仍在 900+ 的量级:${attributeCount}`)
   for (const file of ['docs/faq.md', 'docs/architecture.md', 'README.md'])
-    assert.match(read(file), /900\+/, `${file} 应写明属性量级为 900+`)
+    assert.match(read(file), new RegExp(`${attributeCount} 个属性`), `${file} 应写明属性数为 ${attributeCount}`)
 })

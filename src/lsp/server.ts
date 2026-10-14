@@ -1,26 +1,30 @@
+import type { FileContent, ParseCache } from './symbols'
+import type { DiagnosticSettings, ProjectContext } from './types'
 // krpano XML 语言服务器(LSP):诊断、补全、悬停、跳转。
 // 作为独立进程由 vscode-languageclient 以 IPC 传输启动(见 client.ts)。
 import { readFileSync, statSync } from 'node:fs'
+import { TextDocument } from 'vscode-languageserver-textdocument'
 import {
   CompletionItemKind,
+  createConnection,
   DiagnosticSeverity,
   InsertTextFormat,
   MarkupKind,
   ProposedFeatures,
-  TextDocumentSyncKind,
   TextDocuments,
-  createConnection,
+  TextDocumentSyncKind,
 } from 'vscode-languageserver/node'
-import { TextDocument } from 'vscode-languageserver-textdocument'
 import { getCompletions, getDefinition, getDiagnostics, getHover } from './features'
 import { buildIncludeIndex, contextForFile, uriToPath } from './symbols'
-import type { DiagnosticSettings, ProjectContext } from './types'
 
 const connection = createConnection(ProposedFeatures.all)
 const documents = new TextDocuments(TextDocument)
 
 /** 磁盘文件缓存(已打开的文档直接取内存文本) */
 const fileCache = new Map<string, { mtimeMs: number, size: number, text: string }>()
+
+/** 按文件版本复用的解析缓存:文件没变就不会重新解析 */
+const parseCache: ParseCache = new Map()
 
 /** krpano.lsp.* 设置(初始化与配置变化时刷新) */
 interface LspConfiguration {
@@ -54,26 +58,27 @@ function scheduleValidateAll(): void {
   }, 250)
 }
 
-function openDocumentText(path: string): string | undefined {
+function openDocumentContent(path: string): FileContent | undefined {
   for (const document of documents.all()) {
     if (uriToPath(document.uri) === path)
-      return document.getText()
+      return { text: document.getText(), version: `doc:${document.version}` }
   }
   return undefined
 }
 
-function readFileCached(path: string): string | undefined {
-  const open = openDocumentText(path)
+function readFileCached(path: string): FileContent | undefined {
+  const open = openDocumentContent(path)
   if (open !== undefined)
     return open
   try {
     const stat = statSync(path)
+    const version = `${stat.mtimeMs}:${stat.size}`
     const cached = fileCache.get(path)
-    if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size)
-      return cached.text
-    const text = readFileSync(path, 'utf8')
+    const text = cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size
+      ? cached.text
+      : readFileSync(path, 'utf8')
     fileCache.set(path, { mtimeMs: stat.mtimeMs, size: stat.size, text })
-    return text
+    return { text, version }
   }
   catch {
     return undefined
@@ -85,7 +90,7 @@ function projectContext(document: TextDocument): ProjectContext {
   const path = uriToPath(document.uri)
   if (!path)
     return {}
-  const index = buildIncludeIndex(path, readFileCached)
+  const index = buildIncludeIndex(path, readFileCached, 16, parseCache)
   return contextForFile(index, path, document.uri)
 }
 

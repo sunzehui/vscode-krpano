@@ -31,10 +31,10 @@ export interface XmlTag {
 export interface XmlDocumentScan {
   tags: XmlTag[]
   /** 注释、CDATA、处理指令、DOCTYPE 等非标签区域 */
-  skipped: Array<{ kind: 'comment' | 'cdata' | 'pi' | 'doctype'; start: number; end: number }>
+  skipped: Array<{ kind: 'comment' | 'cdata' | 'pi' | 'doctype', start: number, end: number }>
 }
 
-const NAME_START = /[A-Za-z_:]/
+const NAME_START = /[A-Z_:]/i
 const NAME_CHAR = /[-\w.:]/
 
 function isNameStart(ch: string): boolean {
@@ -198,8 +198,10 @@ export function scanXml(text: string): XmlDocumentScan {
   return { tags, skipped }
 }
 
-/** 标签结构签名:用于格式化前后比较,判断是否发生了(容错修复导致的)结构变化。
- *  空的成对标签 <x></x> 与自闭合 <x/> 视为等价,避免 forceSelfClosingEmptyTag 造成的误判。 */
+/**
+ * 标签结构签名:用于格式化前后比较,判断是否发生了(容错修复导致的)结构变化。
+ *  空的成对标签 <x></x> 与自闭合 <x/> 视为等价,避免 forceSelfClosingEmptyTag 造成的误判。
+ */
 export function structureSignature(text: string): string[] {
   const raw = scanXml(text).tags.map(tag => `${tag.kind === 'close' ? '/' : tag.kind === 'self' ? '#' : ''}${tag.name.toLowerCase()}`)
   const normalized: string[] = []

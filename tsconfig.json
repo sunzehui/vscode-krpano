@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
     "target": "es2017",
-    "outDir": "out",
     "lib": ["esnext"],
-    "sourceMap": true,
+    "module": "commonjs",
     "moduleResolution": "node",
-    "esModuleInterop": true,
+    "resolveJsonModule": true,
     "strict": true,
     "noUnusedLocals": true,
-    "resolveJsonModule": true
+    "outDir": "out",
+    "sourceMap": true,
+    "esModuleInterop": true
   },
   "exclude": [
   ]

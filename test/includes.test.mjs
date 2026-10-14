@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
 import { createRequire } from 'node:module'
+import { test } from 'node:test'
 
 const require = createRequire(import.meta.url)
 const {
@@ -12,7 +12,7 @@ const {
   pathToUri,
   resolveIncludePath,
   uriToPath,
-} = require('./.tmp/lsp/symbols.js')
+} = require('./build/lsp/symbols.js')
 
 test('符号:收集 name 定义与 <include> 引用', () => {
   const text = [
@@ -82,4 +82,36 @@ test('索引:contextForFile 只暴露其它文件的定义与当前文件的缺�
   assert.deepEqual([...context.externalDefinitions.keys()], ['from_include'])
   assert.equal(context.externalDefinitions.get('from_include').uri, 'file:///pano/actions.xml')
   assert.deepEqual(context.unresolvedIncludes.map(u => u.url), ['nope.xml'])
+})
+
+test('索引:按文件版本增量解析,未变更的文件复用结果', () => {
+  const files = {
+    '/pano/a.xml': '<krpano>\n<include url="b.xml"/>\n<action name="a1"/>\n</krpano>',
+    '/pano/b.xml': '<krpano>\n<action name="b1"/>\n</krpano>',
+  }
+  const cache = new Map()
+  const read = path => files[path] === undefined ? undefined : { text: files[path], version: 'v1' }
+
+  const first = buildIncludeIndex('/pano/a.xml', read, 16, cache)
+  assert.deepEqual([...first.definitions.keys()].sort(), ['a1', 'b1'])
+  const parsedA = cache.get('/pano/a.xml').parsed
+  const parsedB = cache.get('/pano/b.xml').parsed
+
+  // 第二次:版本未变 → 复用解析结果(对象同一性可证明未重新解析)
+  buildIncludeIndex('/pano/a.xml', read, 16, cache)
+  assert.equal(cache.get('/pano/a.xml').parsed, parsedA, '未变更的文件应复用解析结果')
+  assert.equal(cache.get('/pano/b.xml').parsed, parsedB)
+
+  // b.xml 版本变化 → 只重新解析它
+  files['/pano/b.xml'] = '<krpano>\n<action name="b2"/>\n</krpano>'
+  const read2 = path => files[path] === undefined ? undefined : { text: files[path], version: path.endsWith('b.xml') ? 'v2' : 'v1' }
+  const third = buildIncludeIndex('/pano/a.xml', read2, 16, cache)
+  assert.ok(third.definitions.has('b2'), '变更的文件应重新解析')
+  assert.equal(cache.get('/pano/a.xml').parsed, parsedA, '其它文件仍复用')
+  assert.equal(cache.get('/pano/b.xml').version, 'v2')
+
+  // 不提供版本(字符串 reader)时不写缓存
+  const plainCache = new Map()
+  buildIncludeIndex('/pano/a.xml', path => files[path], 16, plainCache)
+  assert.equal(plainCache.size, 0, '无版本信息时不应写入缓存')
 })

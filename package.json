@@ -1,46 +1,22 @@
 {
+  "publisher": "sunzehui",
   "name": "krpano-lang",
   "displayName": "krpano-lang",
+  "version": "0.8.0",
   "description": "a krpano high-light plugin",
-  "version": "0.7.0",
-  "main": "./dist/extension.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/sunzehui/vscode-krpano.git"
   },
-  "scripts": {
-    "vscode:prepublish": "npm run build",
-    "build": "tsup src/extension.ts src/lsp/client.ts src/lsp/server.ts --dts --external=vscode",
-    "dev": "npm run build -- --watch",
-    "release": "npx bumpp --commit --tag --push",
-    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/symbols.ts src/shared/xml.ts src/shared/reindent.ts --format=cjs --out-dir=test/.tmp --clean",
-    "test": "npm run build && npm run build:test && node --test test/*.test.mjs"
-  },
-  "devDependencies": {
-    "@antfu/eslint-config": "^0.6.2",
-    "@types/node": "^14.14.37",
-    "@types/vscode": "^1.52.0",
-    "eslint": "^7.23.0",
-    "pkg-up": "^3.1.0",
-    "tsup": "^4.8.21",
-    "types-package-json": "^2.0.31",
-    "typescript": "^4.2.3",
-    "vscode-languageclient": "^7.0.0",
-    "vscode-languageserver": "^7.0.0",
-    "vscode-languageserver-textdocument": "^1.0.15",
-    "vscode-oniguruma": "^2.0.1",
-    "vscode-textmate": "^9.3.2",
-    "xml-formatter": "^3.6.2"
-  },
-  "publisher": "sunzehui",
-  "engines": {
-    "vscode": "^1.52.0"
-  },
-  "icon": "doc/krpano.ico",
   "categories": [
     "Programming Languages",
     "Snippets"
   ],
+  "main": "./dist/extension.js",
+  "icon": "doc/icon.png",
+  "engines": {
+    "vscode": "^1.52.0"
+  },
   "activationEvents": [
     "onLanguage:krpano-xml",
     "onLanguage:krpano"
@@ -152,5 +128,31 @@
         "path": "./syntaxes/krpano.tmLanguage.json"
       }
     ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "tsup src/extension.ts src/lsp/client.ts src/lsp/server.ts --dts --external=vscode",
+    "dev": "npm run build -- --watch",
+    "release": "npx bumpp --commit --tag --push",
+    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/symbols.ts src/shared/xml.ts src/shared/reindent.ts --format=cjs --out-dir=test/build --clean",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "npm run build && npm run build:test && node --test test/*.test.mjs",
+    "coverage": "npm run build:test && c8 --include='test/build/**' --exclude='' --exclude='test/build/fake-vscode/**' --reporter=text --reporter=text-summary --check-coverage --lines 90 --functions 88 --branches 75 node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^9.5.1",
+    "@types/node": "^14.14.37",
+    "@types/vscode": "^1.52.0",
+    "c8": "^12.0.0",
+    "eslint": "^10.12.0",
+    "tsup": "^4.8.21",
+    "typescript": "^4.2.3",
+    "vscode-languageclient": "^7.0.0",
+    "vscode-languageserver": "^7.0.0",
+    "vscode-languageserver-textdocument": "^1.0.15",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2",
+    "xml-formatter": "^3.6.2"
   }
 }

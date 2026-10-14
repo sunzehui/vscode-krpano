@@ -1,6 +1,6 @@
 'use strict'
-import xmlFormat from 'xml-formatter'
 import type { xmlOptions as xmlOptionsType } from './types/options'
+import xmlFormat from 'xml-formatter'
 import { signaturesDiffer } from './shared/xml'
 
 export interface BeautifyResult {

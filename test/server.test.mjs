@@ -2,6 +2,7 @@
 // 需要先 `npm run build`(dist/lsp/server.js);未构建时跳过,便于单独跑 npm test。
 // 进程以临时目录为 cwd 启动:产物必须自包含,不依赖 node_modules。
 import assert from 'node:assert/strict'
+import { Buffer } from 'node:buffer'
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -51,7 +52,7 @@ function createClient(child) {
     }
   })
 
-  const send = (message) => {
+  function send(message) {
     const body = JSON.stringify(message)
     child.stdin.write(`Content-Length: ${Buffer.byteLength(body)}\r\n\r\n${body}`)
   }

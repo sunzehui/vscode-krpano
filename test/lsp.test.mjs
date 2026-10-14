@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
 import { createRequire } from 'node:module'
+import { test } from 'node:test'
 
 const require = createRequire(import.meta.url)
-const { getCompletions, getDefinition, getDiagnostics, getHover, krpanoElementNames } = require('./.tmp/lsp/features.js')
 const krpanoData = require('../src/lsp/krpanoData.json')
+const { getCompletions, getDefinition, getDiagnostics, getHover, krpanoElementNames } = require('./build/lsp/features.js')
 
 const messages = text => getDiagnostics(text).map(d => d.message)
-const offsetOf = (text, needle, occurrence = 1) => {
+function offsetOf(text, needle, occurrence = 1) {
   let index = -1
   for (let i = 0; i < occurrence; i++)
     index = text.indexOf(needle, index + 1)
@@ -30,7 +30,7 @@ test('诊断:标签错配与未闭合', () => {
   assert.ok(mismatch.some(m => m.includes('Closing tag </b> has no matching opening tag')), mismatch.join(' | '))
   const unclosed = messages('<krpano><hotspot name="x"></krpano>')
   assert.ok(unclosed.some(m => m.includes('Unclosed tag <hotspot>')), unclosed.join(' | '))
-  assert.ok(!unclosed.some(m => m.includes('Unclosed tag <krpano>')), 'krpano 已被正确闭合:' + unclosed.join(' | '))
+  assert.ok(!unclosed.some(m => m.includes('Unclosed tag <krpano>')), `krpano 已被正确闭合:${unclosed.join(' | ')}`)
   const orphan = messages('</foo>')
   assert.ok(orphan.some(m => m.includes('has no matching opening tag')), orphan.join(' | '))
   const eof = messages('<krpano><action name="a">')
@@ -124,11 +124,13 @@ test('跳转:从事件属性中的调用跳到 action 定义', () => {
   assert.equal(getDefinition(plain, offsetOf(plain, '"a"', 2) + 1), null)
 })
 
-const externalContext = () => ({
-  externalDefinitions: new Map([
-    ['from_include', { uri: 'file:///pano/actions.xml', range: { start: { line: 2, character: 14 }, end: { line: 2, character: 26 } } }],
-  ]),
-})
+function externalContext() {
+  return {
+    externalDefinitions: new Map([
+      ['from_include', { uri: 'file:///pano/actions.xml', range: { start: { line: 2, character: 14 }, end: { line: 2, character: 26 } } }],
+    ]),
+  }
+}
 
 test('跨文件:include 链中的动作不再报"未定义",真笔误仍报', () => {
   const text = [

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
 import { createRequire } from 'node:module'
+import { test } from 'node:test'
 
 const require = createRequire(import.meta.url)
-const { depthAt, enclosingElementNames, reindentLines } = require('./.tmp/shared/reindent.js')
+const { depthAt, enclosingElementNames, reindentLines } = require('./build/shared/reindent.js')
 
 test('选区格式化:按标签层级对齐缩进', () => {
   const text = [

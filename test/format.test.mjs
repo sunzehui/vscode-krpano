@@ -4,9 +4,10 @@ import { test } from 'node:test'
 
 const require = createRequire(import.meta.url)
 
-// 先由 `npm run test:build` 把 src 下两个纯模块编译到 test/.tmp(CJS)
-const { beautify } = require('./.tmp/beautifyHtml.js')
-const getOptionsModule = require('./.tmp/getOptions.js')
+// 先由 `npm run test:build` 把 src 下两个纯模块编译到 test/build(CJS)
+const { beautify } = require('./build/beautifyHtml.js')
+const getOptionsModule = require('./build/getOptions.js')
+
 const getOptions = getOptionsModule.default ?? getOptionsModule
 
 const base = { handleRootNode: true }

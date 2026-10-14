@@ -6,12 +6,12 @@ import { enclosingElementNames, reindentLines, selectionLineBounds } from './sha
 // krpano-xml 用于 .xml 文件;krpano 用于手动切换到脚本语言模式的场景
 const FORMATTED_LANGUAGES = ['krpano-xml', 'krpano']
 
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext): void {
   registerFormatter(context)
   startLanguageServer(context)
 }
 
-function registerFormatter(context: vscode.ExtensionContext) {
+function registerFormatter(context: vscode.ExtensionContext): void {
   const provider: vscode.DocumentFormattingEditProvider = {
     async provideDocumentFormattingEdits(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
       const fullText = document.getText()
@@ -73,13 +73,12 @@ function registerFormatter(context: vscode.ExtensionContext) {
   }
 }
 
-function startLanguageServer(context: vscode.ExtensionContext) {
+function startLanguageServer(context: vscode.ExtensionContext): void {
   try {
     // 语言客户端单独打包为 dist/lsp/client.js,在激活后再加载:语言服务不可用时
     // (依赖缺失、加载或启动失败)只记录日志,高亮与格式化照常工作。
     const clientPath = context.asAbsolutePath('dist/lsp/client.js')
-    // eslint-disable-next-line ts/no-var-requires
-    const { startLanguageClient } = require(clientPath) as typeof import('./lsp/client')
+    const { startLanguageClient } = require(clientPath) as typeof import('./lsp/client') // eslint-disable-line ts/no-require-imports -- 语言客户端需在激活后按需加载
     startLanguageClient(context)
   }
   catch (error) {
