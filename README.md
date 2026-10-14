@@ -92,6 +92,10 @@ Here is the list of native vscode settings I pass to xml formatter which control
 - **集成测试与覆盖率**：新增 `npm run test:integration`（`@vscode/test-electron` 在真实 VS Code 里跑格式化、命令与 LSP 端到端用例，CI 在 Linux 上以 xvfb 执行）；覆盖率只统计本项目代码，阈值提升到 行 90 / 分支 90 / 函数 88（当前 99% / 90% / 92%）
 - **工程质量**：`npm run typecheck` 进入 CI，并顺势修掉若干潜伏缺陷（悬停 `layer[...` 会抛异常、重命名候选可能撞名、提取 style 把无值属性写成 `name=""`、未保存文档解析 include 抛异常等）
 
+### 0.13.0（预发布）
+
+- 与 1.0.0 内容相同，先通过 Marketplace 的 pre-release 通道发布，用于验证安装与升级路径；正式版 1.0.0 随后发布
+
 ### 0.10.0
 
 - 大幅性能修复：offset→行列换算由线性扫描改为预建行索引 + 二分，大文档上的诊断与大纲不再卡顿（0.9 MB 的 tour：诊断 108 s → 0.6 s，大纲 50 s → 38 ms，200 文件的工作区索引 4.1 s → 0.39 s）

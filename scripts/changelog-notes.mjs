@@ -38,8 +38,8 @@ export function extractSubsection(changelog, version, heading) {
 
 const invokedDirectly = process.argv[1]?.endsWith('changelog-notes.mjs')
 /**
- * 取某个版本的说明:预发布版本(如 1.0.0-rc.1)没有单独段落时,
- * 退回基础版本(1.0.0)的段落,并在开头标注这是预发布。
+ * 取某个版本的说明:预发布版本没有单独段落时(如临时用 0.13.0-rc.1 这样的标识),
+ * 退回基础版本(0.13.0)的段落,并在开头标注这是预发布。
  */
 export function notesFor(changelog, version) {
   const baseVersion = version.replace(/-.*$/, '')

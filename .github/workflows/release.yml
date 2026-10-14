@@ -31,8 +31,10 @@ jobs:
               console.error('tag ' + tag + ' 与 package.json 的 ' + version + ' 不一致')
               process.exit(1)
             }
-            // 带 -rc/-beta 等后缀的版本走预发布通道
-            const prerelease = version.includes('-')
+            // Marketplace 不支持 semver 预发布后缀(-rc 等),按官方建议的奇偶规则区分:
+            // 次版本为奇数(0.13.0)按预发布发布,偶数(1.0.0)按正式版发布
+            const minor = Number(version.split('.')[1])
+            const prerelease = minor % 2 === 1
             process.stdout.write('prerelease=' + prerelease + '\n')
           " >> "$GITHUB_OUTPUT"
 
