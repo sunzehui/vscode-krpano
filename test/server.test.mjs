@@ -322,3 +322,64 @@ test('LSP server:引用、跨文件重命名、符号与快速修复', { skip: h
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+test('LSP server:同文件引用与重命名(光标在调用处也不漏定义)', { skip: hasServer ? false : 'dist/lsp/server.js 未构建,先运行 npm run build' }, async () => {
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs')
+  const dir = mkdtempSync(path.join(tmpdir(), 'krpano-same-file-'))
+  const entry = path.join(dir, 'tour.xml')
+  const lines = [
+    '<krpano>',
+    '  <action name="spin">trace(1);</action>',
+    '  <hotspot name="h1" onclick="spin();"/>',
+    '  <hotspot name="h2" onclick="spin();"/>',
+    '</krpano>',
+  ]
+  const entryText = lines.join('\n')
+  writeFileSync(entry, `${entryText}\n`)
+
+  const child = spawn(process.execPath, [SERVER, '--stdio'], { stdio: ['pipe', 'pipe', 'inherit'], cwd: tmpdir() })
+  const client = createClient(child)
+  const uri = pathToUri(entry)
+  const callSite = { line: 2, character: lines[2].indexOf('spin') + 2 }
+  const definition = { line: 1, character: lines[1].indexOf('spin') + 2 }
+  try {
+    await client.request(1, 'initialize', { processId: process.pid, rootUri: null, capabilities: { workspace: { configuration: true } } })
+    client.send({ jsonrpc: '2.0', method: 'initialized', params: {} })
+    client.send({
+      jsonrpc: '2.0',
+      method: 'textDocument/didOpen',
+      params: { textDocument: { uri, languageId: 'krpano-xml', version: 1, text: entryText } },
+    })
+
+    // 查找引用:定义 + 两处调用都要返回(同一个文件里不能只给一条)
+    const references = await client.request(2, 'textDocument/references', {
+      textDocument: { uri },
+      position: callSite,
+      context: { includeDeclaration: true },
+    })
+    assert.equal(references.result?.length, 3, `应返回定义与全部调用:${JSON.stringify(references.result)}`)
+
+    // includeDeclaration=false:只要引用,不含定义
+    const withoutDeclaration = await client.request(3, 'textDocument/references', {
+      textDocument: { uri },
+      position: definition,
+      context: { includeDeclaration: false },
+    })
+    assert.equal(withoutDeclaration.result?.length, 2, `不应包含定义:${JSON.stringify(withoutDeclaration.result)}`)
+
+    // 重命名:从调用处触发也必须改到定义,否则调用会指向不存在的动作
+    const rename = await client.request(4, 'textDocument/rename', {
+      textDocument: { uri },
+      position: callSite,
+      newName: 'spinning',
+    })
+    const edits = rename.result?.changes?.[uri] ?? []
+    assert.equal(edits.length, 3, `定义与两处调用都应被改名:${JSON.stringify(edits)}`)
+    assert.ok(edits.some(edit => edit.range.start.line === definition.line), `定义所在行应有编辑:${JSON.stringify(edits)}`)
+    assert.ok(edits.every(edit => edit.newText === 'spinning'))
+  }
+  finally {
+    child.kill()
+    rmSync(dir, { recursive: true, force: true })
+  }
+})

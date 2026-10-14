@@ -2,6 +2,20 @@
 
 All notable changes to the "krpano-lang" extension are documented in this file.
 
+## 1.0.1
+
+### Fixed
+
+- **重命名会漏掉同文件里的定义**:光标停在调用处按 `F2` 时,本文件的定义(如 `<action name="…">`)不再被漏掉——此前只重命名引用,会留下指向不存在动作的调用;`Shift+F12` 查找引用现在返回每个文件里的全部位置(此前每个文件只返回第一条),并遵循 `context.includeDeclaration`。
+- **注释与 CDATA 里的 `<action>` 被当作代码**:注释掉的旧动作不再产生"动作未定义""占位符越界"诊断;`xml.format.actionIndentation` 与 `xml.format.scriptStatements` 也不再重排注释里的内容(此前会改动注释正文)。
+- **非 krpano 的 XML 被当作 krpano 文档**:诊断与格式化先确认文件像 krpano(含 `<krpano>` 根或 `scene`、`hotspot`、`cube` 等专有元素),`pom.xml`、`AndroidManifest.xml` 之类不再出现 `Unknown krpano element`,也不会被整篇格式化或"格式化工作区所有 XML"改写;只含 `<action>` 等通用元素的片段文件把语言模式切到 `krpano` 即可参与诊断。
+- 路径含 `#` 或 `?` 时 `pathToUri` 未转义,跳转/重命名/工作区符号给出的 URI 会被当成 fragment 或查询串。
+
+### Changed
+
+- 构建脚本改为 `tsup --clean` 并去掉无用的 `--dts`:哈希 chunk 与 `.d.ts` 不再随构建累积(此前 0.12.0 的 vsix 里带了两份 228KB 的历史 chunk),`.vscodeignore` 不再包含 `sample/`。
+- 文档同步实现:`docs/development.md` 的 engines 版本、CI 步骤、node_modules 打包说明与维护待办,README 的设置表(补上 6 个设置项)、适用范围说明与 TODO。
+
 ## 0.13.0
 
 **预发布版本(pre-release)**:内容与 1.0.0 相同,已通过 Marketplace 的 pre-release 通道发布(次版本号为奇数,判定规则见 `Release` workflow),用于在正式版之前验证安装与升级路径。0.13.0 之后的 1.0.0 为正式版。

@@ -18,6 +18,7 @@ krpano-lang 是一个 VS Code 扩展，为 krpano 全景项目提供 **语法高
 - **类型**：VS Code 扩展。高亮、语言配置、片段与设置项由 `package.json` 的 `contributes` 静态声明；格式化与语言服务（LSP）需要运行时代码（`src/`，语言服务器为独立进程）。
 - **语言 ID**：`krpano-xml`（唯一认领 `.xml` 的宿主语言）、`krpano`（别名 "krpano Action Script"，脚本模式）。
 - **能力**：TextMate 语法高亮、XML 格式化（xml-formatter，含选区与忽略区）、语言服务（诊断与快速修复、补全、悬停、跨文件跳转/引用/重命名、大纲与工作区符号，含 `<include>` 链解析）、53 个代码片段、4 步欢迎引导。
-- **核心依赖**：[xml-formatter](https://github.com/chrisbottin/xml-formatter)、vscode-languageclient / vscode-languageserver（client 7.x，对应 VS Code ^1.52）；0.5.0 起全部由 tsup 打进 `dist/`，发布的 vsix 不再包含 `node_modules`。
+- **核心依赖**：[xml-formatter](https://github.com/chrisbottin/xml-formatter)、vscode-languageclient / vscode-languageserver（client 7.x，对应 VS Code ^1.63）；0.5.0 起全部由 tsup 打进 `dist/`，发布的 vsix 不再包含 `node_modules`。
+- **适用范围**：`krpano-xml` 认领 `.xml`，但诊断与格式化只对"看起来是 krpano"的文档生效（出现 `<krpano>` 根或 krpano 专有元素）；其它 XML 不会被误报或改写。只有 `<action>` 一类通用元素的片段文件可切到 `krpano` 语言模式。
 - **测试**：`npm test`（TextMate 词法断言 + 格式化/LSP/引用/快速修复纯函数断言 + 语言服务器 stdio 端到端冒烟 + 打包产物冒烟）；覆盖率见 `npm run coverage`，大文档性能基准见 `npm run bench`；CI 见 `.github/workflows/ci.yml`（ubuntu/macos/windows 矩阵）。
-- **尚未实现**：变量类型推断、`get:`/`calc:` 表达式校验；属性排版选项、krpano 脚本重排缩进与 LSP 消息本地化评估后未做（原因见 [development.md](./development.md#仓库维护待办)）。
+- **尚未实现**：变量类型推断、`get:`/`calc:` 表达式校验；语言服务器的诊断/悬停文案本地化（原因见 [development.md](./development.md#仓库维护待办)）。

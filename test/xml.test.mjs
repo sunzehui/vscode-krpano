@@ -3,7 +3,7 @@ import { createRequire } from 'node:module'
 import { test } from 'node:test'
 
 const require = createRequire(import.meta.url)
-const { scanXml, signaturesDiffer, structureSignature, offsetToPosition, tagAtOffset } = require('./build/shared/xml.js')
+const { scanXml, signaturesDiffer, structureSignature, offsetToPosition, tagAtOffset, looksLikeKrpanoXml, isSkippedOffset } = require('./build/shared/xml.js')
 
 test('扫描:标签、属性、引号内的大于号', () => {
   const text = '<hotspot name="a" onclick="if(x &gt; 1, lookto(0,0));"/>'
@@ -47,4 +47,19 @@ test('偏移量与位置换算、偏移处标签查找', () => {
   const scan = scanXml(text)
   const tag = tagAtOffset(scan, 8)
   assert.equal(tag.name, 'hotspot')
+})
+
+test('krpano 文档判定:扩展只处理 krpano 的 xml', () => {
+  assert.equal(looksLikeKrpanoXml('<krpano version="1.21"><scene name="a"/></krpano>'), true)
+  assert.equal(looksLikeKrpanoXml('<scene name="a"><hotspot name="h"/></scene>'), true, '片段文件也算')
+  assert.equal(looksLikeKrpanoXml('<project><modelVersion>4.0.0</modelVersion></project>'), false, 'pom.xml 之类不算')
+  assert.equal(looksLikeKrpanoXml('<manifest><application><activity><intent-filter><action name="a"/></intent-filter></activity></application></manifest>'), false, '只有通用元素名(action 等)不算')
+  assert.equal(looksLikeKrpanoXml(''), false)
+})
+
+test('偏移是否落在注释/CDATA 区域内', () => {
+  const text = '<krpano><!-- <action name="a">foo();</action> --><hotspot/></krpano>'
+  const { skipped } = scanXml(text)
+  assert.equal(isSkippedOffset(skipped, text.indexOf('foo')), true)
+  assert.equal(isSkippedOffset(skipped, text.indexOf('<hotspot')), false)
 })

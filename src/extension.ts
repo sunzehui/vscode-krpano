@@ -3,6 +3,7 @@ import { beautify } from './beautifyHtml'
 import getOptions from './getOptions'
 import { localeOf, messagesFor } from './lsp/messages'
 import { enclosingElementNames, reindentLines, selectionLineBounds } from './shared/reindent'
+import { looksLikeKrpanoXml } from './shared/xml'
 
 // krpano-xml 用于 .xml 文件;krpano 用于手动切换到脚本语言模式的场景
 const FORMATTED_LANGUAGES = ['krpano-xml', 'krpano']
@@ -83,6 +84,11 @@ export async function formatAllXml(): Promise<number> {
           continue
         }
         const original = document.getText()
+        // 语言由 .xml 扩展名绑定:不碰 krpano 之外的 XML(批量命令会写盘,更要收紧)
+        if (!looksLikeKrpanoXml(original)) {
+          skipped++
+          continue
+        }
         const result = beautify(original, options)
         if (result.failed || result.structureChanged || result.text === original) {
           skipped++
@@ -108,6 +114,9 @@ function registerFormatter(context: vscode.ExtensionContext): void {
   const provider: vscode.DocumentFormattingEditProvider = {
     async provideDocumentFormattingEdits(document: vscode.TextDocument, formattingOptions?: vscode.FormattingOptions): Promise<vscode.TextEdit[]> {
       const fullText = document.getText()
+      // 语言的 .xml 绑定会把别的 XML 也交给这里:只格式化 krpano 文档
+      if (!looksLikeKrpanoXml(fullText))
+        return []
       // 格式化请求自带的缩进设置优先(与其它语言的格式化器行为一致)
       const options = getOptions(vscode.workspace.getConfiguration(), formattingOptions)
       const result = beautify(fullText, options) // xml 格式化
@@ -148,6 +157,8 @@ function registerFormatter(context: vscode.ExtensionContext): void {
   const rangeProvider: vscode.DocumentRangeFormattingEditProvider = {
     provideDocumentRangeFormattingEdits(document: vscode.TextDocument, range: vscode.Range, formattingOptions?: vscode.FormattingOptions): vscode.TextEdit[] {
       const fullText = document.getText()
+      if (!looksLikeKrpanoXml(fullText))
+        return []
       const startOffset = document.offsetAt(range.start)
       const endOffset = document.offsetAt(range.end)
       const options = getOptions(vscode.workspace.getConfiguration(), formattingOptions)

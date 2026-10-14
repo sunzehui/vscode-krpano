@@ -177,6 +177,8 @@ test('分支:定义收集与 include 解析的边界', () => {
 
   // uri 转换
   assert.equal(pathToUri('/pano/a b.xml'), 'file:///pano/a%20b.xml')
+  assert.equal(pathToUri('/pano/a#b.xml'), 'file:///pano/a%23b.xml', '# 必须转义,否则会成为 fragment')
+  assert.equal(pathToUri('/pano/a?b.xml'), 'file:///pano/a%3Fb.xml', '? 必须转义,否则会成为查询串')
   assert.equal(uriToPath('file:///pano/a%20b.xml'), '/pano/a b.xml')
   assert.equal(uriToPath('file:///C:/pano/a.xml').replace(/\\/g, '/').endsWith('C:/pano/a.xml'), true)
   assert.equal(uriToPath('untitled:test'), undefined)

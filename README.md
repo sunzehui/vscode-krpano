@@ -50,23 +50,39 @@ VS Code 下的 krpano 开发插件：语法高亮、语言服务（LSP）、XML 
 | `krpano.lsp.diagnostics.enable` | `true` | 是否启用诊断；关闭后补全/悬停/跳转仍然可用 |
 | `krpano.lsp.diagnostics.undefinedActions` | `information` | "动作未定义"的提示级别：`information` / `warning` / `off`（插件或动态生成的动作可设为 `off`） |
 | `krpano.lsp.diagnostics.ignoredNames` | `[]` | 不再提示的名字（动作、元素、style、scene），用于压掉插件或动态名字的噪音 |
+| `krpano.lsp.diagnostics.unknownAttributes` | `true` | 是否提示"未在 krpano 文档中列出"的属性（`style`/`object`/`prototype` 等模板类元素自动放行） |
+| `krpano.lsp.diagnostics.versionMismatch` | `true` | 是否提示属性与 `<krpano version="...">` 声明版本不符、或可能已废弃 |
 
 ### XML 格式化（xml.format.*）
 
-Here is the list of native vscode settings I pass to xml formatter which control how your XML will be formatted. You can change any of these to configure how the XML will be formatted.
-[xml-formatter#options](https://github.com/chrisbottin/xml-formatter#options)
-```json
+格式化的全部选项（`editor.insertSpaces` / `editor.tabSize` 也参与决定缩进）：
+
+```jsonc
 {
   "editor.insertSpaces": true,
   "editor.tabSize": 4,
+  // 缩进字符串;留空则按 editor.insertSpaces/tabSize 换算
+  "xml.format.indentation": "",
+  // 内容原样保留的元素路径
   "xml.format.ignoredPaths": ["action"],
   "xml.format.collapseContent": true,
   "xml.format.lineSeparator": "\n",
   "xml.format.whiteSpaceAtEndOfSelfclosingTag": false,
   "xml.format.forceSelfClosingEmptyTag": false,
-  "xml.format.handleRootNode": true
+  // 无唯一根节点时自动包裹 <krpano>…</krpano>
+  "xml.format.handleRootNode": true,
+  // preserve / one-per-line / align(等号对齐)
+  "xml.format.attributeLayout": "preserve",
+  // 按括号层级重新缩进 <action> 正文
+  "xml.format.actionIndentation": false,
+  // 把同一行里用 ; 分隔的脚本语句拆到多行
+  "xml.format.scriptStatements": false
 }
 ```
+
+### 适用范围
+
+语言模式 `krpano-xml` 认领 `.xml` 扩展名，但**诊断与格式化只对 krpano 文档生效**：文件里必须出现 `<krpano>` 根或 krpano 专有元素（`scene`、`hotspot`、`preview`、`cube`、`depthmap`、`cssstyles`…），`pom.xml`、`AndroidManifest.xml` 之类的 XML 不会再收到 krpano 诊断，也不会被自动改写。只有 `<action>` 等通用元素的片段文件需要把语言模式切到 **krpano**（脚本模式）才会参与诊断。
 
 ## 文档
 
@@ -79,6 +95,14 @@ Here is the list of native vscode settings I pass to xml formatter which control
 - [常见问题](docs/faq.md)
 
 ## Release Notes
+
+### 1.0.1
+
+- **重命名不再漏改定义**：光标停在调用处按 `F2` 时，同一文件内的定义（如 `<action name="…">`）也会一起改名——此前只改引用，会留下指向不存在动作的调用；`Shift+F12` 查找引用现在返回每个文件里的全部位置，并遵循"包含声明"开关
+- **注释与 CDATA 里的 `<action>` 不再当作代码**：注释掉的旧动作不再产生"动作未定义""占位符越界"提示；开启 `xml.format.actionIndentation` / `scriptStatements` 时也不会再重排注释里的内容
+- **不再插手非 krpano 的 XML**：诊断与格式化先确认文件确实是 krpano 文档（含 `<krpano>` 根或 `scene`/`hotspot`/`cube` 等专有元素），`pom.xml`、`AndroidManifest.xml` 之类不再收到 `Unknown krpano element` 提示，也不会被格式化或批量改写；只有 `<action>` 等通用元素的片段文件把语言模式切到 **krpano** 即可参与诊断（详见[适用范围](#适用范围)）
+- **打包更干净**：构建改为 `--clean` 并去掉无用的 `.d.ts` 产出，历史 chunk 不再随包发布；开发样例 `sample/` 也不再进包
+- 其它：路径含 `#` / `?` 的文件在跳转、重命名与工作区符号里的 URI 转义正确
 
 ### 1.0.0
 
@@ -182,5 +206,6 @@ Here is the list of native vscode settings I pass to xml formatter which control
 
 - [ ] 变量类型推断与 `get:` / `calc:` 表达式的校验
 - [ ] 更多代码片段
+- [ ] 语言服务器的诊断/悬停文案本地化（快速修复标题与宿主提示已随显示语言切换，服务端诊断仍为英文）
 
-评估后未实现的能力（krpano 版本/废弃项感知、属性排版选项、脚本重排缩进、LSP 消息本地化）与原因见[开发文档](docs/development.md)。
+其余维护项（适用范围判定的取舍、覆盖率统计口径、集成测试未卡最低 VS Code 版本等）见[开发文档](docs/development.md#仓库维护待办)。

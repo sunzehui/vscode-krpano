@@ -1,6 +1,8 @@
 // 脚本语句级排版:把同一行里用 ";" 分隔的多条 krpano 语句拆到各自的行。
 // 只处理非 JS 的 <action> 正文(JS 交给 VS Code 的 JS 格式化),且只按语句边界拆分,
 // 不重排语句、不改动字符串与括号内的 ";"。默认关闭(xml.format.scriptStatements)。
+import { isSkippedOffset, scanXml } from './xml'
+
 export interface StatementSplitResult {
   text: string
   changed: boolean
@@ -77,11 +79,14 @@ function splitLine(line: string, indentOverride?: string): string {
   return statements.map((statement, index) => (index === 0 ? lineIndent : indent) + statement).join('\n')
 }
 
-/** 把非 JS 的 <action> 正文里同一行的多条语句拆成多行 */
+/** 把非 JS 的 <action> 正文里同一行的多条语句拆成多行(注释/CDATA 里的内容不动) */
 export function splitActionStatements(text: string, indentation = '  '): StatementSplitResult {
   const edits: Array<{ start: number, end: number, text: string }> = []
+  const skipped = scanXml(text).skipped
   const actionRe = /<action\b([^>]*)>([\s\S]*?)<\/action>/g
   for (const match of text.matchAll(actionRe)) {
+    if (isSkippedOffset(skipped, match.index!))
+      continue
     const typeMatch = /\btype\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(match[1])
     const type = (typeMatch?.[1] ?? typeMatch?.[2] ?? '').toLowerCase()
     if (type === 'javascript' || type === 'js')

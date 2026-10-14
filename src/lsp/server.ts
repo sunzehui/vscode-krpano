@@ -26,12 +26,13 @@ import {
   TextDocumentSyncKind,
   TextEdit,
 } from 'vscode-languageserver/node'
+import { looksLikeKrpanoXml } from '../shared/xml'
 import { getCodeActions } from './actions'
 import { getCompletions, getDefinition, getDiagnostics, getHover, getSignatureHelp } from './features'
 import { localeOf } from './messages'
 import { getDocumentSymbols } from './outline'
 import { collectReferences, nameAtOffset } from './references'
-import { buildIncludeIndex, contextForFile, extractIncludes, pathToUri, resolveIncludePath, uriToPath } from './symbols'
+import { buildIncludeIndex, collectDefinitions, contextForFile, extractIncludes, pathToUri, resolveIncludePath, uriToPath } from './symbols'
 import { WorkspaceIndex } from './workspace'
 
 const connection = createConnection(ProposedFeatures.all)
@@ -77,39 +78,48 @@ function getWorkspaceIndex(): WorkspaceIndex {
   return workspaceIndex
 }
 
+/** 一个文件里某个名字的定义与引用位置 */
+interface NameOccurrences {
+  uri: string
+  definitions: PlainLocation['range'][]
+  references: PlainLocation['range'][]
+}
+
 /** 名字在 当前文档 + 工作区其它文件 中的定义与引用(查找引用与重命名共用) */
-function nameLocations(document: TextDocument, target: NameAtOffset): Array<{ uri: string, ranges: PlainLocation['range'][] }> {
+function nameLocations(document: TextDocument, target: NameAtOffset): NameOccurrences[] {
+  const text = document.getText()
   const currentPath = uriToPath(document.uri)
-  const grouped = new Map<string, PlainLocation['range'][]>()
-  const push = (uri: string, ranges: PlainLocation['range'][]): void => {
-    const list = grouped.get(uri) ?? []
-    list.push(...ranges)
-    grouped.set(uri, list)
+  const grouped = new Map<string, NameOccurrences>()
+  const entryFor = (uri: string): NameOccurrences => {
+    let entry = grouped.get(uri)
+    if (!entry) {
+      entry = { uri, definitions: [], references: [] }
+      grouped.set(uri, entry)
+    }
+    return entry
   }
 
-  const currentRanges = [
-    ...(target.kind === 'definition' ? [target.range] : []),
-    ...collectReferences(document.getText())
-      .filter(reference => reference.name === target.name)
-      .map(reference => reference.range),
-  ]
-  if (currentRanges.length)
-    push(document.uri, currentRanges)
+  // 光标落在定义上时只算光标的那个定义(同名定义在别的 scene 里时不会被牵连);
+  // 落在引用上时按名字补上本文件的定义 —— 引用不记录所属容器,无法更精确地对应
+  const local = entryFor(document.uri)
+  local.definitions.push(...(target.kind === 'definition'
+    ? [target.range]
+    : collectDefinitions(text).filter(definition => definition.name === target.name).map(definition => definition.range)))
+  local.references.push(...collectReferences(text)
+    .filter(reference => reference.name === target.name)
+    .map(reference => reference.range))
 
   const index = getWorkspaceIndex()
   index.refresh(workspaceRoots)
   for (const entry of index.files()) {
     if (currentPath && entry.path === currentPath)
       continue
-    const ranges = [
-      ...entry.definitions.filter(definition => definition.name === target.name).map(definition => definition.range),
-      ...entry.references.filter(reference => reference.name === target.name).map(reference => reference.range),
-    ]
-    if (ranges.length)
-      push(entry.uri, ranges)
+    const occurrences = entryFor(entry.uri)
+    occurrences.definitions.push(...entry.definitions.filter(definition => definition.name === target.name).map(definition => definition.range))
+    occurrences.references.push(...entry.references.filter(reference => reference.name === target.name).map(reference => reference.range))
   }
 
-  return [...grouped.entries()].map(([uri, ranges]) => ({ uri, ranges }))
+  return [...grouped.values()].filter(item => item.definitions.length || item.references.length)
 }
 
 /** 把纯逻辑的快速修复翻译成 LSP 的 CodeAction */
@@ -237,7 +247,11 @@ function projectContext(document: TextDocument): ProjectContext {
 }
 
 function validate(document: TextDocument): void {
-  if (configuration.diagnostics?.enable === false) {
+  // 诊断的开关、以及"这个 .xml 是不是 krpano 文档"的前置判断:
+  // 语言由 .xml 扩展名绑定,别的 XML(pom.xml、AndroidManifest.xml 等)不应收到 krpano 诊断。
+  // 显式切到 krpano 脚本模式的文件按 krpano 处理,作为纯片段文件的出口。
+  if (configuration.diagnostics?.enable === false
+    || (document.languageId !== 'krpano' && !looksLikeKrpanoXml(document.getText()))) {
     void connection.sendDiagnostics({ uri: document.uri, diagnostics: [] })
     return
   }
@@ -339,7 +353,11 @@ connection.onReferences((params) => {
   const target = nameAtOffset(document.getText(), document.offsetAt(params.position))
   if (!target)
     return []
-  return nameLocations(document, target).map(item => ({ uri: item.uri, range: item.ranges[0] }))
+  const includeDeclaration = params.context?.includeDeclaration !== false
+  return nameLocations(document, target).flatMap((item) => {
+    const ranges = includeDeclaration ? [...item.definitions, ...item.references] : item.references
+    return ranges.map(range => ({ uri: item.uri, range }))
+  })
 })
 
 connection.onPrepareRename((params) => {
@@ -360,8 +378,11 @@ connection.onRenameRequest((params) => {
   if (!target)
     return null
   const changes: Record<string, ReturnType<typeof TextEdit.replace>[]> = {}
-  for (const item of nameLocations(document, target))
-    changes[item.uri] = item.ranges.map(range => TextEdit.replace(range, params.newName))
+  for (const item of nameLocations(document, target)) {
+    const ranges = [...item.definitions, ...item.references]
+    if (ranges.length)
+      changes[item.uri] = ranges.map(range => TextEdit.replace(range, params.newName))
+  }
   return { changes }
 })
 

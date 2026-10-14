@@ -226,7 +226,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "build": "tsup src/extension.ts src/lsp/client.ts src/lsp/server.ts --dts --external=vscode",
+    "build": "tsup src/extension.ts src/lsp/client.ts src/lsp/server.ts --clean --external=vscode",
     "dev": "npm run build -- --watch",
     "release": "npx bumpp --commit --tag --push",
     "typecheck": "tsc --noEmit",

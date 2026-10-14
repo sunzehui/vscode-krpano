@@ -10,6 +10,7 @@ test/
 krpano-upgrade-plan.html
 doc/krpano.ico
 doc/test.png
+sample/
 node_modules/
 coverage/
 src/

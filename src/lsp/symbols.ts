@@ -144,10 +144,11 @@ export function uriToPath(uri: string): string | undefined {
   return path
 }
 
-/** 文件路径 → file:// URI */
+/** 文件路径 → file:// URI(encodeURI 不会转义 `#`/`?`,不补上会让路径被当成 fragment/query) */
 export function pathToUri(path: string): string {
   const normalized = path.replace(/\\/g, '/')
-  return `file://${normalized.startsWith('/') ? '' : '/'}${encodeURI(normalized)}`
+  const encoded = encodeURI(normalized).replace(/[#?]/g, char => (char === '#' ? '%23' : '%3F'))
+  return `file://${encoded.startsWith('/') ? '' : '/'}${encoded}`
 }
 
 /** 解析一个文件(带缓存:版本未变则复用上次结果) */

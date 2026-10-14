@@ -66,6 +66,19 @@ test('诊断:未定义动作引用(本文件范围)', () => {
   assert.ok(!js.some(m => m.includes('console')), js.join(' | '))
 })
 
+test('诊断:注释与 CDATA 里的 action 不是代码', () => {
+  const commented = '<krpano>\n<!-- <action name="old">\n  commented_call(1);\n</action> -->\n<action name="run" autorun="onstart">real_call(1);</action>\n</krpano>'
+  const messages = getDiagnostics(commented).map(d => d.message)
+  assert.ok(messages.some(m => m.includes('real_call')), messages.join(' | '))
+  assert.ok(!messages.some(m => m.includes('commented_call')), `注释里的调用不应报未定义:${messages.join(' | ')}`)
+
+  const placeholder = '<krpano>\n<!-- <action name="old" args="v">%9</action> -->\n</krpano>'
+  assert.ok(!getDiagnostics(placeholder).some(d => d.message.includes('%9')), '注释里的占位符不应报越界')
+
+  const cdata = '<krpano>\n<data name="sample"><![CDATA[ <action name="x">bar();</action> ]]></data>\n</krpano>'
+  assert.ok(!getDiagnostics(cdata).some(d => d.message.includes('bar')), 'CDATA 里的内容不应被当作动作体')
+})
+
 test('补全:元素名与部分输入', () => {
   const text = '<krpan'
   const items = getCompletions(text, text.length)

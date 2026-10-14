@@ -58,7 +58,6 @@ export function collectReferences(text: string): NameReference[] {
   const lineIndex = createLineIndex(text)
   const skip: SkipRegion[] = scan.skipped.map(region => ({ start: region.start, end: region.end }))
   const references: NameReference[] = []
-  let covered = 0
 
   // 动作体范围:用于跳过 JS 动作、并作为脚本引用的扫描范围
   const scriptRanges: SkipRegion[] = []
@@ -72,9 +71,7 @@ export function collectReferences(text: string): NameReference[] {
       skip.push({ start: bodyStart, end: bodyEnd })
     else
       scriptRanges.push({ start: bodyStart, end: bodyEnd })
-    covered = Math.max(covered, bodyEnd)
   }
-  void covered
 
   const isSkipped = (offset: number): boolean => skip.some(region => offset >= region.start && offset < region.end)
 

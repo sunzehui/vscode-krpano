@@ -1,6 +1,6 @@
 // 选区格式化:按标签嵌套深度重排选中行的缩进。
 // 不做属性重排/拆行(xml-formatter 面向整篇文档),因此选区格式化只保证缩进对齐。
-import { scanXml } from './xml'
+import { isSkippedOffset, scanXml } from './xml'
 
 export interface ReindentResult {
   text: string
@@ -96,11 +96,14 @@ export function reindentLines(text: string, startOffset: number, endOffset: numb
   return { text: result, changed: result !== block }
 }
 
-/** 按括号层级重新缩进 <action> 正文(不重排语句;JS 动作不动) */
+/** 按括号层级重新缩进 <action> 正文(不重排语句;JS 动作与注释里的内容不动) */
 export function reindentActionBodies(text: string, indentation: string): string {
   const edits: Array<{ start: number, end: number, text: string }> = []
+  const skipped = scanXml(text).skipped
   const actionRe = /<action\b([^>]*)>([\s\S]*?)<\/action>/g
   for (const match of text.matchAll(actionRe)) {
+    if (isSkippedOffset(skipped, match.index!))
+      continue
     const typeMatch = /\btype\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(match[1])
     const type = (typeMatch?.[1] ?? typeMatch?.[2] ?? '').toLowerCase()
     if (type === 'javascript' || type === 'js')

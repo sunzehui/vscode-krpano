@@ -203,6 +203,10 @@ test('项6:action 正文按括号层级缩进(默认关闭)', () => {
 
   const src = '<krpano><action name="a">if(x, set(y,1));</action></krpano>'
   assert.equal(beautify(src, { ...base, actionIndentation: true }).text, beautify(src, base).text, '单行脚本不受影响')
+
+  // 注释里的 action 不是代码:整体原样保留
+  const commented = '<krpano>\n  <!-- <action name="old">\nif(x,\n1);\n</action> -->\n</krpano>'
+  assert.equal(reindentActionBodies(commented, '  '), commented, '注释里的 action 不应被重新缩进')
 })
 
 test('语句拆分:同一行的多条脚本语句拆到多行(opt-in)', async () => {
@@ -239,6 +243,11 @@ test('语句拆分:同一行的多条脚本语句拆到多行(opt-in)', async ()
   // 行内有标签(注释等)时不拆
   const commented = '<krpano>\n  <action name="a">set(a, 1); <!-- 说明 --> set(b, 2);</action>\n</krpano>'
   assert.equal(splitActionStatements(commented).changed, false)
+
+  // 注释掉的整个 action 也不拆(注释内容应保持原样)
+  const commentedAction = '<krpano>\n  <!-- <action name="old">set(a, 1); set(b, 2);</action> -->\n</krpano>'
+  assert.equal(splitActionStatements(commentedAction).changed, false)
+  assert.equal(splitActionStatements(commentedAction).text, commentedAction)
 
   void text
 })

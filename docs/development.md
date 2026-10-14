@@ -3,19 +3,19 @@
 ## 环境准备
 
 - **Node.js**：建议 22 及以上（构建用 tsup；lint 的 eslint-plugin-unicorn 74 用到 ES2025 的 `Set.prototype.union`，Node 20 会报 `mapTypes.union is not a function`）。CI 同样使用 Node 22。
-- **包管理器**：仓库含有 `pnpm-lock.yaml`，格式为 `lockfileVersion: '6.0'`（pnpm 8 生成）。**用更新版本的 pnpm（9+）直接 `pnpm install` 会报 `ERR_PNPM_LOCKFILE_BREAKING_CHANGE`**，可用 `npx pnpm@8 install --frozen-lockfile` 安装，或自行决定是否用 `--force` 重建锁文件（会产生锁文件改动）。`package.json` 中的脚本写作 `npm run …`，用 npm 同样可以。
-- **VS Code**：`engines.vscode` 为 `^1.52.0`。
+- **包管理器**：以 **npm** 为准（CI 用 `npm ci --legacy-peer-deps`，`package-lock.json` 是唯一有效的锁文件）。`pnpm-lock.yaml` 是早期遗留（`lockfileVersion: '6.0'`，需 pnpm 8；用 pnpm 9+ 会报 `ERR_PNPM_LOCKFILE_BREAKING_CHANGE`），不再随 CI 更新，建议下次维护时删除。
+- **VS Code**：`engines.vscode` 为 `^1.63.0`（Marketplace 只对 `>= 1.63` 的扩展开放预发布通道；代码本身没有用到更新的 API）。
 
 ```bash
-pnpm install        # 安装依赖
+npm install        # 安装依赖
 ```
 
 ## 常用命令
 
 | 命令 | 作用 |
 | --- | --- |
-| `pnpm build`（或 `npm run build`） | 用 tsup 构建一次，输出 `dist/extension.js`（含 dts，`vscode` 为 external） |
-| `pnpm dev`（或 `npm run dev`） | watch 模式，源文件变更时自动重建，供 F5 调试使用 |
+| `npm run build` | 用 tsup 构建一次（`--clean`，先清空 `dist`），输出 `dist/extension.js`、`dist/lsp/server.js`、`dist/lsp/client.js`；`vscode` 为 external，其余依赖都打进产物 |
+| `npm run dev` | watch 模式（同样带 `--clean`），源文件变更时自动重建，供 F5 调试使用 |
 | `npm run bench` | 生成合成大文档跑语言服务关键路径(含预算断言;CI 也会跑) |
 | `npm run lint` / `npm run lint:fix` | ESLint 9 + @antfu/eslint-config 9(flat config);CI 会跑 `npm run lint` |
 | `npm run typecheck` | `tsc --noEmit` 全量类型检查（CI 会跑） |
@@ -47,12 +47,17 @@ pnpm install        # 安装依赖
 npm ci --legacy-peer-deps      # 打包依赖收集需要 npm 形态的 node_modules
 npm run build                  # 先生成 dist(含 dist/lsp/server.js,server 冒烟测试需要)
 npm run lint
+npm run typecheck
 npm test
-npm run coverage               # 纯逻辑模块覆盖率(带阈值:行 90 / 分支 90 / 函数 88)
+npm run coverage               # 纯逻辑模块覆盖率(带阈值:行 90 / 分支 90 / 函数 88;仅在 Linux 卡阈值)
 xvfb-run -a npm run test:integration   # 仅 Linux:真实 VS Code 集成测试(下载的 VS Code 会缓存)
 npm run bench                  # 性能基准(合成 0.9MB 文档 + 200 文件索引)
 npx @vscode/vsce package --out krpano-lang.vsix
-unzip -l krpano-lang.vsix | grep -q 'extension/node_modules/xml-formatter/'   # 回归检查:运行时依赖必须进包
+# 回归检查:产物自包含(dist 三个入口在包里,且不应有 node_modules——依赖已打进 dist)
+unzip -l krpano-lang.vsix | grep -q 'extension/dist/extension.js'
+unzip -l krpano-lang.vsix | grep -q 'extension/dist/lsp/server.js'
+unzip -l krpano-lang.vsix | grep -q 'extension/dist/lsp/client.js'
+! unzip -l krpano-lang.vsix | grep -q 'extension/node_modules/'
 ```
 
 最后把 vsix 作为构建产物上传（Actions 页面可下载）。推 tag 时 `Release` workflow 会另外创建 GitHub Release 并附上 vsix。CI 跑在 ubuntu / macos / windows 三平台矩阵上；另有 `CodeQL` 静态分析与 `Dependabot` 依赖更新。
@@ -77,7 +82,13 @@ npx @vscode/vsce publish
 
 版本号流程：`npm run release`（bumpp）会更新 `package.json` 版本、打 tag 并推送。发布前请确认目标版本高于 Marketplace 上的现有版本（本仓库首次修复发布时为 0.1.0 → 0.3.0），并保持 tag 与 `package.json` 一致。
 
-`.vscodeignore` 控制哪些文件不进包：`src/`、`.vscode/`、`test/`、配置文件与 `docs/` 等被排除。**注意不要排除 `node_modules/`**：扩展运行时需要 `xml-formatter`，语言客户端需要 `vscode-languageclient`（tsup 把 `dependencies` 视为 external），vsce 会自动只把生产依赖树打包进去；一旦把 `node_modules/` 加进 `.vscodeignore`，打出的 vsix 缺失依赖，安装后格式化与语言服务都会失效（发布前用 `unzip -l xxx.vsix | grep xml-formatter` 可快速自检）。`dist/`（含 `dist/lsp/server.js` 语言服务器与 `dist/lsp/client.js` 客户端入口）、`snippets/`、`syntaxes/`、`language-configuration.json`、`doc/krpano.ico`（扩展图标）会进入 vsix。
+`.vscodeignore` 控制哪些文件不进包：`src/`、`.vscode/`、`test/`、`sample/`、`scripts/`、`docs/` 与各类配置文件都会被排除。**`node_modules/` 必须排除**：`package.json` 没有 `dependencies`（全部依赖由 tsup 打进 `dist`），CI 也会断言包里没有 `extension/node_modules/`。`dist/`（含 `dist/lsp/server.js` 语言服务器与 `dist/lsp/client.js` 客户端入口）、`snippets/`、`syntaxes/`、`language-configuration.json`、`package.nls*.json`、`media/`、`doc/icon.png` 会进入 vsix。因为 tsup 的 chunk 名带哈希，构建脚本必须保持 `--clean`，否则历史 chunk 会一直留在 `dist` 里并随包发布（发布前可用 `npx @vscode/vsce ls` 核对清单）。
+
+## 适用范围（哪些 .xml 会被处理）
+
+语言 `krpano-xml` 绑定在 `.xml` 扩展名上，所以每个 XML 文件都会进入本扩展；诊断与格式化会先用 `looksLikeKrpanoXml()`（`src/shared/xml.ts`，判据是出现 `<krpano>` 根或 krpano 专有元素）确认"这确实是 krpano 文档"，否则不报诊断、不格式化（`pom.xml`、`AndroidManifest.xml` 之类因此不再被误报或改写）。
+
+只有 `<action>` 等通用元素的片段文件不会通过这个判定；需要诊断时把该文件的语言模式切到 **krpano**（脚本模式，`krpano` 语言 id 始终按 krpano 处理）。改动这条规则时，`test/xml.test.mjs` 与 `test/artifact.test.mjs` 里都有对应断言。
 
 ## 改动指南
 
@@ -93,6 +104,8 @@ npx @vscode/vsce publish
 | 语法 scope 断言 / 格式化断言 / LSP 断言 | `test/grammar.test.mjs`、`test/format.test.mjs`、`test/lsp.test.mjs`、`test/xml.test.mjs`（改行为时同步补用例） |
 | 打包产物行为断言 | `test/artifact.test.mjs`（假 vscode API 加载 `dist/extension.js`）、`test/server.test.mjs`（语言服务器进程） |
 | 语言服务能力（诊断/补全/悬停/跳转） | `src/lsp/features.ts`（纯函数）；服务器接线在 `src/lsp/server.ts` |
+| krpano 文档判定（哪些 .xml 会被诊断/格式化） | `src/shared/xml.ts` 的 `looksLikeKrpanoXml()`；入口在 `src/lsp/server.ts` 的 `validate()` 与 `src/extension.ts` |
+| 查找引用 / 重命名（跨文件、同文件定义） | `src/lsp/server.ts` 的 `nameLocations()`（把定义与引用分开收集，再由 references/rename 各自取用） |
 | include 链解析与符号索引 | `src/lsp/symbols.ts`（纯逻辑，文件读取注入；断言见 `test/includes.test.mjs`） |
 | 引用解析 / 重命名 / 括号索引 | `src/lsp/references.ts`（纯逻辑；断言见 `test/references.test.mjs`） |
 | 快速修复（Code Actions） | `src/lsp/actions.ts`（纯逻辑；断言见 `test/actions.test.mjs`） |
@@ -113,8 +126,10 @@ npx @vscode/vsce publish
 - include 索引在每次校验时重建（磁盘文件有 mtime 缓存与按文件版本增量解析、校验有 250ms 去抖；offset→行列位置已改为行索引 + 二分）。
 - 覆盖率只统计 `src/` 纯逻辑模块（扩展宿主与语言服务器进程内的代码由冒烟测试覆盖，不计入百分比）；测试构建产物在 `test/build/`（V8 覆盖率不采集 `test/` 下的文件）。
 - 变量类型推断、`get:`/`calc:` 表达式校验未做：属性值的 `calc:`/`get:`/`link:` 前缀与 `%s` 占位符只在 `<action>` 标签的属性里着色，其它标签由内置 XML 语法处理（避免自研标签解析带来的回归）。
-- 未实现（评估后放弃或不划算）：krpano 脚本**语句**重排（只做了缩进）、语言服务器的诊断/悬停文案本地化（扩展宿主提示已按显示语言切换，服务端仍是英文）、真实 VS Code 集成测试（`@vscode/test-electron`，CI 成本与稳定性待评估）。
+- 未做：语言服务器的诊断/悬停文案本地化（快速修复标题与扩展宿主提示已按显示语言切换，服务端诊断仍是英文）。
+- `looksLikeKrpanoXml()` 是"通用元素名不算"的白名单：只含 `<action>` / `<style>` 一类通用元素的片段文件不参与诊断与格式化（出口是把语言模式切到 `krpano`，见上文"适用范围"）。若要放宽，注意别让 `AndroidManifest.xml` 之类重新被误报。
 - 版本感知基于 v1.21–v1.24 四份官方文档的差分：声明更早/更晚版本的文件才会得到提示；如需更细粒度，把更多版本页放进 `/tmp` 并扩展 `DOC_VERSIONS`。
 - `krpano` 模式（脚本-only）未内嵌 XML 标签处理（原因见 [syntax-highlighting.md](./syntax-highlighting.md#现状说明030)）；XML 文档统一用 `krpano-xml`。
 - 元素/属性数据来自官方文档的抽取脚本，只在升级 krpano 版本后需要重跑（页面需先 `curl` 到本地，见脚本头部注释）。
-- `krpano.lsp.*` 之类的开关设置尚未提供：语言服务总是启用，启动失败只记录日志。
+- 诊断开关见 `krpano.lsp.diagnostics.*`（`enable` 关闭全部诊断）；语言服务本身不可关闭，启动失败只记录日志并提示（高亮与格式化不受影响）。
+- 真实 VS Code 集成测试（`npm run test:integration`）下载的是**当前最新** VS Code，声明的最低版本（`engines.vscode`）没有被验证；要卡最低版本可把版本号传给 `downloadAndUnzipVSCode`。

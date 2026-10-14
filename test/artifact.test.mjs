@@ -162,12 +162,23 @@ test(
     assert.ok(confirmed[0].text.includes('</a>'), '格式化结果应包含修复后的闭合标签')
 
     vscode.state.messages.length = 0
-    const failed = await provider.provideDocumentFormattingEdits(document('hello world'))
+    const failed = await provider.provideDocumentFormattingEdits(document('<krpano><view/></krpano>garbage'))
     assert.equal(failed.length, 0, '解析失败时不应修改文档')
     assert.ok(
       vscode.state.messages.some(m => m.msg.includes('formatting failed')),
       '解析失败应给出警告',
     )
+
+    // 语言由 .xml 扩展名绑定:非 krpano 的 XML(pom.xml 等)既不格式化也不提示
+    vscode.state.messages.length = 0
+    const pom = '<project>\n    <modelVersion>4.0.0</modelVersion>\n</project>'
+    assert.deepEqual(await provider.provideDocumentFormattingEdits(document(pom)), [], '非 krpano 文档不应被整篇格式化')
+    assert.deepEqual(
+      vscode.state.rangeProviders['krpano-xml'].provideDocumentRangeFormattingEdits(document(pom), new vscode.Range({ line: 0, character: 0 }, { line: 2, character: 0 })),
+      [],
+      '非 krpano 文档的选区格式化也应跳过',
+    )
+    assert.equal(vscode.state.messages.length, 0, '跳过非 krpano 文档时不应打扰用户')
   },
 )
 
@@ -231,12 +242,17 @@ test(
     assert.equal(await vscode.state.commands['krpano.formatAllXml'](), 0)
     assert.ok(vscode.state.messages.some(m => m.msg.includes('no XML files')), JSON.stringify(vscode.state.messages))
 
-    // 两个文件:一个可格式化、一个结构会变(跳过)
+    // 四个文件:一个可格式化、一个结构会变(跳过)、一个不是 krpano(跳过)、一个打不开(跳过)
     vscode.state.messages.length = 0
     vscode.state.config = { editor: { tabSize: 2, insertSpaces: true }, xml: { format: {} } }
     const messy = '<krpano><view/><hotspot name="a"/></krpano>'
     const broken = '<krpano><a></b></krpano>'
-    vscode.state.xmlFiles = [{ fsPath: '/pano/messy.xml' }, { fsPath: '/pano/broken.xml' }, { fsPath: '/pano/missing.xml' }]
+    vscode.state.xmlFiles = [
+      { fsPath: '/pano/messy.xml' },
+      { fsPath: '/pano/broken.xml' },
+      { fsPath: '/pano/pom.xml' },
+      { fsPath: '/pano/missing.xml' },
+    ]
     vscode.state.documents = {
       '/pano/messy.xml': {
         getText: () => messy,
@@ -248,13 +264,18 @@ test(
         positionAt: offset => offset,
         save: () => Promise.resolve(true),
       },
+      '/pano/pom.xml': {
+        getText: () => '<project>\n    <modelVersion>4.0.0</modelVersion>\n</project>',
+        positionAt: offset => offset,
+        save: () => Promise.resolve(true),
+      },
     }
     const formattedCount = await vscode.state.commands['krpano.formatAllXml']()
-    assert.equal(formattedCount, 1, '只有结构不变的文件会被改写')
+    assert.equal(formattedCount, 1, '只有 krpano 且结构不变的文件会被改写')
     assert.equal(vscode.state.appliedEdits.length, 1)
     assert.ok(vscode.state.appliedEdits[0][0].text.includes('\n  <view/>'), vscode.state.appliedEdits[0][0].text)
     assert.ok(
-      vscode.state.messages.some(m => m.msg.includes('formatted 1 file(s), skipped 2')),
+      vscode.state.messages.some(m => m.msg.includes('formatted 1 file(s), skipped 3')),
       JSON.stringify(vscode.state.messages.map(m => m.msg)),
     )
   },

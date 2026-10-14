@@ -229,6 +229,39 @@ export function signaturesDiffer(a: string, b: string): boolean {
   return false
 }
 
+/**
+ * krpano 专有元素:用于判断一个 `.xml` 是不是 krpano 文档。
+ *  只收别的 XML 词汇表基本不会出现的名字(`action`、`style`、`image`、`view` 等通用名不算,
+ *  否则 AndroidManifest.xml 之类会被当成 krpano)。
+ */
+const KRPANO_ONLY_ELEMENTS = new Set([
+  'krpano',
+  'scene',
+  'hotspot',
+  'preview',
+  'cubestrip',
+  'cube',
+  'depthmap',
+  'textstyle',
+  'cssstyles',
+  'autorotate',
+  'splats',
+])
+
+/**
+ * 文本是否像 krpano 文档(出现 krpano 根元素或 krpano 专有元素)。
+ *  扩展把语言绑定在 `.xml` 扩展名上,诊断与格式化据此避开其它 XML 词汇表;
+ *  只有 `<action>` 一类通用元素的片段文件可把语言模式切到 krpano。
+ */
+export function looksLikeKrpanoXml(text: string): boolean {
+  return scanXml(text).tags.some(tag => KRPANO_ONLY_ELEMENTS.has(tag.name.toLowerCase()))
+}
+
+/** 偏移是否落在注释 / CDATA / 处理指令等非标签区域内 */
+export function isSkippedOffset(skipped: XmlDocumentScan['skipped'], offset: number): boolean {
+  return skipped.some(region => offset >= region.start && offset < region.end)
+}
+
 export interface XmlPosition {
   line: number
   character: number

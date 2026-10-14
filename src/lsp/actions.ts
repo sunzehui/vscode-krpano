@@ -179,13 +179,13 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
 
   // 4) 重复的 name → 改名(光标落在该定义的标签内即可)
   for (const duplicate of findDuplicateDefinitions(text)) {
+    // 定义标签:name 属性的位置与诊断报告的位置一致
     const definitionTag = scan.tags.find((item) => {
       const nameAttr = item.attributes.find(attr => attr.name.toLowerCase() === 'name')
-      return nameAttr?.valueStart === `${duplicate.range.start.line}:${duplicate.range.start.character}`.length - 1 + (nameAttr?.valueStart ?? -1)
-        ? true
-        : nameAttr?.value === duplicate.name && nameAttr.valueStart !== undefined
-          && offsetToPosition(text, nameAttr.valueStart).line === duplicate.range.start.line
-          && offsetToPosition(text, nameAttr.valueStart).character === duplicate.range.start.character
+      if (nameAttr?.value !== duplicate.name || nameAttr.valueStart === undefined)
+        return false
+      const position = offsetToPosition(text, nameAttr.valueStart)
+      return position.line === duplicate.range.start.line && position.character === duplicate.range.start.character
     })
     const withinDefinition = !!definitionTag && offset >= definitionTag.start && offset <= definitionTag.end
     if (!withinDefinition && !inRange(text, duplicate.range, offset))
@@ -251,7 +251,6 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
       const styleLine = `\t<style name="${styleName}" ${styleAttributes}/>\n`
       const insertAt = insertBeforeClosingRoot(text)
       const remainingNames = tag.attributes.filter(attr => !extractable.includes(attr))
-      const tagPrefix = text.slice(tag.start, tag.attributes[0].nameStart)
       // 保留属性原文:无值属性(如开关属性)不能被重写成 name=""
       const rendered = remainingNames
         .map(attr => text.slice(attr.nameStart, attr.valueEnd !== undefined ? attr.valueEnd + (attr.quote ? 1 : 0) : attr.nameEnd))
@@ -270,7 +269,6 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
           }],
         },
       })
-      void tagPrefix
     }
   }
 

@@ -1,7 +1,7 @@
 import type { XmlTag } from '../shared/xml'
 import type { SymbolDefinition } from './symbols'
 import type { DiagnosticSettings, ExternalDefinition, PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
-import { attributeAtOffset, createLineIndex, offsetToPosition, scanXml, tagAtOffset } from '../shared/xml'
+import { attributeAtOffset, createLineIndex, isSkippedOffset, offsetToPosition, scanXml, tagAtOffset } from '../shared/xml'
 // krpano XML 语言特性实现(纯函数,不依赖 vscode / vscode-languageserver,便于单元测试)。
 import krpanoData from './krpanoData.json'
 import { attributeEnums, attributeValueHints, docForAttribute, docForElement } from './krpanoDocs'
@@ -236,9 +236,11 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
     }
   }
 
-  // <action> 体内的调用(krpano 脚本动作;跳过 JS 动作)
+  // <action> 体内的调用(krpano 脚本动作;跳过 JS 动作与注释/CDATA 里的内容)
   const actionBodyRe = /<action\b([^>]*)>([\s\S]*?)<\/action>/g
   for (const m of text.matchAll(actionBodyRe)) {
+    if (isSkippedOffset(scan.skipped, m.index!))
+      continue
     const attrText = m[1]
     const typeMatch = /\btype\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(attrText)
     const type = (typeMatch?.[1] ?? typeMatch?.[2] ?? '').toLowerCase()
@@ -353,9 +355,11 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
     })
   }
 
-  // 10) %N 占位符超过 action 声明的参数个数
+  // 10) %N 占位符超过 action 声明的参数个数(同样跳过注释/CDATA 里的内容)
   const placeholderRe = /<action\b([^>]*)>([\s\S]*?)<\/action>/g
   for (const match of text.matchAll(placeholderRe)) {
+    if (isSkippedOffset(scan.skipped, match.index!))
+      continue
     const argsMatch = /\bargs\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(match[1])
     const declared = (argsMatch?.[1] ?? argsMatch?.[2])
     if (declared === undefined)
