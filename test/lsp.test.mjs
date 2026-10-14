@@ -251,3 +251,26 @@ test('设置:undefinedActions 级别与 ignoredNames', () => {
   const defaults = getDiagnostics(text)
   assert.ok(defaults.some(d => d.severity === 'information' && d.message.includes('missing_one')), '默认级别为 information')
 })
+
+test('诊断+补全:方括号索引', () => {
+  const text = '<krpano>\n  <action name="a" autorun="onstart">layer[ghost].visible = false;</action>\n  <layer name="info"/>\n</krpano>'
+  const diagnostics = getDiagnostics(text)
+  assert.ok(
+    diagnostics.some(d => d.message.includes('layer "ghost" is not defined')),
+    diagnostics.map(d => `${d.severity}:${d.message}`).join(' | '),
+  )
+  assert.ok(!diagnostics.some(d => d.message.includes('"info"')), '已定义的 layer 不应报')
+
+  const completionText = '<krpano>\n  <layer name="info"/>\n  <action name="a" autorun="onstart">layer['
+  const items = getCompletions(completionText, completionText.length)
+  assert.deepEqual(items.map(i => i.label), ['info'], items.map(i => i.label).join(',') || '(无候选)')
+  const insideBracket = getCompletions(`${completionText}in`, completionText.length + 2)
+  assert.deepEqual(insideBracket.map(i => i.label), ['info'], '应支持前缀过滤')
+})
+
+test('诊断:action 上的 lang 属性提示改为官方写法', () => {
+  const text = '<krpano>\n  <action name="a" lang="ts">trace(1);</action>\n</krpano>'
+  const diagnostics = getDiagnostics(text)
+  assert.ok(diagnostics.some(d => d.message.includes('does not support a "lang" attribute')), diagnostics.map(d => d.message).join(' | '))
+  assert.equal(diagnostics.find(d => d.message.includes('lang'))?.severity, 'information')
+})

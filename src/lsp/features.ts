@@ -5,6 +5,7 @@ import { attributeAtOffset, offsetToPosition, scanXml, tagAtOffset } from '../sh
 // krpano XML 语言特性实现(纯函数,不依赖 vscode / vscode-languageserver,便于单元测试)。
 import krpanoData from './krpanoData.json'
 import { docForAttribute, docForElement } from './krpanoDocs'
+import { collectReferences, findUnknownIndexes, indexContextAt } from './references'
 import { collectDefinitions } from './symbols'
 
 export type { DiagnosticSettings, PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
@@ -152,10 +153,13 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
   const definitions = collectDefinitions(text)
   const declared = new Set(definitions.map(definition => definition.name))
   const external: Map<string, ExternalDefinition> = context.externalDefinitions ?? new Map()
+  const isKnownName = (name: string): boolean =>
+    declared.has(name) || external.has(name) || builtins.has(name) || name in elements
+
   const reportReference = (name: string, start: number, end: number): void => {
     if (undefinedActions === 'off' || ignoredNames.has(name))
       return
-    if (declared.has(name) || external.has(name) || builtins.has(name) || name in elements)
+    if (isKnownName(name))
       return
     diagnostics.push({
       message: `Action "${name}" is not defined in this file or in the files it includes (it may be provided by a plugin).`,
@@ -248,7 +252,38 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
     }
   }
 
-  // 7) include 目标不存在(相对当前文件解析;krpano 同样会因此报错)
+  // 7) 方括号索引引用了不存在的名字(layer[ghost])
+  const knownIndexTarget = (element: string, name: string): boolean =>
+    isKnownName(name)
+    || definitions.some(definition => definition.element === element && definition.name === name)
+    || [...external.entries()].some(([key, value]) => key === name && (value.element === undefined || value.element === element))
+  for (const reference of findUnknownIndexes(text, knownIndexTarget)) {
+    if (undefinedActions === 'off' || ignoredNames.has(reference.name))
+      continue
+    diagnostics.push({
+      message: `${reference.element} "${reference.name}" is not defined in this file or in the files it includes.`,
+      severity: 'information',
+      range: reference.range,
+      source: SOURCE,
+    })
+  }
+
+  // 8) action 上的 lang 属性(krpano 不支持,官方写法是 type="Javascript"/"js")
+  for (const tag of scan.tags) {
+    if (tag.name.toLowerCase() !== 'action')
+      continue
+    const langAttr = tag.attributes.find(attr => attr.name.toLowerCase() === 'lang')
+    if (langAttr && langAttr.value !== undefined && langAttr.valueStart !== undefined && langAttr.valueEnd !== undefined) {
+      diagnostics.push({
+        message: `krpano does not support a "lang" attribute; use type="Javascript" (or type="js") for JavaScript actions.`,
+        severity: 'information',
+        range: rangeOf(text, langAttr.nameStart, langAttr.valueEnd),
+        source: SOURCE,
+      })
+    }
+  }
+
+  // 9) include 目标不存在(相对当前文件解析;krpano 同样会因此报错)
   for (const item of context.unresolvedIncludes ?? []) {
     diagnostics.push({
       message: `Included file "${item.url}" was not found (include paths are resolved relative to this file).`,
@@ -284,6 +319,28 @@ function wordBefore(text: string, offset: number): string {
 export function getCompletions(text: string, offset: number, context: ProjectContext = {}): PlainCompletion[] {
   const scan = scanXml(text)
   const tag = tagAtOffset(scan, offset)
+
+  const indexContext = indexContextAt(text, offset)
+  if (indexContext) {
+    const names = new Set<string>()
+    for (const definition of collectDefinitions(text)) {
+      if (definition.element === indexContext.element)
+        names.add(definition.name)
+    }
+    for (const [name, definition] of (context.externalDefinitions ?? new Map<string, ExternalDefinition>())) {
+      if (definition.element === undefined || definition.element === indexContext.element)
+        names.add(name)
+    }
+    const items = [...names].sort().filter(candidate => candidate.startsWith(indexContext.prefix)).map(candidate => ({
+      label: candidate,
+      kind: 'value' as const,
+      detail: `krpano ${indexContext.element} name`,
+      documentation: `Name of a ${indexContext.element} defined in this file or in the files it includes.`,
+      insertText: candidate,
+    }))
+    if (items.length)
+      return items
+  }
 
   /** 本文件 + include 链中某一类元素定义的名字 */
   const namesOfElement = (element: string): string[] => {
@@ -325,6 +382,7 @@ export function getCompletions(text: string, offset: number, context: ProjectCon
     return elementCompletions(prefix)
   }
 
+  // 方括号索引:layer[hs1 处补全热点名
   const attr = attributeAtOffset(tag, offset)
   if (attr) {
     // 属性值内部:只对 action 的 type 给出取值建议
@@ -422,6 +480,29 @@ export function getHover(text: string, offset: number): PlainHover | null {
     }
   }
 
+  // 方括号索引:layer[hs1 处补全热点名
+  const indexContext = indexContextAt(text, offset)
+  if (indexContext) {
+    const names = new Set<string>()
+    for (const definition of collectDefinitions(text)) {
+      if (definition.element === indexContext.element)
+        names.add(definition.name)
+    }
+    for (const [name, definition] of (context.externalDefinitions ?? new Map<string, ExternalDefinition>())) {
+      if (definition.element === undefined || definition.element === indexContext.element)
+        names.add(name)
+    }
+    const items = [...names].sort().filter(candidate => candidate.startsWith(indexContext.prefix)).map(candidate => ({
+      label: candidate,
+      kind: 'value' as const,
+      detail: `krpano ${indexContext.element} name`,
+      documentation: `Name of a ${indexContext.element} defined in this file or in the files it includes.`,
+      insertText: candidate,
+    }))
+    if (items.length)
+      return items
+  }
+
   const attr = attributeAtOffset(tag, offset)
   if (attr) {
     const doc = docForAttribute(name, attr.name.toLowerCase())
@@ -469,6 +550,56 @@ export function getDefinition(text: string, offset: number, context: ProjectCont
 
   // include 链中的定义(跨文件跳转)
   return external.get(word) ?? null
+}
+
+export interface DuplicateDefinition {
+  name: string
+  element: string
+  range: PlainRange
+  firstLine: number
+}
+
+/** 同一容器内重复的 name 定义(供诊断与快速修复共用) */
+export function findDuplicateDefinitions(text: string): DuplicateDefinition[] {
+  const seen = new Map<string, SymbolDefinition>()
+  const duplicates: DuplicateDefinition[] = []
+  for (const definition of collectDefinitions(text)) {
+    const key = `${definition.container ?? ''}|${definition.element}|${definition.name}`
+    const first = seen.get(key)
+    if (first) {
+      duplicates.push({
+        name: definition.name,
+        element: definition.element,
+        range: definition.range,
+        firstLine: first.range.start.line,
+      })
+      continue
+    }
+    seen.set(key, definition)
+  }
+  return duplicates
+}
+
+export interface UndefinedReference {
+  name: string
+  range: PlainRange
+  /** 引用形式(用于生成不同的修复) */
+  form: 'index' | 'attribute' | 'call' | 'argument'
+}
+
+/** 引用了但本文件与 include 链都没有定义的名字(供诊断与快速修复共用) */
+export function findUndefinedReferences(text: string, context: ProjectContext = {}): UndefinedReference[] {
+  const declared = new Set(collectDefinitions(text).map(definition => definition.name))
+  const external = context.externalDefinitions ?? new Map()
+  const result: UndefinedReference[] = []
+  for (const reference of collectReferences(text)) {
+    if (reference.form === 'index')
+      continue // 索引引用由 index 校验负责
+    if (declared.has(reference.name) || external.has(reference.name) || builtins.has(reference.name) || reference.name in elements)
+      continue
+    result.push({ name: reference.name, range: reference.range, form: reference.form })
+  }
+  return result
 }
 
 export const krpanoElementNames = elementNames

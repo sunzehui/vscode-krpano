@@ -226,3 +226,86 @@ test('LSP server:krpano.lsp.diagnostics.enable=false 时不报诊断', { skip: h
     child.kill()
   }
 })
+
+test('LSP server:引用、跨文件重命名、符号与快速修复', { skip: hasServer ? false : 'dist/lsp/server.js 未构建,先运行 npm run build' }, async () => {
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs')
+  const dir = mkdtempSync(path.join(tmpdir(), 'krpano-refs-'))
+  const entry = path.join(dir, 'tour.xml')
+  const actions = path.join(dir, 'actions.xml')
+  writeFileSync(actions, '<krpano>\n  <action name="helper_action">\n    trace(1);\n  </action>\n</krpano>\n')
+  const entryText = [
+    '<krpano>',
+    '  <include url="actions.xml"/>',
+    '  <action name="startup" autorun="onstart" lang="ts">',
+    '    helper_action(1);',
+    '  </action>',
+    '  <layer name="info"/>',
+    '  <action name="use_layer" autorun="onstart">layer[info].visible = true;</action>',
+    '</krpano>',
+  ].join('\n')
+  writeFileSync(entry, `${entryText}\n`)
+
+  const child = spawn(process.execPath, [SERVER, '--stdio'], { stdio: ['pipe', 'pipe', 'inherit'], cwd: tmpdir() })
+  const client = createClient(child)
+  const uri = `file://${entry}`
+  const position = (line, character) => ({ line, character })
+  try {
+    await client.request(1, 'initialize', {
+      processId: process.pid,
+      rootUri: `file://${dir}`,
+      workspaceFolders: [{ uri: `file://${dir}`, name: 'ws' }],
+      capabilities: { workspace: { configuration: true } },
+    })
+    client.send({ jsonrpc: '2.0', method: 'initialized', params: {} })
+    client.send({
+      jsonrpc: '2.0',
+      method: 'textDocument/didOpen',
+      params: { textDocument: { uri, languageId: 'krpano-xml', version: 1, text: entryText } },
+    })
+
+    // 查找引用:helper_action 的调用处 + actions.xml 里的定义
+    const references = await client.request(2, 'textDocument/references', {
+      textDocument: { uri },
+      position: position(3, 6),
+      context: { includeDeclaration: true },
+    })
+    const referenceLocations = references.result ?? []
+    assert.ok(referenceLocations.some(item => item.uri === `file://${actions}`), `应包含 actions.xml 中的定义:${JSON.stringify(referenceLocations)}`)
+    assert.ok(referenceLocations.some(item => item.uri === uri), '应包含本文件的调用处')
+
+    // 重命名:同时改本文件调用处与 include 文件里的定义
+    const rename = await client.request(3, 'textDocument/rename', {
+      textDocument: { uri },
+      position: position(3, 6),
+      newName: 'renamed_helper',
+    })
+    const changes = rename.result?.changes ?? {}
+    assert.ok(changes[uri]?.length >= 1, `本文件应有编辑:${JSON.stringify(changes)}`)
+    assert.ok(changes[`file://${actions}`]?.length === 1, `include 文件应有定义改动:${JSON.stringify(changes)}`)
+    assert.equal(changes[`file://${actions}`][0].newText, 'renamed_helper')
+
+    // 文档大纲:只包含本文档的元素(include 文件里的定义不算)
+    const documentSymbols = await client.request(4, 'textDocument/documentSymbol', { textDocument: { uri } })
+    const names = JSON.stringify(documentSymbols.result ?? [])
+    assert.ok(names.includes('startup') && names.includes('info') && names.includes('use_layer'), names)
+    assert.ok(!names.includes('helper_action'), `include 文件里的动作不应出现在本文档大纲:${names}`)
+
+    // 工作区符号:能搜到 include 文件里的动作
+    const workspaceSymbols = await client.request(6, 'workspace/symbol', { query: 'helper' })
+    const workspaceUris = (workspaceSymbols.result ?? []).map(item => item.location?.uri)
+    assert.ok(workspaceUris.includes(`file://${actions}`), `工作区符号应包含 actions.xml:${JSON.stringify(workspaceSymbols.result)}`)
+
+    // 快速修复:lang="ts" → type="Javascript"
+    const action = await client.request(5, 'textDocument/codeAction', {
+      textDocument: { uri },
+      range: { start: position(2, 30), end: position(2, 39) },
+      context: { diagnostics: [] },
+    })
+    const titles = (action.result ?? []).map(item => item.title)
+    assert.ok(titles.some(title => title.includes('type="Javascript"')), `应提供 lang 修复:${JSON.stringify(titles)}`)
+  }
+  finally {
+    child.kill()
+    rmSync(dir, { recursive: true, force: true })
+  }
+})

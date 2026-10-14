@@ -1,21 +1,36 @@
+import type { DocumentSymbol } from 'vscode-languageserver/node'
+import type { PlainCodeAction } from './actions'
+import type { OutlineSymbol } from './outline'
+import type { NameAtOffset } from './references'
 import type { FileContent, ParseCache } from './symbols'
-import type { DiagnosticSettings, ProjectContext } from './types'
+import type { DiagnosticSettings, PlainLocation, ProjectContext } from './types'
 // krpano XML 语言服务器(LSP):诊断、补全、悬停、跳转。
 // 作为独立进程由 vscode-languageclient 以 IPC 传输启动(见 client.ts)。
 import { readFileSync, statSync } from 'node:fs'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import {
+  CodeAction,
   CompletionItemKind,
   createConnection,
+  CreateFile,
   DiagnosticSeverity,
   InsertTextFormat,
   MarkupKind,
+  Position,
   ProposedFeatures,
+  SymbolInformation,
+  SymbolKind,
+  TextDocumentEdit,
   TextDocuments,
   TextDocumentSyncKind,
+  TextEdit,
 } from 'vscode-languageserver/node'
+import { getCodeActions } from './actions'
 import { getCompletions, getDefinition, getDiagnostics, getHover } from './features'
-import { buildIncludeIndex, contextForFile, uriToPath } from './symbols'
+import { getDocumentSymbols } from './outline'
+import { collectReferences, nameAtOffset } from './references'
+import { buildIncludeIndex, contextForFile, pathToUri, resolveIncludePath, uriToPath } from './symbols'
+import { WorkspaceIndex } from './workspace'
 
 const connection = createConnection(ProposedFeatures.all)
 const documents = new TextDocuments(TextDocument)
@@ -25,6 +40,104 @@ const fileCache = new Map<string, { mtimeMs: number, size: number, text: string 
 
 /** 按文件版本复用的解析缓存:文件没变就不会重新解析 */
 const parseCache: ParseCache = new Map()
+
+const SYMBOL_KINDS: Record<OutlineSymbol['kind'], SymbolKind> = {
+  file: SymbolKind.File,
+  module: SymbolKind.Module,
+  namespace: SymbolKind.Namespace,
+  class: SymbolKind.Class,
+  method: SymbolKind.Method,
+  property: SymbolKind.Property,
+  field: SymbolKind.Field,
+  object: SymbolKind.Object,
+}
+
+/** 文档大纲 → LSP DocumentSymbol */
+function toSymbolInformation(symbol: OutlineSymbol): DocumentSymbol {
+  return {
+    name: symbol.name,
+    detail: symbol.detail,
+    kind: SYMBOL_KINDS[symbol.kind],
+    range: symbol.range,
+    selectionRange: symbol.selectionRange,
+    children: symbol.children.length ? symbol.children.map(toSymbolInformation) : undefined,
+  }
+}
+
+/** 工作区根目录(来自 initialize 的 workspaceFolders) */
+let workspaceRoots: string[] = []
+let workspaceIndex: WorkspaceIndex | undefined
+
+function getWorkspaceIndex(): WorkspaceIndex {
+  workspaceIndex ??= new WorkspaceIndex(readFileCached)
+  return workspaceIndex
+}
+
+/** 名字在 当前文档 + 工作区其它文件 中的定义与引用(查找引用与重命名共用) */
+function nameLocations(document: TextDocument, target: NameAtOffset): Array<{ uri: string, ranges: PlainLocation['range'][] }> {
+  const currentPath = uriToPath(document.uri)
+  const grouped = new Map<string, PlainLocation['range'][]>()
+  const push = (uri: string, ranges: PlainLocation['range'][]): void => {
+    const list = grouped.get(uri) ?? []
+    list.push(...ranges)
+    grouped.set(uri, list)
+  }
+
+  const currentRanges = [
+    ...(target.kind === 'definition' ? [target.range] : []),
+    ...collectReferences(document.getText())
+      .filter(reference => reference.name === target.name)
+      .map(reference => reference.range),
+  ]
+  if (currentRanges.length)
+    push(document.uri, currentRanges)
+
+  const index = getWorkspaceIndex()
+  index.refresh(workspaceRoots)
+  for (const entry of index.files()) {
+    if (currentPath && entry.path === currentPath)
+      continue
+    const ranges = [
+      ...entry.definitions.filter(definition => definition.name === target.name).map(definition => definition.range),
+      ...entry.references.filter(reference => reference.name === target.name).map(reference => reference.range),
+    ]
+    if (ranges.length)
+      push(entry.uri, ranges)
+  }
+
+  return [...grouped.entries()].map(([uri, ranges]) => ({ uri, ranges }))
+}
+
+/** 把纯逻辑的快速修复翻译成 LSP 的 CodeAction */
+function toCodeActions(document: TextDocument, actions: PlainCodeAction[]): CodeAction[] {
+  const currentPath = uriToPath(document.uri)
+  const result: CodeAction[] = []
+  for (const action of actions) {
+    const documentChanges: Array<TextDocumentEdit | CreateFile> = []
+    for (const change of action.edit.changes) {
+      if (!change.edits.length)
+        continue
+      documentChanges.push(TextDocumentEdit.create(
+        { uri: document.uri, version: document.version },
+        change.edits.map(edit => TextEdit.replace(edit.range, edit.newText)),
+      ))
+    }
+    if (action.edit.createFile) {
+      const target = currentPath ? resolveIncludePath(currentPath, action.edit.createFile.url) : undefined
+      if (target) {
+        const uri = pathToUri(target)
+        documentChanges.unshift(CreateFile.create(uri))
+        documentChanges.push(TextDocumentEdit.create(
+          { uri, version: null },
+          [TextEdit.insert(Position.create(0, 0), action.edit.createFile.content)],
+        ))
+      }
+    }
+    if (documentChanges.length)
+      result.push(CodeAction.create(action.title, { documentChanges }))
+  }
+  return result
+}
 
 /** krpano.lsp.* 设置(初始化与配置变化时刷新) */
 interface LspConfiguration {
@@ -121,7 +234,10 @@ function validateAll(): void {
     validate(document)
 }
 
-connection.onInitialize(async () => {
+connection.onInitialize(async (params) => {
+  workspaceRoots = (params.workspaceFolders ?? [])
+    .map(folder => uriToPath(folder.uri))
+    .filter((value): value is string => !!value)
   void refreshSettings()
   return {
     capabilities: {
@@ -137,7 +253,10 @@ connection.onDidChangeConfiguration(() => {
   void refreshSettings()
 })
 
-documents.onDidChangeContent(() => {
+documents.onDidChangeContent((change) => {
+  const changedPath = uriToPath(change.document.uri)
+  if (changedPath)
+    workspaceIndex?.invalidate(changedPath)
   scheduleValidateAll()
 })
 
@@ -147,6 +266,7 @@ documents.onDidClose((event) => {
 
 // 磁盘上的 xml 变化(例如编辑了 include 的动作文件)也要刷新诊断
 connection.onDidChangeWatchedFiles(() => {
+  workspaceIndex = undefined
   scheduleValidateAll()
 })
 
@@ -175,6 +295,76 @@ connection.onHover((params) => {
   if (!hover)
     return null
   return { contents: { kind: MarkupKind.Markdown, value: hover.contents }, range: hover.range }
+})
+
+connection.onReferences((params) => {
+  const document = documents.get(params.textDocument.uri)
+  if (!document)
+    return []
+  const target = nameAtOffset(document.getText(), document.offsetAt(params.position))
+  if (!target)
+    return []
+  return nameLocations(document, target).map(item => ({ uri: item.uri, range: item.ranges[0] }))
+})
+
+connection.onPrepareRename((params) => {
+  const document = documents.get(params.textDocument.uri)
+  if (!document)
+    return null
+  const target = nameAtOffset(document.getText(), document.offsetAt(params.position))
+  if (!target)
+    return null
+  return { range: target.range, placeholder: target.name }
+})
+
+connection.onRenameRequest((params) => {
+  const document = documents.get(params.textDocument.uri)
+  if (!document)
+    return null
+  const target = nameAtOffset(document.getText(), document.offsetAt(params.position))
+  if (!target)
+    return null
+  const changes: Record<string, ReturnType<typeof TextEdit.replace>[]> = {}
+  for (const item of nameLocations(document, target))
+    changes[item.uri] = item.ranges.map(range => TextEdit.replace(range, params.newName))
+  return { changes }
+})
+
+connection.onDocumentSymbol((params) => {
+  const document = documents.get(params.textDocument.uri)
+  if (!document)
+    return []
+  return getDocumentSymbols(document.getText()).map(toSymbolInformation)
+})
+
+connection.onWorkspaceSymbol((params) => {
+  const index = getWorkspaceIndex()
+  index.refresh(workspaceRoots)
+  const query = (params.query ?? '').toLowerCase()
+  const symbols: SymbolInformation[] = []
+  for (const entry of index.files()) {
+    for (const definition of entry.definitions) {
+      if (query && !definition.name.toLowerCase().includes(query))
+        continue
+      symbols.push(SymbolInformation.create(definition.name, SymbolKind.Variable, definition.range, entry.uri, definition.element))
+      if (symbols.length >= 500)
+        return symbols
+    }
+  }
+  return symbols
+})
+
+connection.onCodeAction((params) => {
+  const document = documents.get(params.textDocument.uri)
+  if (!document)
+    return []
+  const context = projectContext(document)
+  const text = document.getText()
+  const actions = getCodeActions(text, params.range, {
+    ...context,
+    unresolvedIncludes: context.unresolvedIncludes,
+  })
+  return toCodeActions(document, actions)
 })
 
 connection.onDefinition((params) => {
