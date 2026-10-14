@@ -7,12 +7,12 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # 创建 GitHub Release
     env:
       # 在仓库 Settings → Secrets and variables → Actions 添加 VSCE_PAT(Marketplace → Manage 权限)
-      # 未配置时只打包并上传 vsix,不发布
+      # 未配置时只打包 + 建 GitHub Release,不发 Marketplace
       VSCE_PAT: ${{ secrets.VSCE_PAT }}
-      # 可选:在 open-vsx.org 建 token 后 gh secret set OVSX_PAT,即可同步发布到 Open VSX(Cursor/VSCodium)
-      OVSX_PAT: ${{ secrets.OVSX_PAT }}
     steps:
       - uses: actions/checkout@v7
 
@@ -48,13 +48,23 @@ jobs:
         if: env.VSCE_PAT != ''
         run: npx --yes @vscode/vsce publish --packagePath krpano-lang.vsix
 
-      - name: Publish to Open VSX
-        if: env.OVSX_PAT != ''
-        run: npx --yes ovsx publish krpano-lang.vsix -p "$OVSX_PAT"
-
       - name: Notice when VSCE_PAT is missing
         if: env.VSCE_PAT == ''
-        run: echo "::notice::未配置 VSCE_PAT secret,已跳过发布;配置命令:gh secret set VSCE_PAT"
+        run: echo "::notice::未配置 VSCE_PAT secret,已跳过 Marketplace 发布;配置命令:gh secret set VSCE_PAT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/changelog-notes.mjs > notes.md
+          title="krpano-lang ${GITHUB_REF_NAME#v}"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            # 重新推送同一个 tag 时:更新说明并覆盖附件
+            gh release edit "$GITHUB_REF_NAME" --title "$title" --notes-file notes.md
+            gh release upload "$GITHUB_REF_NAME" krpano-lang.vsix --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" krpano-lang.vsix --title "$title" --notes-file notes.md
+          fi
 
       - uses: actions/upload-artifact@v7
         with:

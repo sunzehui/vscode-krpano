@@ -2,6 +2,12 @@
 
 All notable changes to the "krpano-lang" extension are documented in this file.
 
+## 0.10.1
+
+### Changed
+
+- Publishing: dropped the Open VSX step and instead create a GitHub Release for every version tag, with the release notes taken from this changelog and the packaged `.vsix` attached (`scripts/changelog-notes.mjs` extracts the section).
+
 ## 0.10.0
 
 ### Fixed

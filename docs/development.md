@@ -52,7 +52,7 @@ npx @vscode/vsce package --out krpano-lang.vsix
 unzip -l krpano-lang.vsix | grep -q 'extension/node_modules/xml-formatter/'   # 回归检查:运行时依赖必须进包
 ```
 
-最后把 vsix 作为构建产物上传（Actions 页面可下载）。CI 跑在 ubuntu / macos / windows 三平台矩阵上；另有 `CodeQL` 静态分析与 `Dependabot` 依赖更新。
+最后把 vsix 作为构建产物上传（Actions 页面可下载）。推 tag 时 `Release` workflow 会另外创建 GitHub Release 并附上 vsix。CI 跑在 ubuntu / macos / windows 三平台矩阵上；另有 `CodeQL` 静态分析与 `Dependabot` 依赖更新。
 
 ## 打包与发布
 
@@ -66,7 +66,9 @@ npx @vscode/vsce package          # 生成 krpano-lang-<version>.vsix
 npx @vscode/vsce publish
 ```
 
-预发布：`Pre-Release` workflow（手动触发，需输入 `publish` 确认）以 `--pre-release` 上传，用户需显式选择加入；Open VSX（Cursor/VSCodium）在配置 `OVSX_PAT` 后由 Release workflow 同步发布。
+发布产物：每次推 `v*` tag，Release workflow 会跑 lint/测试/打包，然后 **创建 GitHub Release**（说明文字取 `CHANGELOG.md` 对应版本段落，由 `scripts/changelog-notes.mjs` 抽取，并把 `krpano-lang.vsix` 作为附件挂上），配置了 `VSCE_PAT` 时再发布到 Marketplace。重新推同一个 tag 会更新说明并覆盖附件，不会失败。
+
+预发布：`Pre-Release` workflow（手动触发，需输入 `publish` 确认）以 `--pre-release` 上传到 Marketplace，用户需显式选择加入。（Open VSX 不再发布：注册流程繁琐，改用 GitHub Release 提供 vsix。）
 
 发布自动化：`.github/workflows/release.yml` 在推送 `v*` tag 时校验 tag 与 `package.json` 版本一致、跑测试、打包并发布到 Marketplace（读 `VSCE_PAT` secret；未配置时只打包上传 vsix）。配置命令：`gh secret set VSCE_PAT`。手动发布仍可用 `npx @vscode/vsce publish --packagePath krpano-lang-<version>.vsix`。
 

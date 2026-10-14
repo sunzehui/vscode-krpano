@@ -1,14 +1,32 @@
-## Features
+# krpano-lang
 
-krpano action high-light code, use textMate syntaxes.
+[![CI](https://github.com/sunzehui/vscode-krpano/actions/workflows/ci.yml/badge.svg)](https://github.com/sunzehui/vscode-krpano/actions/workflows/ci.yml)
+[![Marketplace](https://img.shields.io/visual-studio-marketplace/v/sunzehui.krpano-lang)](https://marketplace.visualstudio.com/items?itemName=sunzehui.krpano-lang)
 
-krpano 语法高亮插件，使用 textMate 语法。
+krpano syntax highlighting, language server, XML formatting and snippets for Visual Studio Code.
+
+VS Code 下的 krpano 开发插件：语法高亮、语言服务（LSP）、XML 格式化与代码片段。
+
 ![test](https://github.com/sunzehui/vscode-krpano/blob/master/doc/test.png?raw=true)
 
-- **语法高亮**:krpano XML、action 脚本(含 `type="Javascript"` 的 JS action)、`<data>` 里的 JSON、`<cssstyles>` 里的 CSS
-- **语言服务(LSP)**:补全与悬停说明、诊断、跨文件跳转/**重命名(F2)**/查找引用、文档大纲与工作区符号(Ctrl+T)、一键快速修复
-- **XML 格式化**:`Shift+Alt+F` 整篇格式化(可用 `<!-- krpano-lang-format: off/on -->` 保护区域),或选中一段后 `Ctrl+K Ctrl+F` 只对齐缩进
-- **代码片段**:53 个常用写法片段(action、标签结构、image/scene/tour 等)
+## 功能
+
+- **语法高亮**：krpano XML、action 脚本（含 `type="Javascript"` 的 JS action）、`<data>` 里的 JSON、`<cssstyles>` 里的 CSS
+- **语言服务（LSP）**：
+  - 补全：元素与属性（插入 `ath="$1"` 形式）、`style=` / `linkedscene=` 取值、事件属性里的动作名、`layer[…]` 括号索引、`layer[info].` 后面的属性、`loadscene(` 等名字参数
+  - 诊断与快速修复：标签未闭合/错配、未知元素、未定义的动作与引用、重名 `name`、`%N` 占位符越界；常见问题一键修复
+  - 导航与重构：悬停说明、`F12` 跳转、`Shift+F12` 查引用、`F2` 重命名，都能跨 `<include>` 的文件
+  - 大纲与工作区符号：Outline 按 scene 树展示结构，`Ctrl+T` 搜索整个工作区的动作与场景
+- **XML 格式化**：`Shift+Alt+F` 整篇格式化（用 `<!-- krpano-lang-format: off -->` … `on` 保护区域），或选中一段后 `Ctrl+K Ctrl+F` 只对齐缩进
+- **代码片段**：53 个常用写法片段（action、标签结构、image/scene/tour 等）
+- 安装后欢迎页提供 4 步引导（打开、诊断、导航、格式化）
+
+## 安装
+
+- **Marketplace**：扩展面板搜索 `krpano-lang`，或[在线安装](https://marketplace.visualstudio.com/items?itemName=sunzehui.krpano-lang)
+- **离线/手动安装**：执行 `npx @vscode/vsce package` 自行打包，或从 CI 构建产物（Actions 页面）下载 `.vsix`，再在扩展面板 `…` → **Install from VSIX** 安装
+
+`.xml` 文件自动使用 **krpano-xml** 语言模式；单独编辑 krpano 脚本时可用 **krpano**（别名 "krpano Action Script"）模式，它是纯脚本模式、不含 XML 标签处理。
 
 推荐配合 auto-close-tag 插件使用，可以自动补全标签。
 需要在 settings.json 中添加如下配置，以支持krpano：
@@ -21,7 +39,18 @@ krpano 语法高亮插件，使用 textMate 语法。
   ]
 }
 ```
-### XML Formatter Settings
+
+## 设置
+
+### 语言服务（krpano.lsp.*）
+
+| 设置 | 默认值 | 说明 |
+| --- | --- | --- |
+| `krpano.lsp.diagnostics.enable` | `true` | 是否启用诊断；关闭后补全/悬停/跳转仍然可用 |
+| `krpano.lsp.diagnostics.undefinedActions` | `information` | "动作未定义"的提示级别：`information` / `warning` / `off`（插件或动态生成的动作可设为 `off`） |
+| `krpano.lsp.diagnostics.ignoredNames` | `[]` | 不再提示的名字（动作、元素、style、scene），用于压掉插件或动态名字的噪音 |
+
+### XML 格式化（xml.format.*）
 
 Here is the list of native vscode settings I pass to xml formatter which control how your XML will be formatted. You can change any of these to configure how the XML will be formatted.
 [xml-formatter#options](https://github.com/chrisbottin/xml-formatter#options)
@@ -49,6 +78,27 @@ Here is the list of native vscode settings I pass to xml formatter which control
 - [常见问题](docs/faq.md)
 
 ## Release Notes
+
+### 0.10.0
+
+- 大幅性能修复：offset→行列换算由线性扫描改为预建行索引 + 二分，大文档上的诊断与大纲不再卡顿（0.9 MB 的 tour：诊断 108 s → 0.6 s，大纲 50 s → 38 ms，200 文件的工作区索引 4.1 s → 0.39 s）
+- 名字参数补全与校验：`loadscene(`、`loadstyle(`、`removehotspot(`、`callwith(caller, …)` 等补全当前文件与 include 里定义的名字，指向不存在的名字会给出提示
+- `layer[info].` 后面的属性补全（858 个属性）；`%N` 占位符超出 `args` 声明数量时按信息级提示
+- 格式化忽略区：`<!-- krpano-lang-format: off -->` … `on` 之间的内容逐字保留，可跨多个元素
+- 安装后提供 4 步欢迎引导（打开、诊断、导航、格式化）
+- 工程：`npm run bench` 性能基准（含预算断言）进入 CI；CI 覆盖 ubuntu / macos / windows 三平台，加入 Dependabot、CodeQL 与手动预发布（Pre-Release）workflow
+
+### 0.9.0
+
+- **引用与重命名**：查找所有引用（`Shift+F12`）与 `F2` 重命名可跨文件（include 文件中的定义与引用一并更新）；识别 `layer[info]` 索引、`style="…"` / `linkedscene="…"` 取值、`action_name(…)` 调用与 `loadscene(scene1)` 之类的名字参数
+- **括号索引补全与校验**：`layer[`、`hotspot[`、`scene[` 等补全已定义的名字，指向未知名字会给出提示（`layer[get(x)]` 这类动态索引不处理）
+- **快速修复**：未知元素 → 改成最接近的元素（开闭标签同步）、`lang="ts"` → `type="Javascript"`、未定义动作调用 → 创建 `<action>` 骨架、重名 `name` → 加后缀重命名、`<include>` 目标缺失 → 创建文件
+- **文档大纲与工作区符号**：Outline 按 scene 树展示场景/动作/热点/图层/样式等结构，`Ctrl+T` 搜索整个工作区的动作与场景
+- 工作区索引改为惰性扫描（60 秒 TTL，上限 2000 文件 / 单文件 2 MB），文档或文件变化时失效重建
+
+### 0.8.1
+
+- 修正 0.8.0 说明中的 ESLint 版本号（实际为 9）
 
 ### 0.8.0
 
@@ -113,5 +163,7 @@ Here is the list of native vscode settings I pass to xml formatter which control
 
 ## TODO
 
-- [ ] LSP support
-- [ ] more snippets
+- [ ] 变量类型推断与 `get:` / `calc:` 表达式的校验
+- [ ] 更多代码片段
+
+评估后未实现的能力（krpano 版本/废弃项感知、属性排版选项、脚本重排缩进、LSP 消息本地化）与原因见[开发文档](docs/development.md)。

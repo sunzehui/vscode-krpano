@@ -1,6 +1,6 @@
 # krpano-lang 项目文档
 
-krpano-lang 是一个 VS Code 扩展，为 krpano 全景项目提供 **语法高亮**、**XML 格式化** 和 **代码片段**。本目录是项目的开发文档；面向使用者的功能介绍与安装说明见仓库根目录的 [README](../README.md)。
+krpano-lang 是一个 VS Code 扩展，为 krpano 全景项目提供 **语法高亮**、**语言服务（LSP）**、**XML 格式化** 和 **代码片段**。本目录是项目的开发文档；面向使用者的功能介绍与安装说明见仓库根目录的 [README](../README.md)。
 
 ## 文档索引
 
@@ -15,9 +15,9 @@ krpano-lang 是一个 VS Code 扩展，为 krpano 全景项目提供 **语法高
 
 ## 项目速览
 
-- **类型**：VS Code 扩展。高亮、语言配置、片段由 `package.json` 的 `contributes` 静态声明；格式化与语言服务（LSP）需要运行时代码（`src/`，语言服务器为独立进程）。
+- **类型**：VS Code 扩展。高亮、语言配置、片段与设置项由 `package.json` 的 `contributes` 静态声明；格式化与语言服务（LSP）需要运行时代码（`src/`，语言服务器为独立进程）。
 - **语言 ID**：`krpano-xml`（唯一认领 `.xml` 的宿主语言）、`krpano`（别名 "krpano Action Script"，脚本模式）。
-- **能力**：TextMate 语法高亮、XML 格式化（xml-formatter）、语言服务（诊断/补全/悬停/跨文件跳转，含 `<include>` 链解析）、53 个代码片段。
+- **能力**：TextMate 语法高亮、XML 格式化（xml-formatter，含选区与忽略区）、语言服务（诊断与快速修复、补全、悬停、跨文件跳转/引用/重命名、大纲与工作区符号，含 `<include>` 链解析）、53 个代码片段、4 步欢迎引导。
 - **核心依赖**：[xml-formatter](https://github.com/chrisbottin/xml-formatter)、vscode-languageclient / vscode-languageserver（client 7.x，对应 VS Code ^1.52）；0.5.0 起全部由 tsup 打进 `dist/`，发布的 vsix 不再包含 `node_modules`。
-- **测试**：`npm test`（TextMate 词法断言 + 格式化/LSP 纯函数断言 + 语言服务器 stdio 端到端冒烟）；CI 见 `.github/workflows/ci.yml`。
-- **尚未实现**：变量类型推断、`get:`/`calc:` 表达式校验、include 索引的增量更新。
+- **测试**：`npm test`（TextMate 词法断言 + 格式化/LSP/引用/快速修复纯函数断言 + 语言服务器 stdio 端到端冒烟 + 打包产物冒烟）；覆盖率见 `npm run coverage`，大文档性能基准见 `npm run bench`；CI 见 `.github/workflows/ci.yml`（ubuntu/macos/windows 矩阵）。
+- **尚未实现**：变量类型推断、`get:`/`calc:` 表达式校验；属性排版选项、krpano 脚本重排缩进与 LSP 消息本地化评估后未做（原因见 [development.md](./development.md#仓库维护待办)）。
