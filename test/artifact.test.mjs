@@ -11,7 +11,7 @@ const EXTENSION = path.resolve('dist/extension.js')
 const FAKE_DIR = path.resolve('test/.tmp/fake-vscode')
 const FAKE_MODULE = path.join(FAKE_DIR, 'index.js')
 
-const FAKE_SOURCE = `const state = { registered: {}, messages: [], config: null, modalAnswer: undefined }
+const FAKE_SOURCE = `const state = { registered: {}, rangeProviders: {}, messages: [], config: null, modalAnswer: undefined }
 class Range { constructor(start, end) { this.start = start; this.end = end } }
 module.exports = {
   state,
@@ -20,6 +20,10 @@ module.exports = {
   languages: {
     registerDocumentFormattingEditProvider: (language, provider) => {
       state.registered[language] = provider
+      return { dispose() {} }
+    },
+    registerDocumentRangeFormattingEditProvider: (language, provider) => {
+      state.rangeProviders[language] = provider
       return { dispose() {} }
     },
   },

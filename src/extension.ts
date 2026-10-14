@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import { beautify } from './beautifyHtml'
 import getOptions from './getOptions'
+import { enclosingElementNames, reindentLines, selectionLineBounds } from './shared/reindent'
 
 // krpano-xml 用于 .xml 文件;krpano 用于手动切换到脚本语言模式的场景
 const FORMATTED_LANGUAGES = ['krpano-xml', 'krpano']
@@ -18,7 +19,8 @@ function registerFormatter(context: vscode.ExtensionContext) {
       const result = beautify(fullText, options) // xml 格式化
 
       if (result.failed) {
-        vscode.window.showWarningMessage('krpano: formatting failed - the document could not be parsed as XML, content kept unchanged.')
+        const detail = result.reason ? ` (${result.reason})` : ''
+        vscode.window.showWarningMessage(`krpano: formatting failed${detail} - content kept unchanged.`)
         return []
       }
       if (result.text === fullText)
@@ -44,8 +46,31 @@ function registerFormatter(context: vscode.ExtensionContext) {
     },
   }
 
-  for (const language of FORMATTED_LANGUAGES)
+  // 选区格式化:只按标签层级对齐缩进(不重排属性、不拆行),落在 xml.format.ignoredPaths 内的选区不动
+  const rangeProvider: vscode.DocumentRangeFormattingEditProvider = {
+    provideDocumentRangeFormattingEdits(document: vscode.TextDocument, range: vscode.Range): vscode.TextEdit[] {
+      const fullText = document.getText()
+      const startOffset = document.offsetAt(range.start)
+      const endOffset = document.offsetAt(range.end)
+      const options = getOptions(vscode.workspace.getConfiguration())
+      const ignored = options.ignoredPaths ?? []
+      if (ignored.length && enclosingElementNames(fullText, startOffset).some(name => ignored.includes(name)))
+        return []
+
+      const indentation = options.indentation || '  '
+      const result = reindentLines(fullText, startOffset, endOffset, indentation)
+      if (!result.changed)
+        return []
+
+      const bounds = selectionLineBounds(fullText, startOffset, endOffset)
+      return [vscode.TextEdit.replace(new vscode.Range(document.positionAt(bounds.start), document.positionAt(bounds.end)), result.text)]
+    },
+  }
+
+  for (const language of FORMATTED_LANGUAGES) {
     context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(language, provider))
+    context.subscriptions.push(vscode.languages.registerDocumentRangeFormattingEditProvider(language, rangeProvider))
+  }
 }
 
 function startLanguageServer(context: vscode.ExtensionContext) {

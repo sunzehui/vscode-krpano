@@ -38,10 +38,11 @@ test('C3: 空文档/纯空白为 no-op,不报失败', () => {
   assert.equal(r.text, '   \n\n')
 })
 
-test('C3: 无法解析为 XML 时返回原文并标记 failed', () => {
+test('C3: 无法解析为 XML 时返回原文、标记 failed 并给出原因', () => {
   const r = beautify('hello world', base)
   assert.equal(r.failed, true)
   assert.equal(r.text, 'hello world')
+  assert.ok(typeof r.reason === 'string' && r.reason.length > 0, `应带上解析失败原因:${JSON.stringify(r)}`)
 })
 
 test('C3: 合法文档正常格式化且不报失败', () => {

@@ -6,6 +6,8 @@ import { signaturesDiffer } from './shared/xml'
 export interface BeautifyResult {
   text: string
   failed: boolean
+  /** 解析失败的原因(来自 xml-formatter),用于提示用户 */
+  reason?: string
   /** 格式化改变了标签结构(未闭合/错配标签被容错修复),调用方应提示用户 */
   structureChanged?: boolean
 }
@@ -46,6 +48,10 @@ export function beautify(originalText: string, xmlOptions: xmlOptionsType): Beau
         // 补根后仍无法解析,按失败处理
       }
     }
-    return { text: originalText, failed: true }
+    return {
+      text: originalText,
+      failed: true,
+      reason: typeof e?.message === 'string' ? e.message : undefined,
+    }
   }
 }

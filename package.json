@@ -2,7 +2,7 @@
   "name": "krpano-lang",
   "displayName": "krpano-lang",
   "description": "a krpano high-light plugin",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "main": "./dist/extension.js",
   "repository": {
     "type": "git",
@@ -13,7 +13,7 @@
     "build": "tsup src/extension.ts src/lsp/client.ts src/lsp/server.ts --dts --external=vscode",
     "dev": "npm run build -- --watch",
     "release": "npx bumpp --commit --tag --push",
-    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/symbols.ts src/shared/xml.ts --format=cjs --out-dir=test/.tmp --clean",
+    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/symbols.ts src/shared/xml.ts src/shared/reindent.ts --format=cjs --out-dir=test/.tmp --clean",
     "test": "npm run build && npm run build:test && node --test test/*.test.mjs"
   },
   "devDependencies": {
