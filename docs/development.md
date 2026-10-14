@@ -84,6 +84,9 @@ npx @vscode/vsce publish
 | 打包产物行为断言 | `test/artifact.test.mjs`（假 vscode API 加载 `dist/extension.js`）、`test/server.test.mjs`（语言服务器进程） |
 | 语言服务能力（诊断/补全/悬停/跳转） | `src/lsp/features.ts`（纯函数）；服务器接线在 `src/lsp/server.ts` |
 | include 链解析与符号索引 | `src/lsp/symbols.ts`（纯逻辑，文件读取注入；断言见 `test/includes.test.mjs`） |
+| 引用解析 / 重命名 / 括号索引 | `src/lsp/references.ts`（纯逻辑；断言见 `test/references.test.mjs`） |
+| 快速修复（Code Actions） | `src/lsp/actions.ts`（纯逻辑；断言见 `test/actions.test.mjs`） |
+| 文档大纲 / 工作区索引 | `src/lsp/outline.ts`、`src/lsp/workspace.ts`（工作区扫描上限 2000 文件、60 秒 TTL） |
 | 元素/属性/内建 action 数据 | `scripts/gen-krpano-data.mjs` → `src/lsp/krpanoData.json`（XML Reference 抽取属性；Actions 文档补内建 action；升级 krpano 版本后重跑） |
 | 悬停说明文字 | `src/lsp/krpanoDocs.ts`（手写，不复用官方文档原文） |
 | 扩展贡献点（语言、语法、设置、激活事件、图标） | `package.json` 的 `contributes` 与 `main` |

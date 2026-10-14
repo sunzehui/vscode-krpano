@@ -6,7 +6,7 @@ krpano 语法高亮插件，使用 textMate 语法。
 ![test](https://github.com/sunzehui/vscode-krpano/blob/master/doc/test.png?raw=true)
 
 - **语法高亮**:krpano XML、action 脚本(含 `type="Javascript"` 的 JS action)、`<data>` 里的 JSON、`<cssstyles>` 里的 CSS
-- **语言服务(LSP)**:元素/属性补全与悬停说明、标签配对与未知元素诊断、从 `action_name(...)` 跳转到定义(可跨 `<include>` 的文件)
+- **语言服务(LSP)**:补全与悬停说明、诊断、跨文件跳转/**重命名(F2)**/查找引用、文档大纲与工作区符号(Ctrl+T)、一键快速修复
 - **XML 格式化**:`Shift+Alt+F` 整篇格式化,或选中一段后 `Ctrl+K Ctrl+F` 只对齐缩进
 - **代码片段**:53 个常用写法片段(action、标签结构、image/scene/tour 等)
 

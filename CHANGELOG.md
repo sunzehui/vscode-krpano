@@ -2,6 +2,20 @@
 
 All notable changes to the "krpano-lang" extension are documented in this file.
 
+## 0.9.0
+
+### Added
+
+- References and rename: "Find All References" and F2 rename work across the workspace (definitions and references in included files are updated together). Recognized reference forms: `layer[info]` style indexes, `style="..."` / `linkedscene="..."` values, `action_name(...)` calls and name arguments such as `loadscene(scene1)`.
+- Bracket index completion and validation: `layer[`, `hotspot[`, `scene[`, ... complete the names defined in the file or in included files, and indexes pointing to unknown names are reported (dynamic indexes like `layer[get(x)]` are ignored).
+- Quick fixes: unknown element → "Change to <closest element>" (open and close tag), `lang="ts"` → `type="Javascript"`, undefined action call → create the `<action>` skeleton, duplicate `name` → rename with a free suffix, missing `<include>` target → create the file.
+- Document symbols (Outline) for scenes, actions, hotspots, layers, styles, events, ... and workspace symbols (Ctrl+T) across all XML files of the workspace.
+- Diagnostics: indexes that point to unknown names, and an information hint for the unsupported `lang` attribute on actions.
+
+### Changed
+
+- The workspace index (used by references/rename/symbols) is scanned lazily with a 60 s TTL, bounded to 2000 files / 2 MB each, and invalidated on document or file changes.
+
 ## 0.8.1
 
 ### Fixed
