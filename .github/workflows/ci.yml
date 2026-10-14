@@ -50,6 +50,7 @@ jobs:
 
       # 回归防线:产物必须自包含(0.3.0 曾因依赖没进包导致格式化失效)
       - name: Verify the package is self-contained
+        shell: bash
         run: |
           unzip -l krpano-lang.vsix | grep -q 'extension/dist/extension.js'
           unzip -l krpano-lang.vsix | grep -q 'extension/dist/lsp/server.js'
