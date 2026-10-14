@@ -69,10 +69,29 @@ const wordsOf = (ruleName) => {
 }
 // 语法文件里未收录、但确实是 krpano 动作的名字(避免"未定义动作"误报)
 const EXTRA_ACTIONS = ['ifnot', 'asynccall', 'asyncfor']
+
+// 官方 Actions 文档里的示例块(<div id="<action>examples" class="xmlexamplecontent">)用于补全语法文件的清单
+const actionNamesFromDocs = () => {
+  const actionsPage = process.argv[4] ?? '/tmp/krpano_actions_page.html'
+  try {
+    const page = readFileSync(actionsPage, 'utf8')
+    const names = [...page.matchAll(/<div id="([a-z_][a-z0-9_]*)examples" class="xmlexamplecontent">/g)]
+      .map(match => match[1])
+      .filter(name => name.length >= 3)
+    console.log(`Actions 文档示例块: ${names.length} 个动作`)
+    return names
+  }
+  catch {
+    console.log('(未找到 Actions 文档缓存,跳过;可用 curl -sSL "https://krpano.com/docu/actions/" -o /tmp/krpano_actions_page.html 生成)')
+    return []
+  }
+}
+
 const builtinActions = [...new Set([
   ...wordsOf('support.function.krpano-global-function'),
   ...wordsOf('support.class.krpano-global-class'),
   ...EXTRA_ACTIONS,
+  ...actionNamesFromDocs(),
 ])].sort()
 const controlKeywords = [...new Set(wordsOf('keyword.control.krpano-statement'))].sort()
 

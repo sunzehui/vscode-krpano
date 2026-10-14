@@ -16,6 +16,7 @@ export function startLanguageClient(context: vscode.ExtensionContext): void {
       // 监听 xml 文件变化:include 进来的动作文件被修改时,依赖它的文档诊断需要刷新
       synchronize: {
         fileEvents: [vscode.workspace.createFileSystemWatcher('**/*.xml')],
+        configurationSection: 'krpano.lsp',
       },
     },
   )

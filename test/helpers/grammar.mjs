@@ -23,6 +23,23 @@ const stubs = {
     ],
   },
   'source.coffee': { scopeName: 'source.coffee', patterns: [{ match: '->', name: 'keyword.test.coffee' }] },
+  'source.json': {
+    scopeName: 'source.json',
+    patterns: [
+      { match: '"[^"]*"\\s*:', name: 'support.type.property-name.test.json' },
+      { match: '"[^"]*"', name: 'string.quoted.double.test.json' },
+      { match: '\\b(?:true|false|null)\\b', name: 'constant.language.test.json' },
+      { match: '\\b\\d+\\b', name: 'constant.numeric.test.json' },
+    ],
+  },
+  'source.css': {
+    scopeName: 'source.css',
+    patterns: [
+      { match: '[a-z-]+(?=\\s*:)', name: 'support.type.property-name.test.css' },
+      { match: '#[0-9a-fA-F]{3,8}\\b', name: 'constant.other.color.test.css' },
+      { match: '\\b\\d+(?:px|em|%)\\b', name: 'constant.numeric.test.css' },
+    ],
+  },
 }
 
 function createRegistry() {

@@ -5,9 +5,9 @@ import { collectDefinitions } from './symbols'
 import type { SymbolDefinition } from './symbols'
 import { attributeAtOffset, offsetToPosition, scanXml, tagAtOffset } from '../shared/xml'
 import type { XmlTag } from '../shared/xml'
-import type { ExternalDefinition, PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
+import type { DiagnosticSettings, ExternalDefinition, PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
 
-export type { PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
+export type { DiagnosticSettings, PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
 
 interface KrpanoData {
   elements: Record<string, string[]>
@@ -53,9 +53,11 @@ function isJavascriptTag(tag: XmlTag): boolean {
   return value === 'javascript' || value === 'js'
 }
 
-export function getDiagnostics(text: string, context: ProjectContext = {}): PlainDiagnostic[] {
+export function getDiagnostics(text: string, context: ProjectContext = {}, settings: DiagnosticSettings = {}): PlainDiagnostic[] {
   const diagnostics: PlainDiagnostic[] = []
   const scan = scanXml(text)
+  const ignoredNames = new Set((settings.ignoredNames ?? []).filter(name => !!name))
+  const undefinedActions = settings.undefinedActions ?? 'information'
 
   // 1) 标签配对:闭合标签与栈中更深处的元素同名时,报告中间被"隐式关闭"的元素
   const stack: XmlTag[] = []
@@ -120,7 +122,7 @@ export function getDiagnostics(text: string, context: ProjectContext = {}): Plai
     const insideFreeForm = ancestors.some(a => FREE_FORM.has(a))
     if (tag.kind === 'open')
       ancestors.push(name)
-    if (!(name in elements) && !insideFreeForm) {
+    if (!(name in elements) && !insideFreeForm && !ignoredNames.has(tag.name)) {
       diagnostics.push({
         message: `Unknown krpano element <${tag.name}>.`,
         severity: 'information',
@@ -151,11 +153,13 @@ export function getDiagnostics(text: string, context: ProjectContext = {}): Plai
   const declared = new Set(definitions.map(definition => definition.name))
   const external: Map<string, ExternalDefinition> = context.externalDefinitions ?? new Map()
   const reportReference = (name: string, start: number, end: number) => {
+    if (undefinedActions === 'off' || ignoredNames.has(name))
+      return
     if (declared.has(name) || external.has(name) || builtins.has(name) || name in elements)
       return
     diagnostics.push({
       message: `Action "${name}" is not defined in this file or in the files it includes (it may be provided by a plugin).`,
-      severity: 'information',
+      severity: undefinedActions === 'warning' ? 'warning' : 'information',
       range: rangeOf(text, start, end),
       source: SOURCE,
     })
@@ -222,6 +226,8 @@ export function getDiagnostics(text: string, context: ProjectContext = {}): Plai
       const attrName = attr.name.toLowerCase()
       const target = attr.value.trim()
       if (!target || target.includes('%'))
+        continue
+      if (ignoredNames.has(target))
         continue
       if (attrName === 'linkedscene' && !hasDefinition('scene', target)) {
         diagnostics.push({

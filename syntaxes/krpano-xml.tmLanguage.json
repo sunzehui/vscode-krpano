@@ -174,6 +174,172 @@
       ]
     },
     {
+      "begin": "(<)(data)\\b(?=[^>]*>)(?![^/>]*/>\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "2": {
+          "name": "entity.name.tag.data.html"
+        }
+      },
+      "end": "(</)(data)(>)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "2": {
+          "name": "entity.name.tag.data.html"
+        },
+        "3": {
+          "name": "punctuation.definition.tag.end.html"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#tag-stuff"
+        },
+        {
+          "contentName": "source.json",
+          "begin": "(>)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "end": "(?=</data>)",
+          "patterns": [
+            {
+              "begin": "(<!\\[CDATA\\[)",
+              "beginCaptures": {
+                "1": {
+                  "name": "punctuation.definition.cdata.begin.html"
+                }
+              },
+              "end": "(\\]\\]>)",
+              "endCaptures": {
+                "1": {
+                  "name": "punctuation.definition.cdata.end.html"
+                }
+              },
+              "patterns": [
+                {
+                  "include": "source.json"
+                }
+              ]
+            },
+            {
+              "include": "source.json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "begin": "(<)(cssstyles)\\b(?=[^>]*>)(?![^/>]*/>\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "2": {
+          "name": "entity.name.tag.cssstyles.html"
+        }
+      },
+      "end": "(</)(cssstyles)(>)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "2": {
+          "name": "entity.name.tag.cssstyles.html"
+        },
+        "3": {
+          "name": "punctuation.definition.tag.end.html"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#tag-stuff"
+        },
+        {
+          "begin": "(>)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "end": "(?=</cssstyles>)",
+          "patterns": [
+        {
+          "begin": "(<)(style)\\b",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.begin.html"
+            },
+            "2": {
+              "name": "entity.name.tag.style.html"
+            }
+          },
+          "end": "(</)(style)(>)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.begin.html"
+            },
+            "2": {
+              "name": "entity.name.tag.style.html"
+            },
+            "3": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#tag-stuff"
+            },
+        {
+          "contentName": "source.css",
+          "begin": "(>)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "end": "(?=</style>)",
+          "patterns": [
+            {
+              "begin": "(<!\\[CDATA\\[)",
+              "beginCaptures": {
+                "1": {
+                  "name": "punctuation.definition.cdata.begin.html"
+                }
+              },
+              "end": "(\\]\\]>)",
+              "endCaptures": {
+                "1": {
+                  "name": "punctuation.definition.cdata.end.html"
+                }
+              },
+              "patterns": [
+                {
+                  "include": "source.css"
+                }
+              ]
+            },
+            {
+              "include": "source.css"
+            }
+          ]
+        }
+          ]
+        },
+        {
+          "include": "text.xml"
+        }
+          ]
+        }
+      ]
+    },
+    {
       "include": "text.xml"
     }
   ],

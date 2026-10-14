@@ -44,3 +44,11 @@ export interface ProjectContext {
   /** 无法解析的 <include url="..."> 目标 */
   unresolvedIncludes?: Array<{ url: string, range: PlainRange }>
 }
+
+/** 诊断相关的可配置项(来自 krpano.lsp.* 设置) */
+export interface DiagnosticSettings {
+  /** 未定义动作引用的级别;off 表示不提示 */
+  undefinedActions?: 'information' | 'warning' | 'off'
+  /** 不再提示的名字(动作、元素、style、scene) */
+  ignoredNames?: string[]
+}

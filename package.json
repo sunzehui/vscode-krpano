@@ -2,7 +2,7 @@
   "name": "krpano-lang",
   "displayName": "krpano-lang",
   "description": "a krpano high-light plugin",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "main": "./dist/extension.js",
   "repository": {
     "type": "git",
@@ -49,10 +49,43 @@
     "configuration": {
       "title": "krpano-lang",
       "properties": {
-        "xml.format.indentation": {
+        "krpano.lsp.diagnostics.enable": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "是否启用语言服务诊断(关闭后补全/悬停/跳转仍然可用)。\n\nEnable language server diagnostics (completion, hover and definition stay available)."
+        },
+        "krpano.lsp.diagnostics.ignoredNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "不再提示的名字(动作、元素、style、scene),用于压掉插件或动态名字带来的噪音。\n\nNames ignored by diagnostics."
+        },
+        "krpano.lsp.diagnostics.undefinedActions": {
           "type": "string",
-          "default": "",
-          "markdownDescription": "缩进字符串(如 `\"  \"` 或 `\"\\t\"`)。留空时按 `editor.insertSpaces` / `editor.tabSize` 自动换算。\n\nIndentation string (e.g. `\"  \"` or `\"\\t\"`). Leave empty to derive it from `editor.insertSpaces` / `editor.tabSize`."
+          "enum": [
+            "information",
+            "warning",
+            "off"
+          ],
+          "default": "information",
+          "markdownDescription": "未定义动作调用的提示级别。插件或动态生成的动作可设为 `off`。\n\nSeverity for action calls that are not defined in the file or in its includes."
+        },
+        "xml.format.collapseContent": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "元素内容只有文本且不含换行时,保持与标签同行。\n\nKeep element content on the same line when it only contains text."
+        },
+        "xml.format.forceSelfClosingEmptyTag": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "空元素写成自闭合形式 `<tag/>`。\n\nForce empty tags to be self-closing."
+        },
+        "xml.format.handleRootNode": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "文档没有唯一根节点时,自动包裹 `<krpano>…</krpano>` 后重新格式化。\n\nWrap the document in `<krpano>…</krpano>` and format again when it has no single root element."
         },
         "xml.format.ignoredPaths": {
           "type": "array",
@@ -64,10 +97,10 @@
           ],
           "markdownDescription": "不参与格式化的元素路径,内容原样保留(默认忽略 `action`,以免重排脚本)。\n\nElement paths that are not formatted; their content is kept as-is."
         },
-        "xml.format.collapseContent": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "元素内容只有文本且不含换行时,保持与标签同行。\n\nKeep element content on the same line when it only contains text."
+        "xml.format.indentation": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "缩进字符串(如 `\"  \"` 或 `\"\\t\"`)。留空时按 `editor.insertSpaces` / `editor.tabSize` 自动换算。\n\nIndentation string (e.g. `\"  \"` or `\"\\t\"`). Leave empty to derive it from `editor.insertSpaces` / `editor.tabSize`."
         },
         "xml.format.lineSeparator": {
           "type": "string",
@@ -82,16 +115,6 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "自闭合标签写成 `<tag />`(带空格)。\n\nEnd self-closing tags with a space, e.g. `<tag />`."
-        },
-        "xml.format.forceSelfClosingEmptyTag": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "空元素写成自闭合形式 `<tag/>`。\n\nForce empty tags to be self-closing."
-        },
-        "xml.format.handleRootNode": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "文档没有唯一根节点时,自动包裹 `<krpano>…</krpano>` 后重新格式化。\n\nWrap the document in `<krpano>…</krpano>` and format again when it has no single root element."
         }
       }
     },

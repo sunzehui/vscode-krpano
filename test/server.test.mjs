@@ -16,6 +16,8 @@ function createClient(child) {
   const pending = new Map()
   const notifications = []
 
+  let configurationHandler = () => [{}]
+
   child.stdout.on('data', (chunk) => {
     buffer = Buffer.concat([buffer, chunk])
     for (;;) {
@@ -39,6 +41,10 @@ function createClient(child) {
         pending.delete(message.id)
         resolve?.(message)
       }
+      else if (message.id !== undefined && message.method !== undefined) {
+        // 服务器发起的请求(workspace/configuration):按注册的处理器应答
+        send({ jsonrpc: '2.0', id: message.id, result: configurationHandler(message) })
+      }
       else {
         notifications.push(message)
       }
@@ -52,6 +58,9 @@ function createClient(child) {
 
   return {
     send,
+    setConfigurationHandler: (handler) => {
+      configurationHandler = handler
+    },
     request: (id, method, params) => new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error(`timeout waiting for ${method}`)), 10000)
       pending.set(id, (message) => {
@@ -78,7 +87,7 @@ test('LSP server:initialize 与能力声明', { skip: hasServer ? false : 'dist/
   const child = spawn(process.execPath, [SERVER, '--stdio'], { stdio: ['pipe', 'pipe', 'inherit'], cwd: tmpdir() })
   const client = createClient(child)
   try {
-    const response = await client.request(1, 'initialize', { processId: process.pid, rootUri: null, capabilities: {} })
+    const response = await client.request(1, 'initialize', { processId: process.pid, rootUri: null, capabilities: { workspace: { configuration: true } } })
     assert.equal(response.result.capabilities.hoverProvider, true)
     assert.equal(response.result.capabilities.definitionProvider, true)
     assert.ok(response.result.capabilities.completionProvider)
@@ -153,7 +162,7 @@ test('LSP server:跨文件 include(诊断不再噪音 + 跨文件跳转)', { ski
   const child = spawn(process.execPath, [SERVER, '--stdio'], { stdio: ['pipe', 'pipe', 'inherit'], cwd: tmpdir() })
   const client = createClient(child)
   try {
-    await client.request(1, 'initialize', { processId: process.pid, rootUri: null, capabilities: {} })
+    await client.request(1, 'initialize', { processId: process.pid, rootUri: null, capabilities: { workspace: { configuration: true } } })
     client.send({ jsonrpc: '2.0', method: 'initialized', params: {} })
 
     const uri = `file://${entry}`
@@ -188,5 +197,31 @@ test('LSP server:跨文件 include(诊断不再噪音 + 跨文件跳转)', { ski
   finally {
     child.kill()
     rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('LSP server:krpano.lsp.diagnostics.enable=false 时不报诊断', { skip: hasServer ? false : 'dist/lsp/server.js 未构建,先运行 npm run build' }, async () => {
+  const child = spawn(process.execPath, [SERVER, '--stdio'], { stdio: ['pipe', 'pipe', 'inherit'], cwd: tmpdir() })
+  const client = createClient(child)
+  client.setConfigurationHandler(() => [{ diagnostics: { enable: false, undefinedActions: 'information', ignoredNames: [] } }])
+  try {
+    await client.request(1, 'initialize', { processId: process.pid, rootUri: null, capabilities: { workspace: { configuration: true } } })
+    client.send({ jsonrpc: '2.0', method: 'initialized', params: {} })
+
+    const uri = 'file:///config-smoke.xml'
+    client.send({
+      jsonrpc: '2.0',
+      method: 'textDocument/didOpen',
+      params: { textDocument: { uri, languageId: 'krpano-xml', version: 1, text: '<krpano><foo/><action name="a">missing_here();</action></krpano>' } },
+    })
+
+    const publish = await client.waitFor(
+      n => n.method === 'textDocument/publishDiagnostics' && n.params.uri === uri,
+      'diagnostics',
+    )
+    assert.deepEqual(publish.params.diagnostics, [], '关闭诊断后不应发布任何诊断')
+  }
+  finally {
+    child.kill()
   }
 })

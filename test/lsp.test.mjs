@@ -228,3 +228,24 @@ test('补全:style / linkedscene 取值与事件属性里的动作名', () => {
   const onclickAt = text.indexOf('onclick=""') + 'onclick="'.length
   assert.deepEqual(getCompletions(text, onclickAt).map(i => i.label), ['act_a'])
 })
+
+test('设置:undefinedActions 级别与 ignoredNames', () => {
+  const text = '<krpano>\n  <action name="a" autorun="onstart">missing_one();</action>\n  <foo/>\n  <hotspot name="h" style="ghost"/>\n</krpano>'
+
+  const off = getDiagnostics(text, {}, { undefinedActions: 'off' })
+  assert.ok(!off.some(d => d.message.includes('missing_one')), 'off 时不应提示未定义动作')
+
+  const warning = getDiagnostics(text, {}, { undefinedActions: 'warning' })
+  assert.ok(
+    warning.some(d => d.severity === 'warning' && d.message.includes('missing_one')),
+    warning.map(d => `${d.severity}:${d.message}`).join(' | '),
+  )
+
+  const ignored = getDiagnostics(text, {}, { ignoredNames: ['missing_one', 'foo', 'ghost'] })
+  assert.ok(!ignored.some(d => d.message.includes('missing_one')), '忽略名单应屏蔽动作')
+  assert.ok(!ignored.some(d => d.message.includes('<foo>')), '忽略名单应屏蔽元素')
+  assert.ok(!ignored.some(d => d.message.includes('ghost')), '忽略名单应屏蔽 style 引用')
+
+  const defaults = getDiagnostics(text)
+  assert.ok(defaults.some(d => d.severity === 'information' && d.message.includes('missing_one')), '默认级别为 information')
+})

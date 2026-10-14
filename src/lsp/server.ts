@@ -14,13 +14,45 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { getCompletions, getDefinition, getDiagnostics, getHover } from './features'
 import { buildIncludeIndex, contextForFile, uriToPath } from './symbols'
-import type { ProjectContext } from './types'
+import type { DiagnosticSettings, ProjectContext } from './types'
 
 const connection = createConnection(ProposedFeatures.all)
 const documents = new TextDocuments(TextDocument)
 
 /** 磁盘文件缓存(已打开的文档直接取内存文本) */
 const fileCache = new Map<string, { mtimeMs: number, size: number, text: string }>()
+
+/** krpano.lsp.* 设置(初始化与配置变化时刷新) */
+interface LspConfiguration {
+  diagnostics?: {
+    enable?: boolean
+    undefinedActions?: 'information' | 'warning' | 'off'
+    ignoredNames?: string[]
+  }
+}
+let configuration: LspConfiguration = {}
+let validateTimer: NodeJS.Timeout | undefined
+
+async function refreshSettings(): Promise<void> {
+  try {
+    const value = await connection.workspace.getConfiguration('krpano.lsp')
+    configuration = (value ?? {}) as LspConfiguration
+  }
+  catch {
+    configuration = {}
+  }
+  scheduleValidateAll()
+}
+
+/** 数组加去抖:频繁输入时合并校验 */
+function scheduleValidateAll(): void {
+  if (validateTimer)
+    clearTimeout(validateTimer)
+  validateTimer = setTimeout(() => {
+    validateTimer = undefined
+    validateAll()
+  }, 250)
+}
 
 function openDocumentText(path: string): string | undefined {
   for (const document of documents.all()) {
@@ -58,7 +90,15 @@ function projectContext(document: TextDocument): ProjectContext {
 }
 
 function validate(document: TextDocument): void {
-  const diagnostics = getDiagnostics(document.getText(), projectContext(document)).map(item => ({
+  if (configuration.diagnostics?.enable === false) {
+    void connection.sendDiagnostics({ uri: document.uri, diagnostics: [] })
+    return
+  }
+  const settings: DiagnosticSettings = {
+    undefinedActions: configuration.diagnostics?.undefinedActions,
+    ignoredNames: configuration.diagnostics?.ignoredNames,
+  }
+  const diagnostics = getDiagnostics(document.getText(), projectContext(document), settings).map(item => ({
     message: item.message,
     severity: item.severity === 'error'
       ? DiagnosticSeverity.Error
@@ -76,17 +116,24 @@ function validateAll(): void {
     validate(document)
 }
 
-connection.onInitialize(() => ({
-  capabilities: {
-    textDocumentSync: TextDocumentSyncKind.Incremental,
-    completionProvider: { triggerCharacters: ['<', ' ', '"', '\'', '='] },
-    hoverProvider: true,
-    definitionProvider: true,
-  },
-}))
+connection.onInitialize(async () => {
+  void refreshSettings()
+  return {
+    capabilities: {
+      textDocumentSync: TextDocumentSyncKind.Incremental,
+      completionProvider: { triggerCharacters: ['<', ' ', '"', '\'', '='] },
+      hoverProvider: true,
+      definitionProvider: true,
+    },
+  }
+})
 
-documents.onDidChangeContent((change) => {
-  validateAll()
+connection.onDidChangeConfiguration(() => {
+  void refreshSettings()
+})
+
+documents.onDidChangeContent(() => {
+  scheduleValidateAll()
 })
 
 documents.onDidClose((event) => {
@@ -95,7 +142,7 @@ documents.onDidClose((event) => {
 
 // 磁盘上的 xml 变化(例如编辑了 include 的动作文件)也要刷新诊断
 connection.onDidChangeWatchedFiles(() => {
-  validateAll()
+  scheduleValidateAll()
 })
 
 connection.onCompletion((params) => {

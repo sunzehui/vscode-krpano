@@ -113,3 +113,40 @@ test('回归: 非 action 标签(走 text.xml)不受影响', async () => {
   assert.ok(scopeOf(tok, 'hotspot').includes('source.krpano-xml'))
   assert.ok(!scopeOf(tok, 'spot1').includes('keyword.test.js'))
 })
+
+test('内嵌:<data> 的 CDATA 内容按 JSON 高亮', async () => {
+  const tok = await tokenize(XML, [
+    '<krpano>',
+    '<data name="config">',
+    '<![CDATA[',
+    '{ "debug": true, "count": 3 }',
+    ']]>',
+    '</data>',
+    '</krpano>',
+  ].join('\n'))
+  assert.ok(scopeOf(tok, '"debug"').includes('support.type.property-name.test.json'), 'JSON 键应命中')
+  assert.ok(scopeOf(tok, 'true').includes('constant.language.test.json'), 'JSON 值应命中')
+  assert.ok(scopeOf(tok, '3').includes('constant.numeric.test.json'), 'JSON 数字应命中')
+  assert.ok(scopeOf(tok, '<![CDATA[').some(s => s.includes('punctuation.definition.cdata')), 'CDATA 标记应为标点')
+})
+
+test('内嵌:<cssstyles> 内的 <style> 正文按 CSS 高亮', async () => {
+  const tok = await tokenize(XML, [
+    '<krpano>',
+    '<cssstyles>',
+    '<style name=".test_class">',
+    'color: #fff;',
+    '</style>',
+    '</cssstyles>',
+    '</krpano>',
+  ].join('\n'))
+  assert.ok(scopeOf(tok, 'color').includes('support.type.property-name.test.css'), 'CSS 属性应命中')
+  assert.ok(scopeOf(tok, '#fff').includes('constant.other.color.test.css'), 'CSS 颜色应命中')
+  // 注意:第 1 次出现的 'style' 是 cssstyles 内的子串,这里要取标签名本身
+  assert.ok(scopeOf(tok, 'style', 2).includes('entity.name.tag.style.html'), 'style 标签名应按 HTML 标签名着色')
+})
+
+test('内嵌:cssstyles 之外的自闭合 <style> 仍按 krpano 元素处理', async () => {
+  const tok = await tokenize(XML, '<krpano><style name="s" bgcolor="0xffffff"/></krpano>')
+  assert.ok(!scopeOf(tok, '<style').includes('entity.name.tag.style.html'), '不应被当作 cssstyles 内部样式')
+})
