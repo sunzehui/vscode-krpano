@@ -1,7 +1,7 @@
 import type { ExternalDefinition, PlainRange } from './types'
 // krpano 文件的符号提取与 <include> 依赖解析(纯逻辑,文件读取通过参数注入,便于测试)。
 import path from 'node:path'
-import { offsetToPosition, scanXml } from '../shared/xml'
+import { createLineIndex, scanXml } from '../shared/xml'
 
 /** 可以定义 name 的元素(其名字可被动作/事件引用) */
 export const NAME_DEFINING_ELEMENTS = ['action', 'hotspot', 'layer', 'plugin', 'scene', 'style', 'events', 'data']
@@ -47,8 +47,8 @@ export interface ParsedFile {
 /** 跨次调用复用的解析缓存:路径 → { 版本, 解析结果 } */
 export type ParseCache = Map<string, { version: string, parsed: ParsedFile }>
 
-function rangeOf(text: string, start: number, end: number): PlainRange {
-  return { start: offsetToPosition(text, start), end: offsetToPosition(text, end) }
+function rangeOf(lineIndex: ReturnType<typeof createLineIndex>, start: number, end: number): PlainRange {
+  return { start: lineIndex.toPosition(start), end: lineIndex.toPosition(end) }
 }
 
 /**
@@ -58,6 +58,7 @@ function rangeOf(text: string, start: number, end: number): PlainRange {
 export function collectDefinitions(text: string): SymbolDefinition[] {
   const definitions: SymbolDefinition[] = []
   const stack: Array<{ element: string, name?: string }> = []
+  const lineIndex = createLineIndex(text)
 
   const currentContainer = (): string | undefined => {
     for (let i = stack.length - 1; i >= 0; i--) {
@@ -86,7 +87,7 @@ export function collectDefinitions(text: string): SymbolDefinition[] {
         name,
         element,
         container: currentContainer(),
-        range: rangeOf(text, nameAttr.valueStart, nameAttr.valueEnd ?? nameAttr.valueStart),
+        range: rangeOf(lineIndex, nameAttr.valueStart, nameAttr.valueEnd ?? nameAttr.valueStart),
       })
     }
     // 只有 scene / krpano 会改变名字的作用域
@@ -99,13 +100,14 @@ export function collectDefinitions(text: string): SymbolDefinition[] {
 /** 收集 <include url="..."> 引用 */
 export function extractIncludes(text: string): IncludeReference[] {
   const includes: IncludeReference[] = []
+  const lineIndex = createLineIndex(text)
   for (const tag of scanXml(text).tags) {
     if (tag.name.toLowerCase() !== 'include')
       continue
     const urlAttr = tag.attributes.find(attr => attr.name.toLowerCase() === 'url')
     if (!urlAttr?.value?.trim() || urlAttr.valueStart === undefined)
       continue
-    includes.push({ url: urlAttr.value, range: rangeOf(text, urlAttr.valueStart, urlAttr.valueEnd ?? urlAttr.valueStart) })
+    includes.push({ url: urlAttr.value, range: rangeOf(lineIndex, urlAttr.valueStart, urlAttr.valueEnd ?? urlAttr.valueStart) })
   }
   return includes
 }

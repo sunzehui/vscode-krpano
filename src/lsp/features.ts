@@ -1,11 +1,11 @@
 import type { XmlTag } from '../shared/xml'
 import type { SymbolDefinition } from './symbols'
 import type { DiagnosticSettings, ExternalDefinition, PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
-import { attributeAtOffset, offsetToPosition, scanXml, tagAtOffset } from '../shared/xml'
+import { attributeAtOffset, createLineIndex, offsetToPosition, scanXml, tagAtOffset } from '../shared/xml'
 // krpano XML 语言特性实现(纯函数,不依赖 vscode / vscode-languageserver,便于单元测试)。
 import krpanoData from './krpanoData.json'
 import { docForAttribute, docForElement } from './krpanoDocs'
-import { collectReferences, findUnknownIndexes, indexContextAt } from './references'
+import { callArgumentContextAt, collectReferences, elementPropertyContextAt, findUnknownIndexes, indexContextAt } from './references'
 import { collectDefinitions } from './symbols'
 
 export type { DiagnosticSettings, PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
@@ -57,6 +57,11 @@ function isJavascriptTag(tag: XmlTag): boolean {
 export function getDiagnostics(text: string, context: ProjectContext = {}, settings: DiagnosticSettings = {}): PlainDiagnostic[] {
   const diagnostics: PlainDiagnostic[] = []
   const scan = scanXml(text)
+  const lineIndex = createLineIndex(text)
+  const range = (start: number, end: number): PlainRange => ({
+    start: lineIndex.toPosition(start),
+    end: lineIndex.toPosition(end),
+  })
   const ignoredNames = new Set((settings.ignoredNames ?? []).filter(name => !!name))
   const undefinedActions = settings.undefinedActions ?? 'information'
 
@@ -86,7 +91,7 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
       diagnostics.push({
         message: `Closing tag </${tag.name}> has no matching opening tag.`,
         severity: 'warning',
-        range: rangeOf(text, tag.nameStart, tag.nameEnd),
+        range: range(tag.nameStart, tag.nameEnd),
         source: SOURCE,
       })
       continue
@@ -95,7 +100,7 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
       diagnostics.push({
         message: `Unclosed tag <${stack[i].name}> (implicitly closed by </${tag.name}>).`,
         severity: 'warning',
-        range: rangeOf(text, stack[i].nameStart, stack[i].nameEnd),
+        range: range(stack[i].nameStart, stack[i].nameEnd),
         source: SOURCE,
       })
     }
@@ -105,7 +110,7 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
     diagnostics.push({
       message: `Unclosed tag <${open.name}>.`,
       severity: 'warning',
-      range: rangeOf(text, open.nameStart, open.nameEnd),
+      range: range(open.nameStart, open.nameEnd),
       source: SOURCE,
     })
   }
@@ -127,7 +132,7 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
       diagnostics.push({
         message: `Unknown krpano element <${tag.name}>.`,
         severity: 'information',
-        range: rangeOf(text, tag.nameStart, tag.nameEnd),
+        range: range(tag.nameStart, tag.nameEnd),
         source: SOURCE,
       })
     }
@@ -141,7 +146,7 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
           diagnostics.push({
             message: `Unknown action type "${value}": krpano supports "" (krpano action code), "Javascript" or "js".`,
             severity: 'warning',
-            range: rangeOf(text, typeAttr.valueStart, typeAttr.valueEnd),
+            range: range(typeAttr.valueStart, typeAttr.valueEnd),
             source: SOURCE,
           })
         }
@@ -164,7 +169,7 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
     diagnostics.push({
       message: `Action "${name}" is not defined in this file or in the files it includes (it may be provided by a plugin).`,
       severity: undefinedActions === 'warning' ? 'warning' : 'information',
-      range: rangeOf(text, start, end),
+      range: range(start, end),
       source: SOURCE,
     })
   }
@@ -237,7 +242,7 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
         diagnostics.push({
           message: `Scene "${target}" is not defined in this file or in the files it includes.`,
           severity: 'warning',
-          range: rangeOf(text, attr.valueStart, attr.valueEnd),
+          range: range(attr.valueStart, attr.valueEnd),
           source: SOURCE,
         })
       }
@@ -245,7 +250,7 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
         diagnostics.push({
           message: `Style "${target}" is not defined in this file or in the files it includes (it may come from a skin or plugin).`,
           severity: 'information',
-          range: rangeOf(text, attr.valueStart, attr.valueEnd),
+          range: range(attr.valueStart, attr.valueEnd),
           source: SOURCE,
         })
       }
@@ -277,13 +282,55 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
       diagnostics.push({
         message: `krpano does not support a "lang" attribute; use type="Javascript" (or type="js") for JavaScript actions.`,
         severity: 'information',
-        range: rangeOf(text, langAttr.nameStart, langAttr.valueEnd),
+        range: range(langAttr.nameStart, langAttr.valueEnd),
         source: SOURCE,
       })
     }
   }
 
-  // 9) include 目标不存在(相对当前文件解析;krpano 同样会因此报错)
+  // 9) 名字参数引用(loadscene(x) / removehotspot(x) 等)指向不存在的名字
+  for (const reference of collectReferences(text)) {
+    if (reference.form !== 'argument' || !reference.element)
+      continue
+    if (ignoredNames.has(reference.name) || isKnownName(reference.name))
+      continue
+    const element = reference.element
+    const knownForElement = definitions.some(definition => definition.element === element && definition.name === reference.name)
+      || [...external.entries()].some(([key, value]) => key === reference.name && (value.element === undefined || value.element === element))
+    if (knownForElement)
+      continue
+    diagnostics.push({
+      message: `${element} "${reference.name}" is not defined in this file or in the files it includes.`,
+      severity: 'information',
+      range: reference.range,
+      source: SOURCE,
+    })
+  }
+
+  // 10) %N 占位符超过 action 声明的参数个数
+  const placeholderRe = /<action\b([^>]*)>([\s\S]*?)<\/action>/g
+  for (const match of text.matchAll(placeholderRe)) {
+    const argsMatch = /\bargs\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(match[1])
+    const declared = (argsMatch?.[1] ?? argsMatch?.[2])
+    if (declared === undefined)
+      continue
+    const argumentCount = declared.split(',').map(item => item.trim()).filter(Boolean).length
+    const bodyStart = match.index! + match[0].indexOf(match[2])
+    for (const placeholder of match[2].matchAll(/%(\d+)/g)) {
+      const index = Number(placeholder[1])
+      if (index === 0 || index <= argumentCount)
+        continue
+      const offset = bodyStart + (placeholder.index ?? 0)
+      diagnostics.push({
+        message: `Placeholder %${index} is used, but the action declares ${argumentCount} argument(s).`,
+        severity: 'information',
+        range: range(offset, offset + placeholder[0].length),
+        source: SOURCE,
+      })
+    }
+  }
+
+  // 11) include 目标不存在(相对当前文件解析;krpano 同样会因此报错)
   for (const item of context.unresolvedIncludes ?? []) {
     diagnostics.push({
       message: `Included file "${item.url}" was not found (include paths are resolved relative to this file).`,
@@ -367,6 +414,46 @@ export function getCompletions(text: string, offset: number, context: ProjectCon
         documentation: docForElement(name, elements[name].length),
         insertText: name,
       }))
+  }
+
+  // 名字参数调用:loadscene(scene1 处补全场景名
+  const callContext = callArgumentContextAt(text, offset)
+  if (callContext?.element) {
+    const names = new Set<string>()
+    for (const definition of collectDefinitions(text)) {
+      if (definition.element === callContext.element)
+        names.add(definition.name)
+    }
+    for (const [name, definition] of (context.externalDefinitions ?? new Map<string, ExternalDefinition>())) {
+      if (definition.element === undefined || definition.element === callContext.element)
+        names.add(name)
+    }
+    const items = [...names].sort().filter(candidate => candidate.startsWith(callContext.prefix)).map(candidate => ({
+      label: candidate,
+      kind: 'value' as const,
+      detail: `krpano ${callContext.element} name`,
+      documentation: `Name of a ${callContext.element} defined in this file or in the files it includes.`,
+      insertText: candidate,
+    }))
+    if (items.length)
+      return items
+  }
+
+  // layer[info]. 之后补全该元素的属性
+  const propertyContext = elementPropertyContextAt(text, offset)
+  if (propertyContext) {
+    const attributes = elements[propertyContext.element] ?? []
+    const items = attributes
+      .filter(candidate => candidate.startsWith(propertyContext.prefix))
+      .map(candidate => ({
+        label: candidate,
+        kind: 'attribute' as const,
+        detail: `krpano ${propertyContext.element} attribute`,
+        documentation: docForAttribute(propertyContext.element, candidate),
+        insertText: candidate,
+      }))
+    if (items.length)
+      return items
   }
 
   if (!tag) {

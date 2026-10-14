@@ -2,7 +2,7 @@
   "publisher": "sunzehui",
   "name": "krpano-lang",
   "displayName": "krpano-lang",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "a krpano high-light plugin",
   "repository": {
     "type": "git",
@@ -127,6 +127,47 @@
         "scopeName": "source.krpano",
         "path": "./syntaxes/krpano.tmLanguage.json"
       }
+    ],
+    "walkthroughs": [
+      {
+        "id": "krpanoGetStarted",
+        "title": "开始使用 krpano-lang",
+        "description": "高亮、补全与诊断、导航与重构、格式化。",
+        "steps": [
+          {
+            "id": "openXml",
+            "title": "打开 krpano XML",
+            "description": "获得语法高亮与语言服务。",
+            "media": {
+              "markdown": "media/walkthrough-open.md"
+            }
+          },
+          {
+            "id": "diagnostics",
+            "title": "诊断与快速修复",
+            "description": "常见错误与一键修复。",
+            "media": {
+              "markdown": "media/walkthrough-diagnostics.md"
+            }
+          },
+          {
+            "id": "navigation",
+            "title": "导航与重构",
+            "description": "补全、悬停、跳转、引用、重命名、大纲。",
+            "media": {
+              "markdown": "media/walkthrough-navigation.md"
+            }
+          },
+          {
+            "id": "format",
+            "title": "格式化",
+            "description": "整篇与选区格式化、忽略区。",
+            "media": {
+              "markdown": "media/walkthrough-format.md"
+            }
+          }
+        ]
+      }
     ]
   },
   "scripts": {
@@ -134,11 +175,12 @@
     "build": "tsup src/extension.ts src/lsp/client.ts src/lsp/server.ts --dts --external=vscode",
     "dev": "npm run build -- --watch",
     "release": "npx bumpp --commit --tag --push",
-    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/symbols.ts src/lsp/references.ts src/lsp/actions.ts src/lsp/outline.ts src/shared/xml.ts src/shared/reindent.ts --format=cjs --out-dir=test/build --clean",
+    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/symbols.ts src/lsp/references.ts src/lsp/actions.ts src/lsp/outline.ts src/lsp/workspace.ts src/shared/xml.ts src/shared/reindent.ts --format=cjs --out-dir=test/build --clean",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "npm run build && npm run build:test && node --test test/*.test.mjs",
-    "coverage": "npm run build:test && c8 --include='test/build/**' --exclude='' --exclude='test/build/fake-vscode/**' --reporter=text --reporter=text-summary --check-coverage --lines 90 --functions 88 --branches 75 node --test test/*.test.mjs"
+    "coverage": "npm run build:test && c8 --include='test/build/**' --exclude='' --exclude='test/build/fake-vscode/**' --exclude='test/build/lsp/workspace.js' --reporter=text --reporter=text-summary --check-coverage --lines 90 --functions 88 --branches 75 node --test test/*.test.mjs",
+    "bench": "npm run build:test && node scripts/bench.mjs"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^9.5.1",

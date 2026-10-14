@@ -13,6 +13,44 @@ export interface BeautifyResult {
 }
 
 const XML_PROLOG = /^\s*<\?xml[^>]*\?>/
+const FORMAT_OFF = /<!--\s*krpano-lang-format:\s*off\s*-->/
+const FORMAT_ON = /<!--\s*krpano-lang-format:\s*on\s*-->/
+
+interface ProtectedRegions {
+  text: string
+  regions: Array<{ token: string, content: string }>
+}
+
+/** 把 `<!-- krpano-lang-format: off -->` … `on` 之间的内容替换成占位文本,格式化后再原样放回 */
+function protectFormatOffRegions(text: string): ProtectedRegions {
+  const regions: ProtectedRegions['regions'] = []
+  let out = ''
+  let cursor = 0
+  let counter = 0
+  for (;;) {
+    const offMatch = FORMAT_OFF.exec(text.slice(cursor))
+    if (!offMatch)
+      break
+    const contentStart = cursor + offMatch.index + offMatch[0].length
+    const onMatch = FORMAT_ON.exec(text.slice(contentStart))
+    if (!onMatch)
+      break // 没有配对的 on:后面的内容不保护
+    const contentEnd = contentStart + onMatch.index
+    const token = `KRPANO_FORMAT_OFF_${counter++}`
+    regions.push({ token, content: text.slice(contentStart, contentEnd) })
+    out += text.slice(cursor, contentStart) + token
+    cursor = contentEnd
+  }
+  out += text.slice(cursor)
+  return { text: out, regions }
+}
+
+function restoreFormatOffRegions(text: string, protectedRegions: ProtectedRegions): string {
+  let out = text
+  for (const region of protectedRegions.regions)
+    out = out.replace(region.token, () => region.content)
+  return out
+}
 
 export function beautify(originalText: string, xmlOptions: xmlOptionsType): BeautifyResult {
   const options: xmlOptionsType = {
@@ -31,7 +69,8 @@ export function beautify(originalText: string, xmlOptions: xmlOptionsType): Beau
     return { text: originalText, failed: false }
 
   try {
-    const formatted = xmlFormat(originalText, options)
+    const protectedRegions = protectFormatOffRegions(originalText)
+    const formatted = restoreFormatOffRegions(xmlFormat(protectedRegions.text, options), protectedRegions)
     return { text: formatted, failed: false, structureChanged: signaturesDiffer(originalText, formatted) }
   }
   catch (e: any) {
@@ -40,7 +79,8 @@ export function beautify(originalText: string, xmlOptions: xmlOptionsType): Beau
       const prolog = XML_PROLOG.exec(originalText)
       const body = prolog ? originalText.slice(prolog[0].length) : originalText
       try {
-        const formatted = xmlFormat(`<krpano>${body}</krpano>`, options)
+        const protectedRegions = protectFormatOffRegions(body)
+        const formatted = restoreFormatOffRegions(xmlFormat(`<krpano>${protectedRegions.text}</krpano>`, options), protectedRegions)
         // 补根本身会新增一层 krpano 标签,不做结构差异比较
         return { text: prolog ? `${prolog[0].trim()}\n${formatted}` : formatted, failed: false }
       }

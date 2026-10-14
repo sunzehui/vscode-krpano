@@ -11,6 +11,8 @@ jobs:
       # 在仓库 Settings → Secrets and variables → Actions 添加 VSCE_PAT(Marketplace → Manage 权限)
       # 未配置时只打包并上传 vsix,不发布
       VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      # 可选:在 open-vsx.org 建 token 后 gh secret set OVSX_PAT,即可同步发布到 Open VSX(Cursor/VSCodium)
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
     steps:
       - uses: actions/checkout@v7
 
@@ -45,6 +47,10 @@ jobs:
       - name: Publish to Marketplace
         if: env.VSCE_PAT != ''
         run: npx --yes @vscode/vsce publish --packagePath krpano-lang.vsix
+
+      - name: Publish to Open VSX
+        if: env.OVSX_PAT != ''
+        run: npx --yes ovsx publish krpano-lang.vsix -p "$OVSX_PAT"
 
       - name: Notice when VSCE_PAT is missing
         if: env.VSCE_PAT == ''

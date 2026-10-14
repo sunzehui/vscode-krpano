@@ -274,3 +274,51 @@ test('诊断:action 上的 lang 属性提示改为官方写法', () => {
   assert.ok(diagnostics.some(d => d.message.includes('does not support a "lang" attribute')), diagnostics.map(d => d.message).join(' | '))
   assert.equal(diagnostics.find(d => d.message.includes('lang'))?.severity, 'information')
 })
+
+test('诊断+补全:loadscene 等名字参数', () => {
+  const text = [
+    '<krpano>',
+    '  <scene name="room1"/>',
+    '  <action name="go" autorun="onstart">',
+    '    loadscene(room1);',
+    '    loadscene(ghost_scene);',
+    '    removehotspot(hs_missing);',
+    '  </action>',
+    '</krpano>',
+  ].join('\n')
+  const diagnostics = getDiagnostics(text)
+  const messages = diagnostics.map(d => d.message)
+  assert.ok(messages.some(m => m.includes('scene "ghost_scene" is not defined')), messages.join(' | '))
+  assert.ok(messages.some(m => m.includes('hotspot "hs_missing" is not defined')), messages.join(' | '))
+  assert.ok(!messages.some(m => m.includes('"room1"')), '已定义的 scene 不应报')
+
+  const completionText = '<krpano>\n  <scene name="room1"/>\n  <action name="go" autorun="onstart">\n    loadscene('
+  const items = getCompletions(completionText, completionText.length)
+  assert.deepEqual(items.map(i => i.label), ['room1'], items.map(i => i.label).join(',') || '(无候选)')
+})
+
+test('诊断:%N 占位符超过声明的参数个数', () => {
+  const text = [
+    '<krpano>',
+    '  <action name="a" args="first, second">',
+    '    trace(%1, %2, %3);',
+    '  </action>',
+    '</krpano>',
+  ].join('\n')
+  const diagnostics = getDiagnostics(text)
+  const placeholder = diagnostics.find(d => d.message.includes('%3'))
+  assert.ok(placeholder, diagnostics.map(d => d.message).join(' | '))
+  assert.equal(placeholder.severity, 'information')
+  assert.ok(!diagnostics.some(d => d.message.includes('%1') || d.message.includes('%2')), '范围内的占位符不应报')
+
+  const withoutArgs = '<krpano>\n  <action name="a">trace(%5);</action>\n</krpano>'
+  assert.ok(!getDiagnostics(withoutArgs).some(d => d.message.includes('%5')), '没有 args 声明时不校验')
+})
+
+test('补全:layer[name]. 之后补全该元素属性', () => {
+  const text = '<krpano>\n  <layer name="info"/>\n  <action name="a" autorun="onstart">\n    layer[info].ali'
+  const items = getCompletions(text, text.length)
+  const labels = items.map(i => i.label)
+  assert.ok(labels.includes('align'), labels.slice(0, 8).join(','))
+  assert.ok(labels.every(label => label.startsWith('ali')), labels.join(','))
+})

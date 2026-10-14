@@ -234,18 +234,42 @@ export interface XmlPosition {
   character: number
 }
 
-/** 偏移 → 行列位置(0 基,按 \n 分行) */
-export function offsetToPosition(text: string, offset: number): XmlPosition {
-  let line = 0
-  let lineStart = 0
-  const limit = Math.max(0, Math.min(offset, text.length))
-  for (let i = 0; i < limit; i++) {
-    if (text.charCodeAt(i) === 10) {
-      line++
-      lineStart = i + 1
-    }
+/**
+ * 预建的行索引:offset → 行列位置,二分查找,O(log n)。
+ *  大文档里逐个 offset 线性扫描会退化成 O(n²)(曾导致 1MB 文档诊断耗时上百秒)。
+ */
+export interface LineIndex {
+  toPosition: (offset: number) => XmlPosition
+  lineStarts: number[]
+}
+
+export function createLineIndex(text: string): LineIndex {
+  const lineStarts = [0]
+  for (let i = 0; i < text.length; i++) {
+    if (text.charCodeAt(i) === 10)
+      lineStarts.push(i + 1)
   }
-  return { line, character: limit - lineStart }
+  return {
+    lineStarts,
+    toPosition(offset: number): XmlPosition {
+      const limit = Math.max(0, Math.min(offset, text.length))
+      let low = 0
+      let high = lineStarts.length - 1
+      while (low < high) {
+        const mid = (low + high + 1) >> 1
+        if (lineStarts[mid] <= limit)
+          low = mid
+        else
+          high = mid - 1
+      }
+      return { line: low, character: limit - lineStarts[low] }
+    },
+  }
+}
+
+/** 偏移 → 行列位置(0 基,按 \n 分行)。批量转换请使用 createLineIndex。 */
+export function offsetToPosition(text: string, offset: number): XmlPosition {
+  return createLineIndex(text).toPosition(offset)
 }
 
 /** 找到包含指定偏移的最内层标签 */

@@ -111,3 +111,46 @@ test('项8: 属性值里的 > 与引号不影响结构判断', () => {
   assert.equal(r.failed, false)
   assert.equal(Boolean(r.structureChanged), false)
 })
+
+test('项12:krpano-lang-format off/on 之间的内容保持原样', () => {
+  const src = [
+    '<krpano>',
+    '<action name="a">',
+    '<!-- krpano-lang-format: off -->',
+    '   if(x,   set(y,1)  );',
+    '        tween(fov, 90);',
+    '<!-- krpano-lang-format: on -->',
+    '</action>',
+    '<hotspot name="h"/>',
+    '</krpano>',
+  ].join('\n')
+  const r = beautify(src, base)
+  assert.equal(r.failed, false)
+  assert.ok(r.text.includes('   if(x,   set(y,1)  );'), `忽略区内容应逐字保留:\n${r.text}`)
+  assert.ok(r.text.includes('        tween(fov, 90);'), r.text)
+  assert.ok(r.text.includes('<!-- krpano-lang-format: off -->') && r.text.includes('<!-- krpano-lang-format: on -->'), '标记本身应保留')
+  assert.ok(r.text.includes('  <hotspot name="h"/>'), '标记之外的内容正常格式化')
+  assert.equal(Boolean(r.structureChanged), false, '忽略区不应造成结构变化误报')
+})
+
+test('项12:忽略区跨越多个元素时也能还原且不误报结构变化', () => {
+  const src = [
+    '<krpano>',
+    '<!-- krpano-lang-format: off -->',
+    '<hotspot name="a" ath="0"/>   <hotspot name="b" ath="1"/>',
+    '<!-- krpano-lang-format: on -->',
+    '<layer name="c"/>',
+    '</krpano>',
+  ].join('\n')
+  const r = beautify(src, base)
+  assert.equal(r.failed, false)
+  assert.ok(r.text.includes('<hotspot name="a" ath="0"/>   <hotspot name="b" ath="1"/>'), r.text)
+  assert.equal(Boolean(r.structureChanged), false, '还原后的结构应与原文一致')
+})
+
+test('项12:没有配对 on 标记时不保护也不报错', () => {
+  const src = '<krpano>\n<!-- krpano-lang-format: off -->\n<hotspot name="a"/>\n</krpano>'
+  const r = beautify(src, base)
+  assert.equal(r.failed, false)
+  assert.ok(r.text.includes('<hotspot name="a"/>'))
+})

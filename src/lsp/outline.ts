@@ -1,6 +1,6 @@
 import type { PlainRange } from './types'
 // 文档大纲:把 krpano XML 结构整理成可折叠的符号树(DocumentSymbol 用)。
-import { offsetToPosition, scanXml } from '../shared/xml'
+import { createLineIndex, scanXml } from '../shared/xml'
 
 export interface OutlineSymbol {
   name: string
@@ -26,13 +26,14 @@ const OUTLINE_ELEMENTS: Record<string, OutlineSymbol['kind']> = {
   image: 'object',
 }
 
-function rangeOf(text: string, start: number, end: number): PlainRange {
-  return { start: offsetToPosition(text, start), end: offsetToPosition(text, end) }
+function rangeOf(lineIndex: ReturnType<typeof createLineIndex>, start: number, end: number): PlainRange {
+  return { start: lineIndex.toPosition(start), end: lineIndex.toPosition(end) }
 }
 
 /** 生成文档大纲(按标签嵌套组织,成对标签的 range 覆盖整个元素) */
 export function getDocumentSymbols(text: string): OutlineSymbol[] {
   const roots: OutlineSymbol[] = []
+  const lineIndex = createLineIndex(text)
   const stack: Array<{ tag: string, symbol: OutlineSymbol, start: number }> = []
 
   for (const tag of scanXml(text).tags) {
@@ -40,7 +41,7 @@ export function getDocumentSymbols(text: string): OutlineSymbol[] {
     if (tag.kind === 'close') {
       for (let i = stack.length - 1; i >= 0; i--) {
         if (stack[i].tag === element) {
-          stack[i].symbol.range = rangeOf(text, stack[i].start, tag.end)
+          stack[i].symbol.range = rangeOf(lineIndex, stack[i].start, tag.end)
           stack.length = i
           break
         }
@@ -55,14 +56,14 @@ export function getDocumentSymbols(text: string): OutlineSymbol[] {
     const nameAttr = tag.attributes.find(attr => attr.name.toLowerCase() === 'name')
     const label = nameAttr?.value?.trim() || `<${element}>`
     const selectionRange = nameAttr?.valueStart !== undefined
-      ? rangeOf(text, nameAttr.valueStart, nameAttr.valueEnd ?? nameAttr.valueStart)
-      : rangeOf(text, tag.nameStart, tag.nameEnd)
+      ? rangeOf(lineIndex, nameAttr.valueStart, nameAttr.valueEnd ?? nameAttr.valueStart)
+      : rangeOf(lineIndex, tag.nameStart, tag.nameEnd)
 
     const symbol: OutlineSymbol = {
       name: label,
       detail: element,
       kind,
-      range: rangeOf(text, tag.start, tag.end),
+      range: rangeOf(lineIndex, tag.start, tag.end),
       selectionRange,
       children: [],
     }

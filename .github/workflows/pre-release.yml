@@ -1,0 +1,31 @@
+name: Pre-Release
+
+# 手动触发的预发布:版本号取 package.json,发布为 --pre-release(用户需显式选择加入)
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 输入 publish 以确认把当前 package.json 版本作为预发布上传
+        required: true
+
+jobs:
+  pre-release:
+    if: github.event.inputs.confirm == 'publish'
+    runs-on: ubuntu-latest
+    env:
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm run lint
+      - run: npm test
+      - name: Publish pre-release
+        if: env.VSCE_PAT != ''
+        run: npx --yes @vscode/vsce publish --pre-release
+      - name: Notice when VSCE_PAT is missing
+        if: env.VSCE_PAT == ''
+        run: echo "::notice::未配置 VSCE_PAT secret,已跳过预发布"

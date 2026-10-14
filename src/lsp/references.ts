@@ -1,7 +1,7 @@
 import type { PlainRange } from './types'
 // 引用解析:在一段 krpano 文本里找出某个名字被引用的位置。
 // 纯逻辑(不依赖 fs / vscode),供查找引用、重命名、括号索引补全与校验共用。
-import { offsetToPosition, scanXml } from '../shared/xml'
+import { createLineIndex, offsetToPosition, scanXml } from '../shared/xml'
 import { collectDefinitions } from './symbols'
 
 /** krpano 里可以用 [name] 索引的元素类型 */
@@ -10,22 +10,22 @@ export const INDEXABLE_ELEMENTS = ['layer', 'hotspot', 'plugin', 'scene', 'data'
 /** 名字型属性:值本身就是一个 name 引用 */
 export const NAME_ATTRIBUTES = ['style', 'linkedscene'] as const
 
-/** 第一个参数是元素/场景名字的内建动作(callwith 的名字在第二个参数) */
-export const NAME_ARGUMENT_ACTIONS = [
-  'loadscene',
-  'loadstyle',
-  'looktohotspot',
-  'removescene',
-  'removehotspot',
-  'removelayer',
-  'removeplugin',
-  'removeevent',
-  'addhotspot',
-  'addlayer',
-  'addplugin',
-  'addstyle',
-  'callwith',
-] as const
+/** 第一个参数是名字的内建动作 → 该名字所属的元素类型(callwith 的名字在第二个参数) */
+export const NAME_ARGUMENT_ACTIONS: Record<string, string | undefined> = {
+  loadscene: 'scene',
+  loadstyle: 'style',
+  looktohotspot: 'hotspot',
+  removescene: 'scene',
+  removehotspot: 'hotspot',
+  removelayer: 'layer',
+  removeplugin: 'plugin',
+  removeevent: 'events',
+  addhotspot: 'hotspot',
+  addlayer: 'layer',
+  addplugin: 'plugin',
+  addevent: 'events',
+  callwith: 'action',
+}
 
 export interface NameReference {
   name: string
@@ -40,8 +40,8 @@ function isPlainName(value: string): boolean {
   return /^[\w.-]+$/.test(value)
 }
 
-function rangeOf(text: string, start: number, end: number): PlainRange {
-  return { start: offsetToPosition(text, start), end: offsetToPosition(text, end) }
+function rangeOf(lineIndex: ReturnType<typeof createLineIndex>, start: number, end: number): PlainRange {
+  return { start: lineIndex.toPosition(start), end: lineIndex.toPosition(end) }
 }
 
 function isJavascriptAction(tag: { attributes: Array<{ name: string, value?: string }> }): boolean {
@@ -55,6 +55,7 @@ interface SkipRegion { start: number, end: number }
 /** 收集文本里所有可能的 name 引用(跳过注释、CDATA 与 JS 动作体) */
 export function collectReferences(text: string): NameReference[] {
   const scan = scanXml(text)
+  const lineIndex = createLineIndex(text)
   const skip: SkipRegion[] = scan.skipped.map(region => ({ start: region.start, end: region.end }))
   const references: NameReference[] = []
   let covered = 0
@@ -87,7 +88,7 @@ export function collectReferences(text: string): NameReference[] {
       const offset = start + (match.index ?? 0) + match[0].length - raw.length - 1
       if (isSkipped(offset))
         continue
-      references.push({ name: raw, range: rangeOf(text, offset, offset + raw.length), form: 'index', element: match[1] })
+      references.push({ name: raw, range: rangeOf(lineIndex, offset, offset + raw.length), form: 'index', element: match[1] })
     }
   }
 
@@ -98,9 +99,9 @@ export function collectReferences(text: string): NameReference[] {
       const offset = start + (match.index ?? 0) + match[0].length - name.length - 1
       if (isSkipped(offset))
         continue
-      references.push({ name, range: rangeOf(text, offset, offset + name.length), form: 'call' })
+      references.push({ name, range: rangeOf(lineIndex, offset, offset + name.length), form: 'call' })
     }
-    const argRe = new RegExp(`(?<![\\w.$])(${NAME_ARGUMENT_ACTIONS.join('|')})[ \\t]*\\(([^)]*)`, 'g')
+    const argRe = new RegExp(`(?<![\\w.$])(${Object.keys(NAME_ARGUMENT_ACTIONS).join('|')})[ \\t]*\\(([^)]*)`, 'g')
     for (const match of slice.matchAll(argRe)) {
       const action = match[1]
       const args = match[2]
@@ -114,7 +115,7 @@ export function collectReferences(text: string): NameReference[] {
       const offset = base + target.indexOf(trimmed)
       if (isSkipped(offset))
         continue
-      references.push({ name: trimmed, range: rangeOf(text, offset, offset + trimmed.length), form: 'argument', element: action === 'loadstyle' ? 'style' : undefined })
+      references.push({ name: trimmed, range: rangeOf(lineIndex, offset, offset + trimmed.length), form: 'argument', element: NAME_ARGUMENT_ACTIONS[action] })
     }
   }
 
@@ -132,7 +133,7 @@ export function collectReferences(text: string): NameReference[] {
         const trimmed = attr.value.trim()
         if (isPlainName(trimmed)) {
           const offset = attr.valueStart + attr.value.indexOf(trimmed)
-          references.push({ name: trimmed, range: rangeOf(text, offset, offset + trimmed.length), form: 'attribute', element: name === 'linkedscene' ? 'scene' : 'style' })
+          references.push({ name: trimmed, range: rangeOf(lineIndex, offset, offset + trimmed.length), form: 'attribute', element: name === 'linkedscene' ? 'scene' : 'style' })
         }
       }
       pushIndexes(attr.valueStart, valueEnd)
@@ -250,4 +251,34 @@ export function attributeValueContextAt(text: string, offset: number): Attribute
     }
   }
   return undefined
+}
+
+/** 处于 `动作名(` 的参数位置时的上下文(用于按元素类型补全名字) */
+export function callArgumentContextAt(text: string, offset: number): { action: string, element?: string, prefix: string } | undefined {
+  const lineStart = text.lastIndexOf('\n', Math.max(0, offset - 1)) + 1
+  const before = text.slice(Math.max(0, offset - 300), offset)
+  const match = /(?<![\w.$])([A-Z_][\w-]*)\(([^()]*)$/i.exec(before)
+  if (!match)
+    return undefined
+  const action = match[1]
+  const args = match[2]
+  if (!(action in NAME_ARGUMENT_ACTIONS))
+    return undefined
+  const isCallwithSecond = action === 'callwith' && args.includes(',')
+  const target = isCallwithSecond ? args.slice(args.indexOf(',') + 1) : args
+  if (target.includes(','))
+    return undefined
+  const start = offset - target.length
+  if (start < lineStart)
+    return undefined
+  return { action, element: NAME_ARGUMENT_ACTIONS[action], prefix: target.trim() }
+}
+
+/** 处于 `元素名[名字].` 之后、准备写属性时的上下文 */
+export function elementPropertyContextAt(text: string, offset: number): { element: string, prefix: string } | undefined {
+  const before = text.slice(0, offset)
+  const match = /(layer|hotspot|plugin|scene|view|image|display|control|area|action|events|data|style|cursors|autorotate|contextmenu|depthmap|model|splats|krpano|preview|include)\s*\[[^\]]*\]\s*\.(\w*)$/.exec(before)
+  if (!match)
+    return undefined
+  return { element: match[1], prefix: match[2] }
 }

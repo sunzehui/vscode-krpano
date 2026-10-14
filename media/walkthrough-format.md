@@ -1,0 +1,4 @@
+- `Shift+Alt+F`：整篇格式化（默认不重排 `<action>` 内容，可配置 `xml.format.*`）
+- `Ctrl+K Ctrl+F`：选区格式化，只按标签层级对齐缩进
+- 检测到标签未闭合/错配时先弹窗确认，避免默默改结构
+- 用 `<!-- krpano-lang-format: off -->` … `<!-- krpano-lang-format: on -->` 包住不想被触碰的区域

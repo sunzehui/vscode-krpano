@@ -5,9 +5,13 @@ import assert from 'node:assert/strict'
 import { Buffer } from 'node:buffer'
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+
+const require = createRequire(import.meta.url)
+const { pathToUri } = require('./build/lsp/symbols.js')
 
 const SERVER = path.resolve('dist/lsp/server.js')
 const hasServer = existsSync(SERVER)
@@ -166,7 +170,7 @@ test('LSP server:跨文件 include(诊断不再噪音 + 跨文件跳转)', { ski
     await client.request(1, 'initialize', { processId: process.pid, rootUri: null, capabilities: { workspace: { configuration: true } } })
     client.send({ jsonrpc: '2.0', method: 'initialized', params: {} })
 
-    const uri = `file://${entry}`
+    const uri = pathToUri(entry)
     client.send({
       jsonrpc: '2.0',
       method: 'textDocument/didOpen',
@@ -192,7 +196,7 @@ test('LSP server:跨文件 include(诊断不再噪音 + 跨文件跳转)', { ski
       position: { line: 4, character: offset - entryText.lastIndexOf('\n', offset) - 1 + 3 },
     })
     assert.ok(definition.result, JSON.stringify(definition))
-    assert.equal(definition.result.uri, `file://${actions}`)
+    assert.equal(definition.result.uri, pathToUri(actions))
     assert.deepEqual(definition.result.range.start, { line: 1, character: 16 }, 'name 值 from_include 的起始列')
   }
   finally {
@@ -247,13 +251,13 @@ test('LSP server:引用、跨文件重命名、符号与快速修复', { skip: h
 
   const child = spawn(process.execPath, [SERVER, '--stdio'], { stdio: ['pipe', 'pipe', 'inherit'], cwd: tmpdir() })
   const client = createClient(child)
-  const uri = `file://${entry}`
+  const uri = pathToUri(entry)
   const position = (line, character) => ({ line, character })
   try {
     await client.request(1, 'initialize', {
       processId: process.pid,
-      rootUri: `file://${dir}`,
-      workspaceFolders: [{ uri: `file://${dir}`, name: 'ws' }],
+      rootUri: pathToUri(dir),
+      workspaceFolders: [{ uri: pathToUri(dir), name: 'ws' }],
       capabilities: { workspace: { configuration: true } },
     })
     client.send({ jsonrpc: '2.0', method: 'initialized', params: {} })
@@ -270,7 +274,7 @@ test('LSP server:引用、跨文件重命名、符号与快速修复', { skip: h
       context: { includeDeclaration: true },
     })
     const referenceLocations = references.result ?? []
-    assert.ok(referenceLocations.some(item => item.uri === `file://${actions}`), `应包含 actions.xml 中的定义:${JSON.stringify(referenceLocations)}`)
+    assert.ok(referenceLocations.some(item => item.uri === pathToUri(actions)), `应包含 actions.xml 中的定义:${JSON.stringify(referenceLocations)}`)
     assert.ok(referenceLocations.some(item => item.uri === uri), '应包含本文件的调用处')
 
     // 重命名:同时改本文件调用处与 include 文件里的定义
@@ -281,8 +285,8 @@ test('LSP server:引用、跨文件重命名、符号与快速修复', { skip: h
     })
     const changes = rename.result?.changes ?? {}
     assert.ok(changes[uri]?.length >= 1, `本文件应有编辑:${JSON.stringify(changes)}`)
-    assert.ok(changes[`file://${actions}`]?.length === 1, `include 文件应有定义改动:${JSON.stringify(changes)}`)
-    assert.equal(changes[`file://${actions}`][0].newText, 'renamed_helper')
+    assert.ok(changes[pathToUri(actions)]?.length === 1, `include 文件应有定义改动:${JSON.stringify(changes)}`)
+    assert.equal(changes[pathToUri(actions)][0].newText, 'renamed_helper')
 
     // 文档大纲:只包含本文档的元素(include 文件里的定义不算)
     const documentSymbols = await client.request(4, 'textDocument/documentSymbol', { textDocument: { uri } })
@@ -293,7 +297,7 @@ test('LSP server:引用、跨文件重命名、符号与快速修复', { skip: h
     // 工作区符号:能搜到 include 文件里的动作
     const workspaceSymbols = await client.request(6, 'workspace/symbol', { query: 'helper' })
     const workspaceUris = (workspaceSymbols.result ?? []).map(item => item.location?.uri)
-    assert.ok(workspaceUris.includes(`file://${actions}`), `工作区符号应包含 actions.xml:${JSON.stringify(workspaceSymbols.result)}`)
+    assert.ok(workspaceUris.includes(pathToUri(actions)), `工作区符号应包含 actions.xml:${JSON.stringify(workspaceSymbols.result)}`)
 
     // 快速修复:lang="ts" → type="Javascript"
     const action = await client.request(5, 'textDocument/codeAction', {
