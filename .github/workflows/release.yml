@@ -22,6 +22,7 @@ jobs:
           cache: npm
 
       - name: Check tag matches package.json version
+        id: version
         run: |
           node -e "
             const version = require('./package.json').version
@@ -30,7 +31,10 @@ jobs:
               console.error('tag ' + tag + ' 与 package.json 的 ' + version + ' 不一致')
               process.exit(1)
             }
-          "
+            // 带 -rc/-beta 等后缀的版本走预发布通道
+            const prerelease = version.includes('-')
+            process.stdout.write('prerelease=' + prerelease + '\n')
+          " >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
@@ -44,9 +48,13 @@ jobs:
       - name: Package vsix
         run: npx --yes @vscode/vsce package --out krpano-lang.vsix
 
-      - name: Publish to Marketplace
-        if: env.VSCE_PAT != ''
+      - name: Publish to Marketplace (stable)
+        if: env.VSCE_PAT != '' && steps.version.outputs.prerelease == 'false'
         run: npx --yes @vscode/vsce publish --packagePath krpano-lang.vsix
+
+      - name: Publish to Marketplace (pre-release)
+        if: env.VSCE_PAT != '' && steps.version.outputs.prerelease == 'true'
+        run: npx --yes @vscode/vsce publish --packagePath krpano-lang.vsix --pre-release
 
       - name: Notice when VSCE_PAT is missing
         if: env.VSCE_PAT == ''
@@ -55,15 +63,20 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
           node scripts/changelog-notes.mjs > notes.md
           title="krpano-lang ${GITHUB_REF_NAME#v}"
+          prerelease_flag=""
+          if [ "$PRERELEASE" = "true" ]; then
+            prerelease_flag="--prerelease"
+          fi
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             # 重新推送同一个 tag 时:更新说明并覆盖附件
-            gh release edit "$GITHUB_REF_NAME" --title "$title" --notes-file notes.md
+            gh release edit "$GITHUB_REF_NAME" --title "$title" --notes-file notes.md $prerelease_flag
             gh release upload "$GITHUB_REF_NAME" krpano-lang.vsix --clobber
           else
-            gh release create "$GITHUB_REF_NAME" krpano-lang.vsix --title "$title" --notes-file notes.md
+            gh release create "$GITHUB_REF_NAME" krpano-lang.vsix --title "$title" --notes-file notes.md $prerelease_flag
           fi
 
       - uses: actions/upload-artifact@v7

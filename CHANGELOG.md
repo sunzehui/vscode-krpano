@@ -2,6 +2,28 @@
 
 All notable changes to the "krpano-lang" extension are documented in this file.
 
+## 1.0.0
+
+### Added
+
+- **Statements, commands and diagnostics**
+  - `xml.format.scriptStatements` (opt-in) splits multiple krpano statements written on one line into separate lines; semicolons inside strings and parentheses are untouched and JavaScript actions are skipped.
+  - Command palette: **krpano: Insert Scene Skeleton** (view / preview / multires cube template named after the file) and **krpano: Format All XML Files** (formats the workspace, only rewrites documents whose tag structure is unchanged, reports how many files were skipped). Command titles are localized through `package.nls`.
+  - `<include url="...">` can be completed from the XML files next to the document, and `F12` on the url jumps to the included file.
+  - Attribute values are validated: unbalanced parentheses or quotes in `calc:`/`get:` expressions are warned about, and enum attributes (`align`, `edge`, `fovtype`, `blendmode`) report values outside the documented set.
+  - Hover shows the accepted values for common attributes; `krpano.lsp.diagnostics.unknownAttributes` and `krpano.lsp.diagnostics.versionMismatch` can switch off the two attribute checks.
+- **Localization and observability**: the quick-fix titles and the extension-host messages follow the VS Code display language (Chinese/English), the language client logs state transitions to the *krpano-lang* output channel and warns when the server stops unexpectedly (highlighting and formatting keep working).
+- **Testing**: a real VS Code integration test (`npm run test:integration`, `@vscode/test-electron`) runs formatting, the commands and the language server end-to-end; CI runs it on Linux under `xvfb`. Branch coverage is now measured without the bundled third-party formatter and the thresholds are 90% lines / 90% branches / 88% functions.
+- `npm run typecheck` (`tsc --noEmit`) runs in CI.
+
+### Fixed
+
+- Latent defects found by enabling the type check and by the coverage work: `getHover` had a stray block referencing an undefined `context` (it would throw when hovering `layer[...`), duplicate detection dropped the `container`, the include index lost the defining element, `resolveIncludePath` threw for unsaved documents, rename candidates could collide with existing names, and "Extract attributes to style" rewrote valueless attributes into `name=""`.
+
+### Changed
+
+- The formatter now honours the `tabSize`/`insertSpaces` of the formatting request (matching the behaviour of other language formatters); `xml.format.indentation` still wins when set.
+
 ## 0.12.0
 
 ### Added

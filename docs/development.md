@@ -18,7 +18,9 @@ pnpm install        # 安装依赖
 | `pnpm dev`（或 `npm run dev`） | watch 模式，源文件变更时自动重建，供 F5 调试使用 |
 | `npm run bench` | 生成合成大文档跑语言服务关键路径(含预算断言;CI 也会跑) |
 | `npm run lint` / `npm run lint:fix` | ESLint 9 + @antfu/eslint-config 9(flat config);CI 会跑 `npm run lint` |
-| `npm run coverage` | 在测试之上统计 `src/` 纯逻辑模块的覆盖率（c8，阈值 90% 语句 / 88% 函数 / 75% 分支） |
+| `npm run typecheck` | `tsc --noEmit` 全量类型检查（CI 会跑） |
+| `npm run coverage` | 在测试之上统计纯逻辑模块的覆盖率（c8，阈值 90% 行 / 90% 分支 / 88% 函数；当前 99%+ / 90%+ / 92%） |
+| `npm run test:integration` | 用 `@vscode/test-electron` 下载真实 VS Code，在扩展宿主里跑端到端用例（格式化、命令面板、LSP 诊断/补全/悬停、批量格式化） |
 | `npm test` | 跑全部测试：`build:test`（把纯模块编译到 `test/build`）+ `node --test test/*.test.mjs`（语法 scope、格式化、LSP 纯函数；若已 `npm run build`，还会跑语言服务器 stdio 端到端冒烟与打包产物冒烟） |
 | `npm run release` | 通过 bumpp 交互式选择版本号 → commit → tag → push |
 | `npx @vscode/vsce package` | 打包出 `.vsix` |
@@ -46,7 +48,8 @@ npm ci --legacy-peer-deps      # 打包依赖收集需要 npm 形态的 node_mod
 npm run build                  # 先生成 dist(含 dist/lsp/server.js,server 冒烟测试需要)
 npm run lint
 npm test
-npm run coverage               # 纯逻辑模块覆盖率(带阈值)
+npm run coverage               # 纯逻辑模块覆盖率(带阈值:行 90 / 分支 90 / 函数 88)
+xvfb-run -a npm run test:integration   # 仅 Linux:真实 VS Code 集成测试(下载的 VS Code 会缓存)
 npm run bench                  # 性能基准(合成 0.9MB 文档 + 200 文件索引)
 npx @vscode/vsce package --out krpano-lang.vsix
 unzip -l krpano-lang.vsix | grep -q 'extension/node_modules/xml-formatter/'   # 回归检查:运行时依赖必须进包

@@ -55,10 +55,12 @@
 | `xml.format.handleRootNode` | `true` | **本扩展自定义**：解析失败且原因是多根节点时，自动包裹 `<krpano>…</krpano>` 重试 |
 | `xml.format.attributeLayout` | `preserve` | **本扩展自定义**：`one-per-line` 每个属性一行；`align` 每行一个并把 `=` 对齐（krpano 官方示例风格） |
 | `xml.format.actionIndentation` | `false` | **本扩展自定义**：按括号层级重新缩进 `<action>` 正文；开启后 action 内容即使列在 `ignoredPaths` 里也会被调整缩进，JS 动作不受影响 |
+| `xml.format.scriptStatements` | `false` | **本扩展自定义**：把同一行里用 `;` 分隔的多条脚本语句拆到多行；只动普通 action 的语句边界，字符串/括号内的分号不动，JS 动作跳过 |
 
 各选项的完整语义以 [xml-formatter 文档](https://github.com/chrisbottin/xml-formatter#options) 为准。两点补充说明：
 
-- **缩进取值的优先级**：`xml.format.indentation`（留空视为未设置）> `editor.insertSpaces`（`false` 用 `\t`）> 按 `editor.tabSize`（兜底 4）生成空格。
+- **缩进取值的优先级**：格式化请求携带的 `tabSize`/`insertSpaces`（VS Code 调用 provider 时传入，与编辑器当前设置一致）> `xml.format.indentation`（留空视为未设置）> `editor.insertSpaces`（`false` 用 `\t`）> 按 `editor.tabSize`（兜底 4）生成空格。
+- **语句拆分的顺序**：`scriptStatements` 先拆行，`actionIndentation` 再按括号给拆出来的行统一缩进，两者同时开启时结果最整齐。
 - 未设置 `whiteSpaceAtEndOfSelfclosingTag` / `forceSelfClosingEmptyTag` 时使用库默认值 `false`，即自闭合标签写成 `<tag/>`、空元素保持 `<tag></tag>`。
 
 ### 推荐配置（来自根 README）

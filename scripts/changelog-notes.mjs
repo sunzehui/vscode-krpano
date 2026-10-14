@@ -37,10 +37,25 @@ export function extractSubsection(changelog, version, heading) {
 }
 
 const invokedDirectly = process.argv[1]?.endsWith('changelog-notes.mjs')
+/**
+ * 取某个版本的说明:预发布版本(如 1.0.0-rc.1)没有单独段落时,
+ * 退回基础版本(1.0.0)的段落,并在开头标注这是预发布。
+ */
+export function notesFor(changelog, version) {
+  const baseVersion = version.replace(/-.*$/, '')
+  const exact = extractSection(changelog, version)
+  if (exact)
+    return exact
+  const base = extractSection(changelog, baseVersion)
+  if (!base)
+    return undefined
+  return `> 预发布版本 ${version}(正式版请以 ${baseVersion} 为准)\n\n${base}`
+}
+
 if (invokedDirectly) {
   const version = process.argv[2] ?? JSON.parse(readFileSync('package.json', 'utf8')).version
   const changelog = readFileSync('CHANGELOG.md', 'utf8')
-  const notes = extractSection(changelog, version)
+  const notes = notesFor(changelog, version)
   if (!notes) {
     console.error(`CHANGELOG.md 中没有找到版本 ${version} 的段落`)
     process.exitCode = 1

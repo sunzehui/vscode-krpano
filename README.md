@@ -13,11 +13,12 @@ VS Code 下的 krpano 开发插件：语法高亮、语言服务（LSP）、XML 
 
 - **语法高亮**：krpano XML、action 脚本（含 `type="Javascript"` 的 JS action）、`<data>` 里的 JSON、`<cssstyles>` 里的 CSS
 - **语言服务（LSP）**：
-  - 补全：元素与属性（插入 `ath="$1"` 形式）、`style=` / `linkedscene=` 取值、事件属性里的动作名、`layer[…]` 括号索引、`layer[info].` 后面的属性、`loadscene(` 等名字参数
-  - 诊断与快速修复：标签未闭合/错配、未知元素、未定义的动作与引用、重名 `name`、`%N` 占位符越界；常见问题一键修复
-  - 导航与重构：悬停说明、`F12` 跳转、`Shift+F12` 查引用、`F2` 重命名，都能跨 `<include>` 的文件
+  - 补全：元素与属性（插入 `ath="$1"` 形式）、`style=` / `linkedscene=` 取值、事件属性里的动作名、`layer[…]` 括号索引、`layer[info].` 后面的属性、`loadscene(` 等名字参数、`<include url="` 的同目录 xml 文件
+  - 诊断与快速修复：标签未闭合/错配、未知元素、未定义的动作与引用、重名 `name`、`%N` 占位符越界、`calc:` 表达式括号引号配平、`align`/`edge`/`fovtype`/`blendmode` 取值校验；常见问题一键修复
+  - 导航与重构：悬停说明（常用属性附可取值）、`F12` 跳转（含 `<include url>` 跳到被包含文件）、`Shift+F12` 查引用、`F2` 重命名，都能跨 `<include>` 的文件
   - 大纲与工作区符号：Outline 按 scene 树展示结构，`Ctrl+T` 搜索整个工作区的动作与场景
 - **XML 格式化**：`Shift+Alt+F` 整篇格式化（用 `<!-- krpano-lang-format: off -->` … `on` 保护区域），或选中一段后 `Ctrl+K Ctrl+F` 只对齐缩进
+- **命令面板**：`krpano: 插入 scene 骨架`（view/preview/多分辨率 cube 模板）、`krpano: 格式化工作区所有 XML 文件`（只改写结构不变的文件）
 - **代码片段**：53 个常用写法片段（action、标签结构、image/scene/tour 等）
 - 安装后欢迎页提供 4 步引导（打开、诊断、导航、格式化）
 
@@ -78,6 +79,18 @@ Here is the list of native vscode settings I pass to xml formatter which control
 - [常见问题](docs/faq.md)
 
 ## Release Notes
+
+### 1.0.0
+
+- **命令面板**：`krpano: 插入 scene 骨架`（按文件名生成 view/preview/多分辨率 cube 模板）、`krpano: 格式化工作区所有 XML 文件`（只改写结构不变的文件，跳过并计数），命令标题随界面语言切换（`package.nls`）
+- **include 导航**：`<include url="` 处补全同目录的 xml 文件，`F12` 直接跳到被包含的文件
+- **取值校验与提示**：`calc:`/`get:` 表达式括号、引号不配平给出警告；`align`、`edge`、`fovtype`、`blendmode` 取值不在官方集合内给出提示；悬停在常用属性上附带可取值列表
+- **细粒度诊断开关**：新增 `krpano.lsp.diagnostics.unknownAttributes`（未知属性）与 `versionMismatch`（版本不匹配/可能废弃），可分别关闭
+- **语句级排版（可选）**：`xml.format.scriptStatements` 把同一行里以 `;` 分隔的多条语句拆到多行——字符串与括号内的分号不动，JS 动作跳过；与 `actionIndentation` 同时开启时先拆行再统一缩进
+- **服务可观测性**：语言客户端把状态变化写进 `krpano-lang` 输出通道，服务意外停止时提示并可一键查看日志；语言服务加载失败也会明确提示（高亮与格式化不受影响）
+- **本地化**：快速修复标题与宿主提示随 VS Code 显示语言切换中/英
+- **集成测试与覆盖率**：新增 `npm run test:integration`（`@vscode/test-electron` 在真实 VS Code 里跑格式化、命令与 LSP 端到端用例，CI 在 Linux 上以 xvfb 执行）；覆盖率只统计本项目代码，阈值提升到 行 90 / 分支 90 / 函数 88（当前 99% / 90% / 92%）
+- **工程质量**：`npm run typecheck` 进入 CI，并顺势修掉若干潜伏缺陷（悬停 `layer[...` 会抛异常、重命名候选可能撞名、提取 style 把无值属性写成 `name=""`、未保存文档解析 include 抛异常等）
 
 ### 0.10.0
 
