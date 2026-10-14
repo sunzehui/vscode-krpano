@@ -273,12 +273,3 @@ export function callArgumentContextAt(text: string, offset: number): { action: s
     return undefined
   return { action, element: NAME_ARGUMENT_ACTIONS[action], prefix: target.trim() }
 }
-
-/** 处于 `元素名[名字].` 之后、准备写属性时的上下文 */
-export function elementPropertyContextAt(text: string, offset: number): { element: string, prefix: string } | undefined {
-  const before = text.slice(0, offset)
-  const match = /(layer|hotspot|plugin|scene|view|image|display|control|area|action|events|data|style|cursors|autorotate|contextmenu|depthmap|model|splats|krpano|preview|include)\s*\[[^\]]*\]\s*\.(\w*)$/.exec(before)
-  if (!match)
-    return undefined
-  return { element: match[1], prefix: match[2] }
-}

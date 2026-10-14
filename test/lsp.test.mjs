@@ -4,7 +4,7 @@ import { test } from 'node:test'
 
 const require = createRequire(import.meta.url)
 const krpanoData = require('../src/lsp/krpanoData.json')
-const { getCompletions, getDefinition, getDiagnostics, getHover, krpanoElementNames } = require('./build/lsp/features.js')
+const { getCompletions, getDefinition, getDiagnostics, getHover, getSignatureHelp, krpanoElementNames } = require('./build/lsp/features.js')
 
 const messages = text => getDiagnostics(text).map(d => d.message)
 function offsetOf(text, needle, occurrence = 1) {
@@ -321,4 +321,75 @@ test('补全:layer[name]. 之后补全该元素属性', () => {
   const labels = items.map(i => i.label)
   assert.ok(labels.includes('align'), labels.slice(0, 8).join(','))
   assert.ok(labels.every(label => label.startsWith('ali')), labels.join(','))
+})
+
+test('属性诊断:未知属性给提示,样式模板类元素放行', () => {
+  const typo = '<krpano>\n  <hotspot name="h" athh="10"/>\n</krpano>'
+  const diagnostics = getDiagnostics(typo)
+  assert.ok(diagnostics.some(d => d.message.includes('Unknown attribute "athh" on <hotspot>')), diagnostics.map(d => d.message).join(' | '))
+  assert.equal(diagnostics.find(d => d.message.includes('Unknown attribute'))?.severity, 'information')
+
+  const legit = '<krpano>\n  <hotspot name="h" ath="10" atv="0" style="s" devices="mobile" if="x"/>\n</krpano>'
+  assert.ok(!getDiagnostics(legit).some(d => d.message.includes('Unknown attribute')), getDiagnostics(legit).map(d => d.message).join(' | '))
+
+  const custom = '<krpano>\n  <style name="s" my_custom="1"/>\n  <object name="o" my_custom="1"/>\n</krpano>'
+  assert.ok(!getDiagnostics(custom).some(d => d.message.includes('Unknown attribute')), '样式模板类允许自定义属性')
+
+  // 数据类元素(object/prototype)不应被当作未知元素
+  const legacy = '<krpano>\n  <object name="o" extends="InvisibleContent"/>\n  <prototype name="p"/>\n</krpano>'
+  assert.ok(!getDiagnostics(legacy).some(d => d.message.includes('Unknown krpano element')), getDiagnostics(legacy).map(d => d.message).join(' | '))
+})
+
+test('属性诊断:版本差异(需要更新版本 / 可能已废弃)', () => {
+  // depthmap.textured 在 1.21/1.22 有文档,1.23 起没有
+  const deprecated = '<krpano version="1.23">\n  <image><depthmap textured="true"/></image>\n</krpano>'
+  const deprecatedMessages = getDiagnostics(deprecated).map(d => d.message)
+  assert.ok(deprecatedMessages.some(m => m.includes('not documented since krpano 1.22')), deprecatedMessages.join(' | '))
+
+  const oldFile = '<krpano version="1.21">\n  <image><depthmap textured="true"/></image>\n</krpano>'
+  assert.ok(!getDiagnostics(oldFile).some(d => d.message.includes('not documented since')), '声明旧版本时不应提示废弃')
+
+  // 未声明版本时不校验
+  const noVersion = '<krpano>\n  <image><depthmap textured="true"/></image>\n</krpano>'
+  assert.ok(!getDiagnostics(noVersion).some(d => d.message.includes('not documented since')), getDiagnostics(noVersion).map(d => d.message).join(' | '))
+})
+
+test('签名帮助:内置动作的参数列表与当前参数', () => {
+  const text = '<hotspot name="h" onclick="lookat(45, 12'
+  const help = getSignatureHelp(text, text.length)
+  assert.ok(help, '应识别出 lookat 调用')
+  assert.equal(help.name, 'lookat')
+  assert.deepEqual(help.params.slice(0, 2).map(p => p.name), ['h', 'v'])
+  assert.equal(help.params[2].optional, true)
+  assert.equal(help.activeParameter, 1, '光标在第 2 个参数')
+
+  const third = `${text}, 90`
+  assert.equal(getSignatureHelp(third, third.length)?.activeParameter, 2)
+
+  // 嵌套调用:内层优先
+  const nested = '<hotspot name="h" onclick="if(x, lookat(1'
+  const nestedHelp = getSignatureHelp(nested, nested.length)
+  assert.equal(nestedHelp?.name, 'lookat')
+
+  // 未知动作没有签名
+  assert.equal(getSignatureHelp('<hotspot name="h" onclick="my_action(1', 32), undefined)
+})
+
+test('补全:%N 占位符按 args 声明', () => {
+  const text = '<krpano>\n  <action name="a" args="first, second">\n    trace(%'
+  const items = getCompletions(text, text.length)
+  assert.deepEqual(items.map(i => i.label), ['%1', '%2'], items.map(i => i.label).join(',') || '(无候选)')
+  assert.ok(items[0].detail.includes('first'), items[0].detail)
+
+  const withArg = `${text}1`
+  assert.deepEqual(getCompletions(withArg, withArg.length).map(i => i.label), ['%1'], '应按已输入内容过滤')
+  assert.ok(!getCompletions('<krpano>\n  <action name="a">\n    trace(%', 33).length, '没有 args 时不建议占位符')
+})
+
+test('补全:view. / layer[x]. 之后补全元素属性', () => {
+  const text = '<hotspot name="h" onclick="tween(view.fo'
+  const items = getCompletions(text, text.length)
+  const labels = items.map(i => i.label)
+  assert.ok(labels.includes('fov'), labels.slice(0, 6).join(','))
+  assert.ok(labels.every(label => label.startsWith('fo')), labels.join(','))
 })

@@ -5,7 +5,7 @@ import { attributeAtOffset, createLineIndex, offsetToPosition, scanXml, tagAtOff
 // krpano XML 语言特性实现(纯函数,不依赖 vscode / vscode-languageserver,便于单元测试)。
 import krpanoData from './krpanoData.json'
 import { docForAttribute, docForElement } from './krpanoDocs'
-import { callArgumentContextAt, collectReferences, elementPropertyContextAt, findUnknownIndexes, indexContextAt } from './references'
+import { callArgumentContextAt, collectReferences, findUnknownIndexes, indexContextAt } from './references'
 import { collectDefinitions } from './symbols'
 
 export type { DiagnosticSettings, PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
@@ -14,11 +14,17 @@ interface KrpanoData {
   elements: Record<string, string[]>
   builtinActions: string[]
   controlKeywords: string[]
+  attributeVersions: Record<string, string[]>
+  actionSignatures: Record<string, Array<{ name: string, optional?: boolean }>>
 }
 
 const data = krpanoData as unknown as KrpanoData
 const elements: Record<string, string[]> = data.elements
 const elementNames = Object.keys(elements).sort()
+const attributeVersions = data.attributeVersions ?? {}
+const actionSignatures = data.actionSignatures ?? {}
+/** 样式模板类元素:允许自定义属性,不做属性校验 */
+const CUSTOM_ATTRIBUTE_ELEMENTS = new Set(['style', 'object', 'prototype'])
 const builtins = new Set([...data.builtinActions, ...data.controlKeywords, 'parent', 'caller', 'global', 'local', 'Math'])
 
 /** 允许任意子标签的元素(其子元素名不是 krpano 元素) */
@@ -27,6 +33,18 @@ const FREE_FORM = new Set(['textstyle', 'cssstyles', 'style'])
 const SPECIAL_ATTRIBUTES = ['devices', 'if']
 
 const SOURCE = 'krpano-lang'
+
+/** 把 "1.21"/"1.20.11" 解析成可比较的数字(1.21 → 1.21) */
+function parseVersion(value: string): number | undefined {
+  const match = /^(\d+)\.(\d+)/.exec(value.trim())
+  if (!match)
+    return undefined
+  return Number(match[1]) + Number(match[2]) / 100
+}
+
+function rangeOfAttr(lineIndex: ReturnType<typeof createLineIndex>, attr: { nameStart: number, nameEnd: number }): PlainRange {
+  return { start: lineIndex.toPosition(attr.nameStart), end: lineIndex.toPosition(attr.nameEnd) }
+}
 
 function rangeOf(text: string, start: number, end: number): PlainRange {
   return { start: offsetToPosition(text, start), end: offsetToPosition(text, end) }
@@ -330,6 +348,67 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
     }
   }
 
+  // 12) 属性校验:未知属性 + 版本差异提示(数据来自官方文档,以及 v1.21–v1.24 的差分)
+  const rootVersion = (() => {
+    const root = scan.tags.find(tag => tag.name.toLowerCase() === 'krpano')
+    const versionAttr = root?.attributes.find(attr => attr.name.toLowerCase() === 'version')
+    return versionAttr?.value ? parseVersion(versionAttr.value) : undefined
+  })()
+  for (const tag of scan.tags) {
+    const element = tag.name.toLowerCase()
+    const documented = elements[element]
+    if (!documented)
+      continue
+    for (const attr of tag.attributes) {
+      const name = attr.name.toLowerCase()
+      if (SPECIAL_ATTRIBUTES.includes(name) || ignoredNames.has(name))
+        continue
+      const range = rangeOfAttr(lineIndex, attr)
+      const versions = attributeVersions[`${element}.${name}`]
+      if (!documented.includes(name)) {
+        if (CUSTOM_ATTRIBUTE_ELEMENTS.has(element))
+          continue
+        // 曾经有文档、但在当前版本已消失的属性 → 提示可能废弃,而不是"未知属性"
+        if (versions?.length && rootVersion !== undefined && parseVersion(versions[versions.length - 1])! < rootVersion) {
+          diagnostics.push({
+            message: `Attribute "${name}" is not documented since krpano ${versions[versions.length - 1]}; it may be deprecated.`,
+            severity: 'information',
+            range,
+            source: SOURCE,
+          })
+          continue
+        }
+        diagnostics.push({
+          message: `Unknown attribute "${attr.name}" on <${tag.name}>.`,
+          severity: 'information',
+          range,
+          source: SOURCE,
+        })
+        continue
+      }
+      if (!versions?.length || rootVersion === undefined)
+        continue
+      const first = parseVersion(versions[0])
+      const last = parseVersion(versions[versions.length - 1])
+      if (first !== undefined && rootVersion < first) {
+        diagnostics.push({
+          message: `Attribute "${name}" needs krpano ${versions[0]} or newer (this file declares ${tag.attributes.find(a => a.name.toLowerCase() === 'version')?.value ?? ''}${rootVersion}).`,
+          severity: 'information',
+          range,
+          source: SOURCE,
+        })
+      }
+      else if (last !== undefined && rootVersion > last) {
+        diagnostics.push({
+          message: `Attribute "${name}" is not documented since krpano ${versions[versions.length - 1]}; it may be deprecated.`,
+          severity: 'information',
+          range,
+          source: SOURCE,
+        })
+      }
+    }
+  }
+
   // 11) include 目标不存在(相对当前文件解析;krpano 同样会因此报错)
   for (const item of context.unresolvedIncludes ?? []) {
     diagnostics.push({
@@ -439,8 +518,23 @@ export function getCompletions(text: string, offset: number, context: ProjectCon
       return items
   }
 
-  // layer[info]. 之后补全该元素的属性
-  const propertyContext = elementPropertyContextAt(text, offset)
+  // %N 占位符:按所在 action 的 args 补全
+  const percentContext = percentContextAt(text, offset)
+  if (percentContext) {
+    const args = enclosingActionArgs(text, offset)
+    if (args.length) {
+      return args.map((argName, index) => ({
+        label: `%${index + 1}`,
+        kind: 'value' as const,
+        detail: `argument ${index + 1}${argName ? `: ${argName}` : ''}`,
+        documentation: `Placeholder for argument ${index + 1} of the enclosing action.`,
+        insertText: `%${index + 1}`,
+      })).filter(item => item.label.slice(1).startsWith(percentContext.prefix))
+    }
+  }
+
+  // view.fov / layer[info].ath 之后补全该元素的属性
+  const propertyContext = elementPrefixContextAt(text, offset)
   if (propertyContext) {
     const attributes = elements[propertyContext.element] ?? []
     const items = attributes
@@ -690,4 +784,93 @@ export function findUndefinedReferences(text: string, context: ProjectContext = 
 }
 
 export const krpanoElementNames = elementNames
+/** 元素 → 已文档化的属性名(快速修复用) */
+export const krpanoAttributes = elements
+export const krpanoSpecialAttributes = SPECIAL_ATTRIBUTES
+export const krpanoCustomAttributeElements = CUSTOM_ATTRIBUTE_ELEMENTS
 export const krpanoBuiltinCount = builtins.size
+
+export interface PlainSignatureHelp {
+  name: string
+  params: Array<{ name: string, optional?: boolean }>
+  activeParameter: number
+}
+
+/** 光标所在调用的签名信息(内置动作的参数列表来自官方 Actions 文档) */
+export function getSignatureHelp(text: string, offset: number): PlainSignatureHelp | undefined {
+  let depth = 0
+  for (let i = offset - 1; i >= 0; i--) {
+    const char = text[i]
+    if (char === ')') {
+      depth++
+      continue
+    }
+    if (char !== '(')
+      continue
+    if (depth > 0) {
+      depth--
+      continue
+    }
+    let start = i
+    while (start > 0 && /[\w-]/.test(text[start - 1]))
+      start--
+    const name = text.slice(start, i)
+    const params = actionSignatures[name]
+    if (!params?.length)
+      return undefined
+    let commas = 0
+    let nested = 0
+    for (let j = i + 1; j < offset; j++) {
+      const inner = text[j]
+      if (inner === '(')
+        nested++
+      else if (inner === ')')
+        nested--
+      else if (inner === ',' && nested === 0)
+        commas++
+    }
+    return { name, params, activeParameter: Math.min(commas, params.length - 1) }
+  }
+  return undefined
+}
+
+/** `element.` 或 `element[name].` 之后准备写属性时的上下文(元素来自 krpano 数据) */
+export function elementPrefixContextAt(text: string, offset: number): { element: string, prefix: string } | undefined {
+  const before = text.slice(0, offset)
+  const match = /(?<![\w.])([a-z_]\w*)(?:\[[^\]]*\])?\.(\w*)$/.exec(before)
+  if (!match)
+    return undefined
+  const element = match[1]
+  if (!elementNames.includes(element))
+    return undefined
+  return { element, prefix: match[2] }
+}
+
+/** 光标前是否是 `%` 占位符的开头 */
+export function percentContextAt(text: string, offset: number): { prefix: string } | undefined {
+  const match = /(?<![\w%])%(\d*)$/.exec(text.slice(0, offset))
+  return match ? { prefix: match[1] } : undefined
+}
+
+/** 找到包含偏移的最内层 <action> 的 args 参数名 */
+export function enclosingActionArgs(text: string, offset: number): string[] {
+  const stack: Array<{ start: number, args: string[] }> = []
+  for (const tag of scanXml(text).tags) {
+    if (tag.start > offset)
+      break
+    const element = tag.name.toLowerCase()
+    if (element !== 'action')
+      continue
+    if (tag.kind === 'close')
+      stack.pop()
+    else if (tag.kind === 'open')
+      stack.push({ start: tag.start, args: parseArgsValue(tag.attributes.find(attr => attr.name.toLowerCase() === 'args')?.value) })
+  }
+  return stack.length ? stack[stack.length - 1].args : []
+}
+
+function parseArgsValue(value?: string): string[] {
+  if (!value)
+    return []
+  return value.split(',').map(item => item.trim()).filter(Boolean)
+}

@@ -244,7 +244,7 @@ test('LSP server:引用、跨文件重命名、符号与快速修复', { skip: h
     '    helper_action(1);',
     '  </action>',
     '  <layer name="info"/>',
-    '  <action name="use_layer" autorun="onstart">layer[info].visible = true;</action>',
+    '  <action name="use_layer" autorun="onstart">layer[info].visible = true; lookat(45, 12);</action>',
     '</krpano>',
   ].join('\n')
   writeFileSync(entry, `${entryText}\n`)
@@ -298,6 +298,15 @@ test('LSP server:引用、跨文件重命名、符号与快速修复', { skip: h
     const workspaceSymbols = await client.request(6, 'workspace/symbol', { query: 'helper' })
     const workspaceUris = (workspaceSymbols.result ?? []).map(item => item.location?.uri)
     assert.ok(workspaceUris.includes(pathToUri(actions)), `工作区符号应包含 actions.xml:${JSON.stringify(workspaceSymbols.result)}`)
+
+    // 签名帮助:lookat( 的参数列表
+    const signature = await client.request(7, 'textDocument/signatureHelp', {
+      textDocument: { uri },
+      position: { line: 6, character: entryText.split('\n')[6].indexOf('lookat(') + 'lookat(45, 12'.length },
+    })
+    const label = signature.result?.signatures?.[0]?.label ?? ''
+    assert.ok(label.startsWith('lookat('), `应返回 lookat 的签名:${JSON.stringify(signature.result)}`)
+    assert.ok(label.includes('[fov]'), `可选参数应用 [] 标出:${label}`)
 
     // 快速修复:lang="ts" → type="Javascript"
     const action = await client.request(5, 'textDocument/codeAction', {

@@ -35,7 +35,7 @@ graph TD
 │   │   ├── client.ts           # 语言客户端：在扩展宿主里启动服务器进程
 │   │   ├── server.ts           # 语言服务器入口（独立进程，stdio/IPC）
 │   │   ├── features.ts         # 纯函数：诊断/补全/悬停/跳转
-│   │   ├── krpanoData.json     # 生成数据：31 个元素、858 个属性名、内建 action 清单
+│   │   ├── krpanoData.json     # 生成数据：33 个元素、864 个属性名(含皮肤通用属性)、内建 action、属性版本记录、动作签名
 │   │   ├── krpanoDocs.ts       # 手写的元素/属性说明（hover 用）
 │   │   └── krpanoData 生成脚本见 scripts/gen-krpano-data.mjs
 │   └── types/options.ts        # 选项类型（xml-formatter 选项 + handleRootNode）
@@ -100,8 +100,8 @@ graph TD
 
 - 扩展激活时 `src/lsp/client.ts` 用 `vscode-languageclient` 启动 **独立进程**（`dist/lsp/server.js`，IPC 传输）；启动失败只记录日志，不影响高亮与格式化。
 - 服务器（`src/lsp/server.ts`）使用 `vscode-languageserver` + `TextDocument` 同步文档，收到变更后把文本交给 `src/lsp/features.ts` 的纯函数并发布结果：
-  - 诊断（标签配对、未知元素、`action type` 取值、`<include>` 目标不存在、`linkedscene`/`style` 引用不存在、同一容器内重名、未定义动作引用）
-  - 补全（元素名、属性名、`type`/`style`/`linkedscene` 取值、事件属性里的动作名、`layer[…]` 括号索引）、悬停、跳转、引用与重命名（跨文件）、文档大纲与工作区符号、快速修复
+  - 诊断（标签配对、未知元素与未知属性、属性需要更高 krpano 版本/可能已废弃、`action type` 取值、`<include>` 目标不存在、`linkedscene`/`style` 引用不存在、同一容器内重名、未定义动作引用、`%N` 越界）
+  - 补全（元素名、属性名、`type`/`style`/`linkedscene` 取值、事件属性里的动作名、`layer[…]` 与 `view.` 前缀、`%N` 占位符）、悬停、跳转、引用与重命名（跨文件）、文档大纲与工作区符号、签名帮助、快速修复
 - `src/lsp/symbols.ts` 沿 `<include url="...">` 链收集动作/热点/场景等 `name` 定义（广度优先、带环检测与深度上限、路径归一化），磁盘文件按 mtime+size 缓存；因此"未定义动作"只在**本文件与 include 链都没有**时提示，跳转可跨文件。客户端注册了 `**/*.xml` 文件监听，include 的文件被改动时会重新校验打开的文档。
 - 数据来源：`krpanoData.json`（由 `scripts/gen-krpano-data.mjs` 从官方 XML Reference 抽取元素/属性名，并按 Actions 文档补充内建 action 清单）+ `krpanoDocs.ts`（手写说明，不复用官方文档原文）。
 - `src/shared/xml.ts` 的 `createLineIndex` 预建行起点并用二分查找做 offset→行列换算：早期实现每次线性扫描，1MB 级文档会让诊断退化成 O(n²)（基准见 `npm run bench`）。

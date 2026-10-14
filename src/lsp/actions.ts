@@ -1,9 +1,16 @@
 import type { PlainRange, ProjectContext } from './types'
 import { offsetToPosition, scanXml, tagAtOffset } from '../shared/xml'
-import { findDuplicateDefinitions, findUndefinedReferences } from './features'
+import {
+  findDuplicateDefinitions,
+  findUndefinedReferences,
+  krpanoAttributes,
+  krpanoCustomAttributeElements,
+  krpanoSpecialAttributes,
+} from './features'
 // 快速修复(Code Actions):针对诊断给出可一键应用的修改。
 // 纯逻辑:只计算编辑内容,由服务器翻译成 LSP 的 WorkspaceEdit。
 import krpanoData from './krpanoData.json'
+import { collectReferences } from './references'
 
 export interface PlainTextEdit {
   range: PlainRange
@@ -186,10 +193,45 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
       candidate = `${duplicate.name}_${index}`
       index++
     }
-    actions.push({
-      title: `Rename this duplicate to "${candidate}"`,
-      edit: { changes: [{ edits: [{ range: duplicate.range, newText: candidate }] }] },
+    // 同一容器(scene)内的同名引用很可能指向这个定义,一并改名;标题里说明这一启发式
+    const containerRange = duplicate.container ? findElementRange(text, 'scene', duplicate.container) : undefined
+    const related = collectReferences(text).filter((reference) => {
+      if (reference.name !== duplicate.name)
+        return false
+      return containerRange ? rangeContains(containerRange, reference.range) : true
     })
+    const edits: PlainTextEdit[] = [
+      { range: duplicate.range, newText: candidate },
+      ...related.map(reference => ({ range: reference.range, newText: candidate })),
+    ]
+    const scope = duplicate.container ? `its references in this scene` : 'its references'
+    actions.push({
+      title: `Rename this duplicate (and ${scope}) to "${candidate}"`,
+      edit: { changes: [{ edits }] },
+    })
+  }
+
+  // 6) 未知属性 → 建议最接近的属性名
+  if (tag) {
+    const element = tag.name.toLowerCase()
+    const documented = krpanoAttributes[element]
+    if (documented && !krpanoCustomAttributeElements.has(element)) {
+      const unknown = tag.attributes.filter(attr =>
+        !documented.includes(attr.name.toLowerCase())
+        && !krpanoSpecialAttributes.includes(attr.name.toLowerCase())
+        && attr.valueStart !== undefined,
+      )
+      const target = unknown.find(attr => offset >= attr.nameStart && offset <= attr.nameEnd) ?? (unknown.length === 1 ? unknown[0] : undefined)
+      if (target) {
+        const suggestion = closestAttribute(documented, target.name)
+        if (suggestion) {
+          actions.push({
+            title: `Change attribute to "${suggestion}"`,
+            edit: { changes: [{ edits: [{ range: rangeOf(text, target.nameStart, target.nameEnd), newText: suggestion }] }] },
+          })
+        }
+      }
+    }
   }
 
   // 5) include 目标缺失 → 新建文件(只对调用方确认解析不到的目标提供)
@@ -268,3 +310,53 @@ function offsetAtPosition(text: string, position: { line: number, character: num
 }
 
 export { editDistance }
+
+/** 与给定名字最接近的已文档化属性名(编辑距离 ≤ 2) */
+function closestAttribute(documented: string[], name: string): string | undefined {
+  const lower = name.toLowerCase()
+  let best: string | undefined
+  let bestDistance = 3
+  for (const candidate of documented) {
+    if (candidate === lower)
+      continue
+    const distance = editDistance(lower, candidate)
+    if (distance < bestDistance) {
+      bestDistance = distance
+      best = candidate
+    }
+  }
+  return best
+}
+
+/** 找到某个带 name 的元素(如 scene)在文本中的整体范围 */
+function findElementRange(text: string, element: string, name: string): PlainRange | undefined {
+  const tags = scanXml(text).tags
+  for (let i = 0; i < tags.length; i++) {
+    const tag = tags[i]
+    if (tag.kind !== 'open' || tag.name.toLowerCase() !== element)
+      continue
+    const nameAttr = tag.attributes.find(attr => attr.name.toLowerCase() === 'name')
+    if (nameAttr?.value !== name)
+      continue
+    let depth = 0
+    for (let j = i; j < tags.length; j++) {
+      if (tags[j].kind === 'open' && tags[j].name.toLowerCase() === element) {
+        depth++
+      }
+      else if (tags[j].kind === 'close' && tags[j].name.toLowerCase() === element) {
+        depth--
+        if (depth === 0)
+          return rangeOf(text, tag.start, tags[j].end)
+      }
+    }
+    return rangeOf(text, tag.start, tag.end)
+  }
+  return undefined
+}
+
+/** a 是否完整包含 b */
+function rangeContains(a: PlainRange, b: PlainRange): boolean {
+  const startsBefore = a.start.line < b.start.line || (a.start.line === b.start.line && a.start.character <= b.start.character)
+  const endsAfter = a.end.line > b.end.line || (a.end.line === b.end.line && a.end.character >= b.end.character)
+  return startsBefore && endsAfter
+}

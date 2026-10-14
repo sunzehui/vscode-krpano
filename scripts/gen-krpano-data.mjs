@@ -41,6 +41,9 @@ const ELEMENTS = [
   'scene',
   'model',
   'splats',
+  // 历史写法:文档没有独立章节,但 krpano 里可用(样式模板类,允许自定义属性)
+  'object',
+  'prototype',
 ]
 
 // 文档对这两个元素的属性写法特殊(style 允许任意属性,include 只列了 url),手工补齐
@@ -59,6 +62,25 @@ function add(path, attr) {
     return
   if (attrs.has(tag) && /^[a-z][a-z0-9_]*$/.test(attr))
     attrs.get(tag).add(attr)
+}
+
+/** 从一份 XML Reference 页面里收集 (元素, 属性) 对 */
+function collectAttributePairs(page) {
+  const pairs = new Set()
+  for (const m of page.matchAll(/<a href="#([A-Za-z][\w.-]*)\.([a-z][\w-]*)"[^>]*>[A-Za-z_][\w-]*<\/a>=/g))
+    pairs.add(`${m[1].split('.').pop()}.${m[2]}`)
+  for (const row of page.matchAll(/<tr class="xmlattrdocdesc">([\s\S]{0,2000}?)<\/tr>/g)) {
+    const label = row[1].replace(/<[^>]*>/g, ' ')
+    if (/Function\s*name/i.test(label))
+      continue
+    for (const anchor of row[1].matchAll(/<a name="([A-Za-z][\w.-]*)"><\/a>/g)) {
+      const parts = anchor[1].split('.')
+      if (parts.length < 2)
+        continue
+      pairs.add(`${parts[parts.length - 2]}.${parts[parts.length - 1]}`)
+    }
+  }
+  return pairs
 }
 
 // 来源 1:元素文档里的 presyntax 属性清单(<a href="#ELEM.ATTR">attr</a>="...">)
@@ -91,9 +113,19 @@ for (const row of html.matchAll(/<tr class="xmlattrdocdesc">([\s\S]{0,2000}?)<\/
   }
 }
 
+// 官方 XML Reference 未收录、但在 krpano 皮肤与官方示例里通用的属性(不列入会误报"未知属性")
+const EXTRA_ATTRIBUTES = {
+  krpano: ['title'],
+  scene: ['title', 'thumburl'],
+  layer: ['title'],
+  hotspot: ['linkedscene', 'onlastframe'],
+}
+
 const data = {}
-for (const el of ELEMENTS)
-  data[el] = [...attrs.get(el)].sort()
+for (const el of ELEMENTS) {
+  const extra = EXTRA_ATTRIBUTES[el] ?? []
+  data[el] = [...new Set([...attrs.get(el), ...extra])].sort()
+}
 
 // 从仓库内的 TextMate 语法提取内建 action 与关键字,供"未定义动作"诊断排除误报
 const grammar = JSON.parse(readFileSync('syntaxes/krpano.tmLanguage.json', 'utf8'))
@@ -134,7 +166,58 @@ const builtinActions = [...new Set([
 ])].sort()
 const controlKeywords = [...new Set(wordsOf('keyword.control.krpano-statement'))].sort()
 
-writeFileSync(out, `${JSON.stringify({ elements: data, builtinActions, controlKeywords }, null, 2)}\n`)
+// 版本感知:对比官方文档的 4 个版本,记录每个 元素.属性 出现在哪些版本里
+const DOC_VERSIONS = [
+  ['1.21', '/tmp/krpano_xml_v121.html'],
+  ['1.22', '/tmp/krpano_xml_v122.html'],
+  ['1.23', '/tmp/krpano_xml_v123.html'],
+  ['1.24', '/tmp/krpano_xml_ref.html'],
+]
+const attributeVersions = {}
+let versionInfo = false
+for (const [version, file] of DOC_VERSIONS) {
+  let page
+  try {
+    page = readFileSync(file, 'utf8')
+  }
+  catch {
+    console.log(`(缺少 ${version} 的文档缓存,跳过版本差分;可 curl -sSL "https://krpano.com/docu/xml/?version=121" -o /tmp/krpano_xml_v121.html 生成)`)
+    versionInfo = false
+    break
+  }
+  versionInfo = true
+  for (const key of collectAttributePairs(page)) {
+    attributeVersions[key] ??= []
+    attributeVersions[key].push(version)
+  }
+}
+
+// 动作签名:官方 Actions 页面用 <pre><a href="#act" class="selflink">act(必选, <span class="optargs">可选…</span>)</a></pre> 描述参数
+const actionSignatures = {}
+try {
+  const actionsPage = readFileSync(process.argv[4] ?? '/tmp/krpano_actions_page.html', 'utf8')
+  for (const match of actionsPage.matchAll(/<pre><a href="#([a-z_][a-z0-9_]*)" class="selflink">([\s\S]*?)<\/a><\/pre>/g)) {
+    const action = match[1]
+    const text = match[2]
+    const open = text.indexOf('(')
+    if (open === -1 || !text.trimEnd().endsWith(')'))
+      continue
+    const inner = text.slice(open + 1, text.lastIndexOf(')'))
+    const optionalPart = /<span class="optargs">([\s\S]*?)<\/span>/.exec(inner)
+    const requiredText = inner.replace(/<span class="optargs">[\s\S]*?<\/span>/, '')
+    const names = (raw, optional) => raw.replace(/<[^>]*>/g, ' ').split(',').map(item => item.trim()).filter(item => /^[A-Z_][\w-]*$/i.test(item)).map(name => (optional ? { name, optional: true } : { name }))
+    const params = [...names(requiredText, false), ...(optionalPart ? names(optionalPart[1], true) : [])]
+    if (params.length)
+      actionSignatures[action] = params
+  }
+}
+catch {
+  console.log('(未找到 Actions 文档缓存,跳过动作签名)')
+}
+
+writeFileSync(out, `${JSON.stringify({ elements: data, builtinActions, controlKeywords, attributeVersions: versionInfo ? attributeVersions : {}, actionSignatures }, null, 2)}\n`)
 console.log(`元素: ${ELEMENTS.length}, 属性合计: ${ELEMENTS.reduce((n, el) => n + data[el].length, 0)}`)
 console.log(`内建 action: ${builtinActions.length}, 关键字: ${controlKeywords.join(' ')}`)
+console.log(`属性版本记录: ${Object.keys(attributeVersions).length} 条${versionInfo ? '' : '(跳过)'}`)
+console.log(`动作签名: ${Object.keys(actionSignatures).length} 个;示例 lookat = ${JSON.stringify(actionSignatures.lookat ?? null)}`)
 console.log(`元素: ${ELEMENTS.join(' ')}`)

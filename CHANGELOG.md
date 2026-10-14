@@ -2,6 +2,18 @@
 
 All notable changes to the "krpano-lang" extension are documented in this file.
 
+## 0.11.0
+
+### Added
+
+- Attribute diagnostics: unknown attributes are reported (information) with a one-click "Change attribute to ..." fix; style-template elements (`style`, `object`, `prototype`) are exempt because they allow custom attributes.
+- Version awareness: the generator now diffs the official XML reference of krpano 1.21–1.24 (920 attribute/version records), so attributes introduced after the version declared in `<krpano version="...">` are reported as "needs krpano X.Y or newer" and attributes that disappeared from the documentation as "may be deprecated".
+- Signature help for built-in actions: parameter lists are extracted from the official Actions documentation (89 actions, required and optional parameters), shown for the call under the cursor.
+- `%N` completion inside actions: placeholders are completed from the declared `args`, with the argument name as detail.
+- Attribute completion after element prefixes: `view.fov`, `layer[info].ath`, ... complete the attributes of that element.
+- The duplicate-name quick fix now also renames the same-name references inside the same scene (the title states this heuristic).
+- Legacy elements `object` and `prototype` are recognised again (they are not in the current XML reference but are valid krpano), so they are no longer flagged as unknown.
+
 ## 0.10.1
 
 ### Changed

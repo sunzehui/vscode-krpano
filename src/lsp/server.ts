@@ -26,7 +26,7 @@ import {
   TextEdit,
 } from 'vscode-languageserver/node'
 import { getCodeActions } from './actions'
-import { getCompletions, getDefinition, getDiagnostics, getHover } from './features'
+import { getCompletions, getDefinition, getDiagnostics, getHover, getSignatureHelp } from './features'
 import { getDocumentSymbols } from './outline'
 import { collectReferences, nameAtOffset } from './references'
 import { buildIncludeIndex, contextForFile, pathToUri, resolveIncludePath, uriToPath } from './symbols'
@@ -244,6 +244,7 @@ connection.onInitialize(async (params) => {
       textDocumentSync: TextDocumentSyncKind.Incremental,
       completionProvider: { triggerCharacters: ['<', ' ', '"', '\'', '='] },
       hoverProvider: true,
+      signatureHelpProvider: { triggerCharacters: ['(', ','] },
       definitionProvider: true,
     },
   }
@@ -365,6 +366,23 @@ connection.onCodeAction((params) => {
     unresolvedIncludes: context.unresolvedIncludes,
   })
   return toCodeActions(document, actions)
+})
+
+connection.onSignatureHelp((params) => {
+  const document = documents.get(params.textDocument.uri)
+  if (!document)
+    return null
+  const help = getSignatureHelp(document.getText(), document.offsetAt(params.position))
+  if (!help)
+    return null
+  return {
+    signatures: [{
+      label: `${help.name}(${help.params.map(param => (param.optional ? `[${param.name}]` : param.name)).join(', ')})`,
+      parameters: help.params.map(param => ({ label: param.optional ? `[${param.name}]` : param.name })),
+    }],
+    activeSignature: 0,
+    activeParameter: help.activeParameter,
+  }
 })
 
 connection.onDefinition((params) => {

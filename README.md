@@ -83,7 +83,7 @@ Here is the list of native vscode settings I pass to xml formatter which control
 
 - 大幅性能修复：offset→行列换算由线性扫描改为预建行索引 + 二分，大文档上的诊断与大纲不再卡顿（0.9 MB 的 tour：诊断 108 s → 0.6 s，大纲 50 s → 38 ms，200 文件的工作区索引 4.1 s → 0.39 s）
 - 名字参数补全与校验：`loadscene(`、`loadstyle(`、`removehotspot(`、`callwith(caller, …)` 等补全当前文件与 include 里定义的名字，指向不存在的名字会给出提示
-- `layer[info].` 后面的属性补全（858 个属性）；`%N` 占位符超出 `args` 声明数量时按信息级提示
+- `layer[info].` 后面的属性补全（864 个属性）；`%N` 占位符超出 `args` 声明数量时按信息级提示
 - 格式化忽略区：`<!-- krpano-lang-format: off -->` … `on` 之间的内容逐字保留，可跨多个元素
 - 安装后提供 4 步欢迎引导（打开、诊断、导航、格式化）
 - 工程：`npm run bench` 性能基准（含预算断言）进入 CI；CI 覆盖 ubuntu / macos / windows 三平台，加入 Dependabot、CodeQL 与手动预发布（Pre-Release）workflow
@@ -135,7 +135,7 @@ Here is the list of native vscode settings I pass to xml formatter which control
 - 新增语言服务(LSP):
   - 诊断:标签未闭合/错配、未知元素、`<action type>` 取值、当前文件中未定义的动作调用
   - 补全:元素名、元素属性(插入 `attr="$1"`)、特殊属性 `devices`/`if`、`<action type>` 取值
-  - 悬停:元素与属性的简短说明(基于 krpano XML Reference 的 31 个元素、858 个属性)
+  - 悬停:元素与属性的简短说明(基于 krpano XML Reference 的 33 个元素、864 个属性)
   - 跳转:事件属性或 action 体中的 `action_name(...)` → 对应 `name="..."` 声明
 - 格式化前检测到标签未闭合/错配时会先弹窗确认(格式化器会容错修复标签结构)
 - 设置项 `xml.format.*` 已在清单中声明,设置界面有补全与说明
