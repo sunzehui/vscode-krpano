@@ -35,7 +35,7 @@ graph TD
 │   │   ├── client.ts           # 语言客户端：在扩展宿主里启动服务器进程
 │   │   ├── server.ts           # 语言服务器入口（独立进程，stdio/IPC）
 │   │   ├── features.ts         # 纯函数：诊断/补全/悬停/跳转
-│   │   ├── krpanoData.json     # 生成数据：31 个元素、900+ 属性名、内建 action 清单
+│   │   ├── krpanoData.json     # 生成数据：31 个元素、858 个属性名、内建 action 清单
 │   │   ├── krpanoDocs.ts       # 手写的元素/属性说明（hover 用）
 │   │   └── krpanoData 生成脚本见 scripts/gen-krpano-data.mjs
 │   └── types/options.ts        # 选项类型（xml-formatter 选项 + handleRootNode）

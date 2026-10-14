@@ -16,7 +16,9 @@ pnpm install        # 安装依赖
 | --- | --- |
 | `pnpm build`（或 `npm run build`） | 用 tsup 构建一次，输出 `dist/extension.js`（含 dts，`vscode` 为 external） |
 | `pnpm dev`（或 `npm run dev`） | watch 模式，源文件变更时自动重建，供 F5 调试使用 |
-| `npm test` | 跑全部测试：`build:test`（把纯模块编译到 `test/.tmp`）+ `node --test test/*.test.mjs`（语法 scope、格式化、LSP 纯函数；若已 `npm run build`，还会跑语言服务器 stdio 端到端冒烟与打包产物冒烟） |
+| `npm run lint` / `npm run lint:fix` | ESLint 10 + @antfu/eslint-config 9(flat config);CI 会跑 `npm run lint` |
+| `npm run coverage` | 在测试之上统计 `src/` 纯逻辑模块的覆盖率（c8，阈值 90% 语句 / 88% 函数 / 75% 分支） |
+| `npm test` | 跑全部测试：`build:test`（把纯模块编译到 `test/build`）+ `node --test test/*.test.mjs`（语法 scope、格式化、LSP 纯函数；若已 `npm run build`，还会跑语言服务器 stdio 端到端冒烟与打包产物冒烟） |
 | `npm run release` | 通过 bumpp 交互式选择版本号 → commit → tag → push |
 | `npx @vscode/vsce package` | 打包出 `.vsix` |
 | `npx @vscode/vsce publish` | 发布到 VS Code Marketplace（需要 Personal Access Token） |
@@ -41,7 +43,9 @@ pnpm install        # 安装依赖
 ```bash
 npm ci --legacy-peer-deps      # 打包依赖收集需要 npm 形态的 node_modules
 npm run build                  # 先生成 dist(含 dist/lsp/server.js,server 冒烟测试需要)
+npm run lint
 npm test
+npm run coverage               # 纯逻辑模块覆盖率(带阈值)
 npx @vscode/vsce package --out krpano-lang.vsix
 unzip -l krpano-lang.vsix | grep -q 'extension/node_modules/xml-formatter/'   # 回归检查:运行时依赖必须进包
 ```
@@ -94,7 +98,7 @@ npx @vscode/vsce publish
 从当前仓库状态整理出的改进点，供后续维护参考：
 
 - include 索引在每次校验时重建（磁盘文件有 mtime 缓存、校验有 250ms 去抖，仍未做增量解析）：超大项目偏重。
-- 单元测试没有覆盖率统计（可加 c8）；lint 栈（@antfu 0.6 + eslint 7）已停止维护，升级会带来全仓格式变化。
+- 覆盖率只统计 `src/` 纯逻辑模块（扩展宿主与语言服务器进程内的代码由冒烟测试覆盖，不计入百分比）；测试构建产物在 `test/build/`（V8 覆盖率不采集 `test/` 下的文件）。
 - 变量类型推断、`get:`/`calc:` 表达式校验未做。
 - `krpano` 模式（脚本-only）未内嵌 XML 标签处理（原因见 [syntax-highlighting.md](./syntax-highlighting.md#现状说明030)）；XML 文档统一用 `krpano-xml`。
 - 元素/属性数据来自官方文档的抽取脚本，只在升级 krpano 版本后需要重跑（页面需先 `curl` 到本地，见脚本头部注释）。

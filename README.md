@@ -26,14 +26,16 @@ krpano 语法高亮插件，使用 textMate 语法。
 Here is the list of native vscode settings I pass to xml formatter which control how your XML will be formatted. You can change any of these to configure how the XML will be formatted.
 [xml-formatter#options](https://github.com/chrisbottin/xml-formatter#options)
 ```json
-"editor.insertSpaces": true,
-"editor.tabSize": 4
-"xml.format.ignoredPaths": ["action"],
-"xml.format.collapseContent": true,
-"xml.format.lineSeparator": "\n",
-"xml.format.whiteSpaceAtEndOfSelfclosingTag": false
-"xml.format.forceSelfClosingEmptyTag": false,
-"xml.format.handleRootNode": true, // when format error, auto add krpano tag
+{
+  "editor.insertSpaces": true,
+  "editor.tabSize": 4,
+  "xml.format.ignoredPaths": ["action"],
+  "xml.format.collapseContent": true,
+  "xml.format.lineSeparator": "\n",
+  "xml.format.whiteSpaceAtEndOfSelfclosingTag": false,
+  "xml.format.forceSelfClosingEmptyTag": false,
+  "xml.format.handleRootNode": true
+}
 ```
 
 ## 文档
@@ -47,6 +49,14 @@ Here is the list of native vscode settings I pass to xml formatter which control
 - [常见问题](docs/faq.md)
 
 ## Release Notes
+
+### 0.8.0
+
+- 悬停说明新增约 105 条(常见属性现在都有说明);属性数据清理掉被文档混排进来的 krpano API 方法(如 `layer.getfullpath`),不再出现在补全里
+- include 链解析改为增量:只重新解析版本变化的文件(打开中的文档按编辑器版本号,磁盘文件按 mtime+size)
+- 覆盖率(c8)接入 CI,阈值 90% 语句 / 88% 函数 / 75% 分支(当前 95%+/95%+)
+- lint 升级到 ESLint 10 + @antfu/eslint-config 9(flat config),`npm run lint` 进入 CI
+- 扩展图标换成 128×128 PNG,仓库大图不再随包发布(安装包更小)
 
 ### 0.7.0
 
@@ -75,7 +85,7 @@ Here is the list of native vscode settings I pass to xml formatter which control
 - 新增语言服务(LSP):
   - 诊断:标签未闭合/错配、未知元素、`<action type>` 取值、当前文件中未定义的动作调用
   - 补全:元素名、元素属性(插入 `attr="$1"`)、特殊属性 `devices`/`if`、`<action type>` 取值
-  - 悬停:元素与属性的简短说明(基于 krpano XML Reference 的 31 个元素、900+ 属性)
+  - 悬停:元素与属性的简短说明(基于 krpano XML Reference 的 31 个元素、858 个属性)
   - 跳转:事件属性或 action 体中的 `action_name(...)` → 对应 `name="..."` 声明
 - 格式化前检测到标签未闭合/错配时会先弹窗确认(格式化器会容错修复标签结构)
 - 设置项 `xml.format.*` 已在清单中声明,设置界面有补全与说明

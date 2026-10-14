@@ -2,6 +2,21 @@
 
 All notable changes to the "krpano-lang" extension are documented in this file.
 
+## 0.8.0
+
+### Added
+
+- Coverage reporting with c8 (95%+ statements / 95%+ functions of the pure logic modules) and thresholds enforced in CI.
+- ~105 more hover descriptions (140 documented attributes in total, plus the earlier element docs).
+- Incremental include-chain parsing: the index only re-parses files whose version changed (open documents use the editor version, disk files mtime+size).
+
+### Changed
+
+- Lint stack upgraded to ESLint 10 with `@antfu/eslint-config` 9 (flat config); `npm run lint` is part of CI.
+- Generated attribute data is cleaned up: krpano API methods that the documentation mixes into the attribute tables are no longer suggested (858 attributes instead of 902).
+- The extension icon is a 128×128 PNG and the repository images are excluded from the package (smaller vsix).
+- Test builds are written to `test/build` (V8 coverage does not collect files below `test/`).
+
 ## 0.7.0
 
 ### Added
