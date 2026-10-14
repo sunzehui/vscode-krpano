@@ -94,14 +94,14 @@ graph TD
 
 ### 4. 格式化数据流
 
-`触发格式化 → getOptions（读配置）→ beautify（xml-formatter）→ 结构变化则先弹窗确认 → 单个 TextEdit 全量替换`，详见 [formatting.md](./formatting.md)。
+`触发格式化 → getOptions（读配置）→ beautify（xml-formatter）→ 结构变化则先弹窗确认 → 单个 TextEdit 全量替换`；选区格式化走 `src/shared/reindent.ts`（按标签层级对齐缩进，不重排属性），详见 [formatting.md](./formatting.md)。
 
 ### 5. 语言服务（LSP）
 
 - 扩展激活时 `src/lsp/client.ts` 用 `vscode-languageclient` 启动 **独立进程**（`dist/lsp/server.js`，IPC 传输）；启动失败只记录日志，不影响高亮与格式化。
 - 服务器（`src/lsp/server.ts`）使用 `vscode-languageserver` + `TextDocument` 同步文档，收到变更后把文本交给 `src/lsp/features.ts` 的纯函数并发布结果：
-  - 诊断（标签配对、未知元素、`action type` 取值、未定义动作引用、`<include>` 目标不存在）
-  - 补全（元素名、属性名、`type` 取值）、悬停、跳转（含跨文件跳转）
+  - 诊断（标签配对、未知元素、`action type` 取值、`<include>` 目标不存在、`linkedscene`/`style` 引用不存在、同一容器内重名、未定义动作引用）
+  - 补全（元素名、属性名、`type`/`style`/`linkedscene` 取值、事件属性里的动作名）、悬停、跳转（含跨文件跳转）
 - `src/lsp/symbols.ts` 沿 `<include url="...">` 链收集动作/热点/场景等 `name` 定义（广度优先、带环检测与深度上限、路径归一化），磁盘文件按 mtime+size 缓存；因此"未定义动作"只在**本文件与 include 链都没有**时提示，跳转可跨文件。客户端注册了 `**/*.xml` 文件监听，include 的文件被改动时会重新校验打开的文档。
 - 数据来源：`krpanoData.json`（由 `scripts/gen-krpano-data.mjs` 从官方 XML Reference 抽取的元素/属性名与内建 action 清单）+ `krpanoDocs.ts`（手写说明，不复用官方文档原文）。
 - 纯函数不依赖 vscode/lsp 类型，因此可以直接用 `node --test` 断言（见 `test/lsp.test.mjs`），另有 `test/server.test.mjs` 以真实进程走 stdio 协议做端到端冒烟。

@@ -7,7 +7,7 @@ krpano 语法高亮插件，使用 textMate 语法。
 
 - **语法高亮**:krpano XML 与 action 脚本(含 `type="Javascript"` 的 JS action)高亮
 - **语言服务(LSP)**:元素/属性补全与悬停说明、标签配对与未知元素诊断、从 `action_name(...)` 跳转到定义(可跨 `<include>` 的文件)
-- **XML 格式化**:按 `Shift+Alt+F` 格式化,选项见下方 Settings
+- **XML 格式化**:`Shift+Alt+F` 整篇格式化,或选中一段后 `Ctrl+K Ctrl+F` 只对齐缩进
 - **代码片段**:53 个常用写法片段(action、标签结构、image/scene/tour 等)
 
 推荐配合 auto-close-tag 插件使用，可以自动补全标签。
@@ -47,6 +47,14 @@ Here is the list of native vscode settings I pass to xml formatter which control
 - [常见问题](docs/faq.md)
 
 ## Release Notes
+
+### 0.6.0
+
+- 更多引用诊断:同一容器内重名的 `name`(scene 之间同名合法)、`linkedscene` 指向不存在的 scene(警告)、`style` 指向不存在的 style(信息级,皮肤/插件可能提供)
+- 取值补全:`style` / `linkedscene` 属性补全已定义的名字;事件属性(`onclick` 等)里补全动作名(含 include 文件中的定义)
+- 支持**选区格式化**(Format Selection):按标签层级对齐选中行的缩进,注释与 CDATA 内部保持原样,`xml.format.ignoredPaths` 内的选区不动
+- 格式化失败时给出解析器的具体原因,不再是笼统提示
+- 新增 `Release` workflow:推送 `v*` tag 时校验版本号并发布到 Marketplace(需配置 `VSCE_PAT` secret)
 
 ### 0.5.0
 

@@ -2,6 +2,16 @@
 
 All notable changes to the "krpano-lang" extension are documented in this file.
 
+## 0.6.0
+
+### Added
+
+- More reference diagnostics: duplicate `name` inside the same container (scenes are separate scopes), `linkedscene` pointing to an unknown scene (warning) and `style` pointing to an unknown style (information; skins and plugins may provide it).
+- Value completion for `style` / `linkedscene` attributes and for action names inside event attributes (`onclick`, `onloaded`, ...), including names from included files.
+- Range formatting (`Format Selection`): re-indents the selected lines to the tag nesting depth, leaving comments and CDATA untouched and skipping selections inside `xml.format.ignoredPaths`.
+- Formatting failures now report the parser message instead of a generic warning.
+- A `Release` workflow publishes the tagged version to the Marketplace (requires a `VSCE_PAT` repository secret) and verifies that the tag matches `package.json`.
+
 ## 0.5.0
 
 ### Added

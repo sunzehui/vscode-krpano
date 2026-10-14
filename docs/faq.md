@@ -54,8 +54,8 @@
 
 | 能力 | 说明 |
 | --- | --- |
-| 诊断 | 标签未闭合/错配（警告）、未知元素与 `<action type>` 非法取值（警告）、`<include>` 目标不存在（警告）、本文件与 include 链中均未定义的动作调用（信息） |
-| 补全 | 元素名、该元素的属性（插入 `ath="$1"` 形式）、特殊属性 `devices`/`if`、`<action type>` 的取值 |
+| 诊断 | 标签未闭合/错配、`<action type>` 非法取值、`<include>` 目标不存在、`linkedscene` 指向不存在的 scene、同一容器内重名（均为警告）；未知元素、未定义的 `style`、本文件与 include 链中均未定义的动作调用（信息级） |
+| 补全 | 元素名、该元素的属性（插入 `ath="$1"` 形式）、特殊属性 `devices`/`if`、`<action type>` 的取值、`style`/`linkedscene` 的已定义名字、事件属性里的动作名 |
 | 悬停 | 元素与属性的简短说明（31 个元素、900+ 属性） |
 | 跳转 | 事件属性或 action 体里的 `action_name(...)` → 对应 `name="..."` 声明（可跨 `<include>` 的文件） |
 
@@ -65,6 +65,10 @@
 - "Unknown krpano element" 同样是 **information**：白名单是官方 XML Reference 的 31 个元素，第三方插件自定义的元素可能被标记。
 
 语言服务在独立进程里运行；启动失败只会在扩展宿主控制台打印日志，高亮与格式化不受影响。
+
+## 选区格式化（Format Selection）与整篇格式化有什么区别？
+
+整篇格式化（`Shift+Alt+F`）交给 xml-formatter 重排；**选区格式化**只按标签层级把选中行的缩进对齐（不重排属性、不拆行），注释与 CDATA 内部保持原样，落在 `xml.format.ignoredPaths`（默认 `action`）里的选区不做处理。
 
 ## 设置里怎么配置格式化选项？
 

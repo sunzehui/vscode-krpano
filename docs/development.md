@@ -60,6 +60,8 @@ npx @vscode/vsce package          # 生成 krpano-lang-<version>.vsix
 npx @vscode/vsce publish
 ```
 
+发布自动化：`.github/workflows/release.yml` 在推送 `v*` tag 时校验 tag 与 `package.json` 版本一致、跑测试、打包并发布到 Marketplace（读 `VSCE_PAT` secret；未配置时只打包上传 vsix）。配置命令：`gh secret set VSCE_PAT`。手动发布仍可用 `npx @vscode/vsce publish --packagePath krpano-lang-<version>.vsix`。
+
 版本号流程：`npm run release`（bumpp）会更新 `package.json` 版本、打 tag 并推送。发布前请确认目标版本高于 Marketplace 上的现有版本（本仓库首次修复发布时为 0.1.0 → 0.3.0），并保持 tag 与 `package.json` 一致。
 
 `.vscodeignore` 控制哪些文件不进包：`src/`、`.vscode/`、`test/`、配置文件与 `docs/` 等被排除。**注意不要排除 `node_modules/`**：扩展运行时需要 `xml-formatter`，语言客户端需要 `vscode-languageclient`（tsup 把 `dependencies` 视为 external），vsce 会自动只把生产依赖树打包进去；一旦把 `node_modules/` 加进 `.vscodeignore`，打出的 vsix 缺失依赖，安装后格式化与语言服务都会失效（发布前用 `unzip -l xxx.vsix | grep xml-formatter` 可快速自检）。`dist/`（含 `dist/lsp/server.js` 语言服务器与 `dist/lsp/client.js` 客户端入口）、`snippets/`、`syntaxes/`、`language-configuration.json`、`doc/krpano.ico`（扩展图标）会进入 vsix。
@@ -73,6 +75,7 @@ npx @vscode/vsce publish
 | 代码片段 | `snippets/krpano.code-snippets` |
 | 注释、折叠、括号配对等编辑器行为 | `language-configuration.json` |
 | 格式化选项与默认值 | `src/getOptions.ts`、`src/beautifyHtml.ts`、`src/types/options.ts` |
+| 选区格式化（缩进对齐） | `src/shared/reindent.ts`（纯函数，断言见 `test/reindent.test.mjs`） |
 | 语法 scope 断言 / 格式化断言 / LSP 断言 | `test/grammar.test.mjs`、`test/format.test.mjs`、`test/lsp.test.mjs`、`test/xml.test.mjs`（改行为时同步补用例） |
 | 打包产物行为断言 | `test/artifact.test.mjs`（假 vscode API 加载 `dist/extension.js`）、`test/server.test.mjs`（语言服务器进程） |
 | 语言服务能力（诊断/补全/悬停/跳转） | `src/lsp/features.ts`（纯函数）；服务器接线在 `src/lsp/server.ts` |

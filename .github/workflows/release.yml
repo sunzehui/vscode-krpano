@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      # 在仓库 Settings → Secrets and variables → Actions 添加 VSCE_PAT(Marketplace → Manage 权限)
+      # 未配置时只打包并上传 vsix,不发布
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Check tag matches package.json version
+        run: |
+          node -e "
+            const version = require('./package.json').version
+            const tag = process.env.GITHUB_REF_NAME.replace(/^v/, '')
+            if (version !== tag) {
+              console.error('tag ' + tag + ' 与 package.json 的 ' + version + ' 不一致')
+              process.exit(1)
+            }
+          "
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Test
+        run: npm test
+
+      - name: Package vsix
+        run: npx --yes @vscode/vsce package --out krpano-lang.vsix
+
+      - name: Publish to Marketplace
+        if: env.VSCE_PAT != ''
+        run: npx --yes @vscode/vsce publish --packagePath krpano-lang.vsix
+
+      - name: Notice when VSCE_PAT is missing
+        if: env.VSCE_PAT == ''
+        run: echo "::notice::未配置 VSCE_PAT secret,已跳过发布;配置命令:gh secret set VSCE_PAT"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vsix
+          path: krpano-lang.vsix
+          if-no-files-found: error
