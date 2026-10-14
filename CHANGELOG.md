@@ -2,6 +2,12 @@
 
 All notable changes to the "krpano-lang" extension are documented in this file.
 
+## 0.8.1
+
+### Fixed
+
+- Documentation: the 0.8.0 release notes named the wrong ESLint major (the lint stack is ESLint 9, not 10).
+
 ## 0.8.0
 
 ### Added
@@ -12,7 +18,7 @@ All notable changes to the "krpano-lang" extension are documented in this file.
 
 ### Changed
 
-- Lint stack upgraded to ESLint 10 with `@antfu/eslint-config` 9 (flat config); `npm run lint` is part of CI.
+- Lint stack upgraded to ESLint 9 with `@antfu/eslint-config` 9 (flat config); `npm run lint` is part of CI.
 - Generated attribute data is cleaned up: krpano API methods that the documentation mixes into the attribute tables are no longer suggested (858 attributes instead of 902).
 - The extension icon is a 128×128 PNG and the repository images are excluded from the package (smaller vsix).
 - Test builds are written to `test/build` (V8 coverage does not collect files below `test/`).

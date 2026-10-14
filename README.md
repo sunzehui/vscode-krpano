@@ -55,7 +55,7 @@ Here is the list of native vscode settings I pass to xml formatter which control
 - 悬停说明新增约 105 条(常见属性现在都有说明);属性数据清理掉被文档混排进来的 krpano API 方法(如 `layer.getfullpath`),不再出现在补全里
 - include 链解析改为增量:只重新解析版本变化的文件(打开中的文档按编辑器版本号,磁盘文件按 mtime+size)
 - 覆盖率(c8)接入 CI,阈值 90% 语句 / 88% 函数 / 75% 分支(当前 95%+/95%+)
-- lint 升级到 ESLint 10 + @antfu/eslint-config 9(flat config),`npm run lint` 进入 CI
+- lint 升级到 ESLint 9 + @antfu/eslint-config 9(flat config),`npm run lint` 进入 CI
 - 扩展图标换成 128×128 PNG,仓库大图不再随包发布(安装包更小)
 
 ### 0.7.0

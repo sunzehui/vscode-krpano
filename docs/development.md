@@ -16,7 +16,7 @@ pnpm install        # 安装依赖
 | --- | --- |
 | `pnpm build`（或 `npm run build`） | 用 tsup 构建一次，输出 `dist/extension.js`（含 dts，`vscode` 为 external） |
 | `pnpm dev`（或 `npm run dev`） | watch 模式，源文件变更时自动重建，供 F5 调试使用 |
-| `npm run lint` / `npm run lint:fix` | ESLint 10 + @antfu/eslint-config 9(flat config);CI 会跑 `npm run lint` |
+| `npm run lint` / `npm run lint:fix` | ESLint 9 + @antfu/eslint-config 9(flat config);CI 会跑 `npm run lint` |
 | `npm run coverage` | 在测试之上统计 `src/` 纯逻辑模块的覆盖率（c8，阈值 90% 语句 / 88% 函数 / 75% 分支） |
 | `npm test` | 跑全部测试：`build:test`（把纯模块编译到 `test/build`）+ `node --test test/*.test.mjs`（语法 scope、格式化、LSP 纯函数；若已 `npm run build`，还会跑语言服务器 stdio 端到端冒烟与打包产物冒烟） |
 | `npm run release` | 通过 bumpp 交互式选择版本号 → commit → tag → push |
