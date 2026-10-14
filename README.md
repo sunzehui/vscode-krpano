@@ -1,7 +1,7 @@
 # krpano-lang
 
 [![CI](https://github.com/sunzehui/vscode-krpano/actions/workflows/ci.yml/badge.svg)](https://github.com/sunzehui/vscode-krpano/actions/workflows/ci.yml)
-[![Marketplace](https://img.shields.io/visual-studio-marketplace/v/sunzehui.krpano-lang)](https://marketplace.visualstudio.com/items?itemName=sunzehui.krpano-lang)
+[![Marketplace](https://vsmarketplacebadges.dev/version-short/sunzehui.krpano-lang.svg)](https://marketplace.visualstudio.com/items?itemName=sunzehui.krpano-lang)
 
 krpano syntax highlighting, language server, XML formatting and snippets for Visual Studio Code.
 
