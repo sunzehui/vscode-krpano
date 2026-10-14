@@ -22,8 +22,8 @@ export interface IncludeReference {
 }
 
 export interface IncludeIndex {
-  /** 名字 → 定义(含定义所在文件路径) */
-  definitions: Map<string, { path: string, range: PlainRange }>
+  /** 名字 → 定义(含定义所在文件路径、定义它的元素与容器) */
+  definitions: Map<string, { path: string, range: PlainRange, element: string, container?: string }>
   /** 解析不到的 include 目标 */
   unresolved: Array<{ path: string, url: string, range: PlainRange }>
 }
@@ -164,7 +164,7 @@ function parseFile(path: string, content: FileContent, cache?: ParseCache): Pars
 
 /** 沿 include 链收集定义(广度优先,带环检测、深度上限与按文件版本的增量解析) */
 export function buildIncludeIndex(entryPath: string, readFile: ReadFile, maxDepth = 16, cache?: ParseCache): IncludeIndex {
-  const definitions = new Map<string, { path: string, range: PlainRange }>()
+  const definitions: IncludeIndex['definitions'] = new Map()
   const unresolved: IncludeIndex['unresolved'] = []
   const visited = new Set<string>()
   let frontier: Array<{ path: string, depth: number }> = [{ path: entryPath, depth: 0 }]
@@ -185,7 +185,7 @@ export function buildIncludeIndex(entryPath: string, readFile: ReadFile, maxDept
         : parseFile(path, normalized, cache)
       for (const definition of parsed.definitions) {
         if (!definitions.has(definition.name))
-          definitions.set(definition.name, { path, range: definition.range })
+          definitions.set(definition.name, { path, range: definition.range, element: definition.element, container: definition.container })
       }
       if (depth >= maxDepth)
         continue
@@ -219,6 +219,7 @@ export function contextForFile(index: IncludeIndex, currentPath: string, current
       uri: pathToUri(definition.path),
       range: definition.range,
       element: definition.element,
+      container: definition.container,
     })
   }
   const unresolvedIncludes = index.unresolved

@@ -393,3 +393,87 @@ test('补全:view. / layer[x]. 之后补全元素属性', () => {
   assert.ok(labels.includes('fov'), labels.slice(0, 6).join(','))
   assert.ok(labels.every(label => label.startsWith('fo')), labels.join(','))
 })
+
+test('补全:include url 补全当前目录的 xml 文件', () => {
+  const text = '<krpano>\n  <include url="ac'
+  const items = getCompletions(text, text.length, { siblingXmlFiles: ['actions.xml', 'tour.xml', 'skin/'] })
+  assert.deepEqual(items.map(i => i.label), ['actions.xml'], items.map(i => i.label).join(',') || '(无候选)')
+  assert.ok(items[0].detail.includes('xml file'), items[0].detail)
+  assert.equal(items[0].insertText, 'actions.xml')
+  assert.ok(items[0].documentation.includes('actions.xml'))
+
+  const openQuote = '<krpano>\n  <include url="'
+  const all = getCompletions(openQuote, openQuote.length, { siblingXmlFiles: ['actions.xml', 'tour.xml'] })
+  assert.deepEqual(all.map(i => i.label), ['actions.xml', 'tour.xml'])
+  assert.deepEqual(getCompletions(text, text.length), [], '没有目录信息时不给候选')
+})
+
+test('跳转:include url 跳到被包含的文件', () => {
+  const text = '<krpano>\n  <include url="actions.xml"/>\n</krpano>'
+  const offset = offsetOf(text, 'actions.xml') + 2
+  const context = {
+    includeTargets: [{
+      url: 'actions.xml',
+      range: { start: { line: 1, character: 16 }, end: { line: 1, character: 27 } },
+      uri: 'file:///pano/actions.xml',
+    }],
+  }
+  const location = getDefinition(text, offset, context)
+  assert.ok(location, '应能跳到 include 目标')
+  assert.equal(location.uri, 'file:///pano/actions.xml')
+  assert.deepEqual(location.range.start, { line: 0, character: 0 })
+  assert.equal(getDefinition(text, offset, {}), null, '目标未解析时不跳转')
+})
+
+test('诊断:calc:/get: 表达式括号与引号配平', () => {
+  const unbalanced = messages('<hotspot ath="calc:(1+2" atv="0"/>')
+  assert.ok(unbalanced.some(m => m.includes('Unbalanced parentheses')), unbalanced.join(' | '))
+  const quote = messages('<hotspot ath="get:view.hlookat" atv="calc:\'1+2"/>')
+  assert.ok(quote.some(m => m.includes('Unclosed string quote')), quote.join(' | '))
+  const fine = messages('<hotspot ath="calc:(1+2)*3" atv="get:view.vlookat"/>')
+  assert.ok(!fine.some(m => m.includes('Unbalanced') || m.includes('Unclosed')), fine.join(' | '))
+  const severity = getDiagnostics('<hotspot ath="calc:(1+2"/>')[0]
+  assert.equal(severity.severity, 'warning')
+})
+
+test('诊断:枚举属性取值(align/edge/fovtype/blendmode)', () => {
+  const bad = messages('<hotspot align="lef" edge="top" ath="0"/>')
+  assert.ok(bad.some(m => m.includes('"lef" is not valid for align')), bad.join(' | '))
+  assert.ok(!bad.some(m => m.includes('for edge')), '合法取值不应报')
+
+  const cases = messages('<krpano><layer name="l" align="left top" fovtype="HFOV" blendmode="screen"/><hts name="h" blendmode="Normal"/></krpano>')
+  assert.ok(!cases.some(m => m.includes('is not valid for')), cases.join(' | '))
+
+  const dynamic = messages('<krpano><layer name="l" align="get:my_align" blendmode="calc:bm+1"/></krpano>')
+  assert.ok(!dynamic.some(m => m.includes('is not valid for')), `动态取值应放行:${dynamic.join(' | ')}`)
+
+  const custom = messages('<krpano><style name="s" align="weird"/></krpano>')
+  assert.ok(!custom.some(m => m.includes('is not valid for')), `样式模板元素应放行:${custom.join(' | ')}`)
+
+  const enumDiag = getDiagnostics('<hotspot align="lef" ath="0"/>').find(d => d.message.includes('is not valid for'))
+  assert.equal(enumDiag.severity, 'information')
+  assert.ok(enumDiag.message.includes('lefttop'), '提示里应列出合法取值')
+})
+
+test('悬停:属性取值提示', () => {
+  const text = '<hotspot name="h" align="lefttop" ath="0"/>'
+  const hover = getHover(text, offsetOf(text, 'align') + 1)
+  assert.ok(hover.contents.includes('Values:'), hover.contents)
+  assert.ok(hover.contents.includes('lefttop'), hover.contents)
+
+  const plain = getHover(text, offsetOf(text, 'name') + 1)
+  assert.ok(!plain.contents.includes('Values:'), '没有取值提示的属性不应出现 Values 段')
+})
+
+test('设置:unknownAttributes / versionMismatch 开关', () => {
+  const text = '<krpano version="1.21"><hotspot name="h" not_real="1" ath="0"/></krpano>'
+  assert.ok(messages(text).some(m => m.includes('Unknown attribute "not_real"')), messages(text).join(' | '))
+  const off = getDiagnostics(text, {}, { unknownAttributes: false })
+  assert.ok(!off.some(d => d.message.includes('not_real')), '关闭后不应提示未知属性')
+
+  const versioned = '<krpano version="1.24"><hotspot name="h" ath="0" videourl="x"/></krpano>'
+  const on = messages(versioned)
+  assert.ok(on.some(m => m.includes('videourl')) || on.some(m => m.includes('not documented since')), on.join(' | '))
+  const versionOff = getDiagnostics(versioned, {}, { versionMismatch: false })
+  assert.ok(!versionOff.some(d => d.message.includes('not documented since')), versionOff.map(d => d.message).join(' | '))
+})

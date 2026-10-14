@@ -14,6 +14,8 @@ export function startLanguageClient(context: vscode.ExtensionContext): void {
     },
     {
       documentSelector: [{ language: 'krpano-xml' }, { language: 'krpano' }],
+      // 让服务器按界面语言输出提示(诊断/悬停框架文案)
+      initializationOptions: { locale: vscode.env.language },
       // 监听 xml 文件变化:include 进来的动作文件被修改时,依赖它的文档诊断需要刷新
       synchronize: {
         fileEvents: [vscode.workspace.createFileSystemWatcher('**/*.xml')],

@@ -3,10 +3,11 @@ import type { PlainCodeAction } from './actions'
 import type { OutlineSymbol } from './outline'
 import type { NameAtOffset } from './references'
 import type { FileContent, ParseCache } from './symbols'
-import type { DiagnosticSettings, PlainLocation, ProjectContext } from './types'
+import type { DiagnosticSettings, IncludeTarget, PlainLocation, ProjectContext } from './types'
 // krpano XML 语言服务器(LSP):诊断、补全、悬停、跳转。
 // 作为独立进程由 vscode-languageclient 以 IPC 传输启动(见 client.ts)。
-import { readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import path from 'node:path'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import {
   CodeAction,
@@ -29,7 +30,7 @@ import { getCodeActions } from './actions'
 import { getCompletions, getDefinition, getDiagnostics, getHover, getSignatureHelp } from './features'
 import { getDocumentSymbols } from './outline'
 import { collectReferences, nameAtOffset } from './references'
-import { buildIncludeIndex, contextForFile, pathToUri, resolveIncludePath, uriToPath } from './symbols'
+import { buildIncludeIndex, contextForFile, extractIncludes, pathToUri, resolveIncludePath, uriToPath } from './symbols'
 import { WorkspaceIndex } from './workspace'
 
 const connection = createConnection(ProposedFeatures.all)
@@ -66,6 +67,8 @@ function toSymbolInformation(symbol: OutlineSymbol): DocumentSymbol {
 
 /** 工作区根目录(来自 initialize 的 workspaceFolders) */
 let workspaceRoots: string[] = []
+/** 客户端界面语言(来自 initializationOptions.locale) */
+let clientLocale = 'en'
 let workspaceIndex: WorkspaceIndex | undefined
 
 function getWorkspaceIndex(): WorkspaceIndex {
@@ -145,6 +148,8 @@ interface LspConfiguration {
     enable?: boolean
     undefinedActions?: 'information' | 'warning' | 'off'
     ignoredNames?: string[]
+    unknownAttributes?: boolean
+    versionMismatch?: boolean
   }
 }
 let configuration: LspConfiguration = {}
@@ -198,13 +203,36 @@ function readFileCached(path: string): FileContent | undefined {
   }
 }
 
-/** 当前文档的上下文:沿 <include> 链收集到的外部定义与解析失败的 include */
+/** 当前文档的上下文:include 链的外部定义、include 目标(跳转)与同目录 xml 文件(补全) */
 function projectContext(document: TextDocument): ProjectContext {
-  const path = uriToPath(document.uri)
-  if (!path)
+  const documentPath = uriToPath(document.uri)
+  if (!documentPath)
     return {}
-  const index = buildIncludeIndex(path, readFileCached, 16, parseCache)
-  return contextForFile(index, path, document.uri)
+  const index = buildIncludeIndex(documentPath, readFileCached, 16, parseCache)
+  const context = contextForFile(index, documentPath, document.uri)
+
+  const knownUnresolved = new Set((context.unresolvedIncludes ?? []).map(item => item.url))
+  const includeTargets: IncludeTarget[] = []
+  for (const reference of extractIncludes(document.getText())) {
+    if (knownUnresolved.has(reference.url))
+      continue
+    const resolved = resolveIncludePath(documentPath, reference.url)
+    if (!resolved || !readFileCached(resolved))
+      continue
+    includeTargets.push({ url: reference.url, range: reference.range, uri: pathToUri(resolved) })
+  }
+
+  let siblingXmlFiles: string[] | undefined
+  try {
+    siblingXmlFiles = readdirSync(path.dirname(documentPath))
+      .filter(entry => entry.toLowerCase().endsWith('.xml'))
+      .slice(0, 200)
+  }
+  catch {
+    siblingXmlFiles = undefined
+  }
+
+  return { ...context, includeTargets, siblingXmlFiles }
 }
 
 function validate(document: TextDocument): void {
@@ -215,6 +243,9 @@ function validate(document: TextDocument): void {
   const settings: DiagnosticSettings = {
     undefinedActions: configuration.diagnostics?.undefinedActions,
     ignoredNames: configuration.diagnostics?.ignoredNames,
+    unknownAttributes: configuration.diagnostics?.unknownAttributes,
+    versionMismatch: configuration.diagnostics?.versionMismatch,
+    locale: clientLocale,
   }
   const diagnostics = getDiagnostics(document.getText(), projectContext(document), settings).map(item => ({
     message: item.message,
@@ -235,6 +266,8 @@ function validateAll(): void {
 }
 
 connection.onInitialize(async (params) => {
+  const options = params.initializationOptions as { locale?: string } | undefined
+  clientLocale = options?.locale ?? 'en'
   workspaceRoots = (params.workspaceFolders ?? [])
     .map(folder => uriToPath(folder.uri))
     .filter((value): value is string => !!value)

@@ -4,7 +4,7 @@ import type { DiagnosticSettings, ExternalDefinition, PlainCompletion, PlainDiag
 import { attributeAtOffset, createLineIndex, offsetToPosition, scanXml, tagAtOffset } from '../shared/xml'
 // krpano XML 语言特性实现(纯函数,不依赖 vscode / vscode-languageserver,便于单元测试)。
 import krpanoData from './krpanoData.json'
-import { docForAttribute, docForElement } from './krpanoDocs'
+import { attributeEnums, attributeValueHints, docForAttribute, docForElement } from './krpanoDocs'
 import { callArgumentContextAt, collectReferences, findUnknownIndexes, indexContextAt } from './references'
 import { collectDefinitions } from './symbols'
 
@@ -33,6 +33,32 @@ const FREE_FORM = new Set(['textstyle', 'cssstyles', 'style'])
 const SPECIAL_ATTRIBUTES = ['devices', 'if']
 
 const SOURCE = 'krpano-lang'
+
+/** 检查表达式里的括号与引号是否闭合(返回问题描述,正常时 undefined) */
+function unbalancedExpression(expression: string): string | undefined {
+  let depth = 0
+  let quote: string | undefined
+  for (const char of expression) {
+    if (quote) {
+      if (char === quote)
+        quote = undefined
+      continue
+    }
+    if (char === '\'' || char === '"') {
+      quote = char
+      continue
+    }
+    if (char === '(')
+      depth++
+    else if (char === ')')
+      depth--
+  }
+  if (quote)
+    return 'Unclosed string quote'
+  if (depth !== 0)
+    return 'Unbalanced parentheses'
+  return undefined
+}
 
 /** 把 "1.21"/"1.20.11" 解析成可比较的数字(1.21 → 1.21) */
 function parseVersion(value: string): number | undefined {
@@ -81,6 +107,8 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
     end: lineIndex.toPosition(end),
   })
   const ignoredNames = new Set((settings.ignoredNames ?? []).filter(name => !!name))
+  const checkUnknownAttributes = settings.unknownAttributes !== false
+  const checkVersionMismatch = settings.versionMismatch !== false
   const undefinedActions = settings.undefinedActions ?? 'information'
 
   // 1) 标签配对:闭合标签与栈中更深处的元素同名时,报告中间被"隐式关闭"的元素
@@ -364,12 +392,29 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
       if (SPECIAL_ATTRIBUTES.includes(name) || ignoredNames.has(name))
         continue
       const range = rangeOfAttr(lineIndex, attr)
+      // 属性值校验:calc:/get: 表达式配平 + 枚举取值
+      if (attr.value !== undefined && attr.valueStart !== undefined && attr.valueEnd !== undefined) {
+        const value = attr.value.trim()
+        const valueRange: PlainRange = { start: lineIndex.toPosition(attr.valueStart), end: lineIndex.toPosition(attr.valueEnd) }
+        const expressionMatch = /^(?:calc|get):/i.exec(value)
+        if (expressionMatch) {
+          const problem = unbalancedExpression(value.slice(expressionMatch[0].length))
+          if (problem) {
+            diagnostics.push({
+              message: `${problem} in the attribute value.`,
+              severity: 'warning',
+              range: valueRange,
+              source: SOURCE,
+            })
+          }
+        }
+      }
       const versions = attributeVersions[`${element}.${name}`]
       if (!documented.includes(name)) {
-        if (CUSTOM_ATTRIBUTE_ELEMENTS.has(element))
+        if (!checkUnknownAttributes || CUSTOM_ATTRIBUTE_ELEMENTS.has(element))
           continue
         // 曾经有文档、但在当前版本已消失的属性 → 提示可能废弃,而不是"未知属性"
-        if (versions?.length && rootVersion !== undefined && parseVersion(versions[versions.length - 1])! < rootVersion) {
+        if (checkVersionMismatch && versions?.length && rootVersion !== undefined && parseVersion(versions[versions.length - 1])! < rootVersion) {
           diagnostics.push({
             message: `Attribute "${name}" is not documented since krpano ${versions[versions.length - 1]}; it may be deprecated.`,
             severity: 'information',
@@ -385,6 +430,21 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
           source: SOURCE,
         })
         continue
+      }
+      // 枚举取值:仅对文档中列出的属性校验(样式模板类元素仍放行)
+      if (attr.value !== undefined && attr.valueStart !== undefined && attr.valueEnd !== undefined && !CUSTOM_ATTRIBUTE_ELEMENTS.has(element)) {
+        const value = attr.value.trim()
+        const enumValues = attributeEnums[name]
+        const normalized = value.toLowerCase().replace(/\s+/g, '')
+        if (enumValues && /^[\w-]+$/.test(normalized)
+          && !enumValues.some(candidate => candidate.toLowerCase().replace(/\s+/g, '') === normalized)) {
+          diagnostics.push({
+            message: `Value "${value}" is not valid for ${name}; expected one of: ${enumValues.join(' / ')}.`,
+            severity: 'information',
+            range: { start: lineIndex.toPosition(attr.valueStart), end: lineIndex.toPosition(attr.valueEnd) },
+            source: SOURCE,
+          })
+        }
       }
       if (!versions?.length || rootVersion === undefined)
         continue
@@ -579,6 +639,19 @@ export function getCompletions(text: string, offset: number, context: ProjectCon
         }))
       }
       // 名字引用型属性:补全本文件/include 链里定义的名字
+      // include url:补全当前目录下的 xml 文件
+      if (name === 'include' && attrName === 'url') {
+        const prefix = text.slice(attr.valueStart, offset)
+        return (context.siblingXmlFiles ?? [])
+          .filter(candidate => candidate.startsWith(prefix))
+          .map(candidate => ({
+            label: candidate,
+            kind: 'value' as const,
+            detail: 'xml file in the same folder',
+            documentation: `Included file: ${candidate}`,
+            insertText: candidate,
+          }))
+      }
       const referenceKind = attrName === 'style'
         ? 'style'
         : attrName === 'linkedscene' ? 'scene' : undefined
@@ -661,35 +734,13 @@ export function getHover(text: string, offset: number): PlainHover | null {
     }
   }
 
-  // 方括号索引:layer[hs1 处补全热点名
-  const indexContext = indexContextAt(text, offset)
-  if (indexContext) {
-    const names = new Set<string>()
-    for (const definition of collectDefinitions(text)) {
-      if (definition.element === indexContext.element)
-        names.add(definition.name)
-    }
-    for (const [name, definition] of (context.externalDefinitions ?? new Map<string, ExternalDefinition>())) {
-      if (definition.element === undefined || definition.element === indexContext.element)
-        names.add(name)
-    }
-    const items = [...names].sort().filter(candidate => candidate.startsWith(indexContext.prefix)).map(candidate => ({
-      label: candidate,
-      kind: 'value' as const,
-      detail: `krpano ${indexContext.element} name`,
-      documentation: `Name of a ${indexContext.element} defined in this file or in the files it includes.`,
-      insertText: candidate,
-    }))
-    if (items.length)
-      return items
-  }
-
   const attr = attributeAtOffset(tag, offset)
   if (attr) {
     const doc = docForAttribute(name, attr.name.toLowerCase())
     const known = (elements[name] ?? []).includes(attr.name.toLowerCase())
+    const hint = attributeValueHints[attr.name.toLowerCase()]
     return {
-      contents: `**${attr.name}** — ${tagDisplayName(tag)} attribute${known ? '' : ' (not documented for this element)'}\n\n${doc}`,
+      contents: `**${attr.name}** — ${tagDisplayName(tag)} attribute${known ? '' : ' (not documented for this element)'}\n\n${doc}${hint ? `\n\nValues: ${hint}` : ''}`,
       range: rangeOf(text, attr.nameStart, attr.nameEnd),
     }
   }
@@ -698,6 +749,22 @@ export function getHover(text: string, offset: number): PlainHover | null {
 }
 
 export function getDefinition(text: string, offset: number, context: ProjectContext = {}): PlainLocation | null {
+  // include url:直接跳到被 include 的文件(先于"本文件有没有定义"的判断)
+  const scan = scanXml(text)
+  for (const tag of scan.tags) {
+    if (tag.name.toLowerCase() !== 'include')
+      continue
+    const urlAttr = tag.attributes.find(attr => attr.name.toLowerCase() === 'url')
+    if (urlAttr?.valueStart === undefined || urlAttr.valueEnd === undefined)
+      continue
+    if (offset < urlAttr.valueStart || offset > urlAttr.valueEnd)
+      continue
+    const target = (context.includeTargets ?? []).find(item => item.url === urlAttr.value)
+    if (target)
+      return { uri: target.uri, range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } } }
+    return null
+  }
+
   const definitions = collectDefinitions(text)
   const external = context.externalDefinitions ?? new Map()
   if (!definitions.length && !external.size)
@@ -736,6 +803,8 @@ export function getDefinition(text: string, offset: number, context: ProjectCont
 export interface DuplicateDefinition {
   name: string
   element: string
+  /** 所属容器:scene 的名字(不在 scene 内时为空 = krpano 根) */
+  container?: string
   range: PlainRange
   firstLine: number
 }
@@ -751,6 +820,7 @@ export function findDuplicateDefinitions(text: string): DuplicateDefinition[] {
       duplicates.push({
         name: definition.name,
         element: definition.element,
+        container: definition.container,
         range: definition.range,
         firstLine: first.range.start.line,
       })

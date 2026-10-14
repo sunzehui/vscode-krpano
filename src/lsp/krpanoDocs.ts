@@ -234,3 +234,27 @@ export function docForAttribute(element: string, attribute: string): string {
     return attributeDocs[attribute]
   return 'krpano attribute (no description available).'
 }
+
+/** 常见属性的取值说明(悬停显示;枚举类同时用于取值校验) */
+export const attributeValueHints: Record<string, string> = {
+  align: 'lefttop / left / leftbottom / top / center / bottom / righttop / right / rightbottom,或 layer[...] / hotspot[...]',
+  edge: 'lefttop / left / leftbottom / top / center / bottom / righttop / right / rightbottom',
+  fovtype: 'MFOV(默认) / HFOV / VFOV / DFOV / SFOV',
+  blendmode: 'normal / add / subtract / multiply / screen / lighten / darken / overlay / difference,以及 CSS 的其它混合模式',
+  alpha: '0.0(全透明)…1.0(不透明)',
+  ath: '-180 … +180(度,水平方向)',
+  atv: '-90 … +90(度,垂直方向)',
+  fov: '0 … 179(度)',
+  scale: '1.0 为原始大小',
+  rotate: '度数,可为负',
+  bgcolor: '0xRRGGBB 或 0xAARRGGBB',
+  zorder: '整数,越大越靠前',
+}
+
+/** 取值是有限枚举的属性(用于取值校验;值不含 [...] 形式,动态值会跳过) */
+export const attributeEnums: Record<string, string[]> = {
+  align: ['lefttop', 'left', 'leftbottom', 'top', 'center', 'bottom', 'righttop', 'right', 'rightbottom'],
+  edge: ['lefttop', 'left', 'leftbottom', 'top', 'center', 'bottom', 'righttop', 'right', 'rightbottom'],
+  fovtype: ['MFOV', 'HFOV', 'VFOV', 'DFOV', 'SFOV'],
+  blendmode: ['normal', 'add', 'subtract', 'multiply', 'screen', 'lighten', 'darken', 'overlay', 'difference', 'hardlight', 'softlight', 'colorburn', 'colordodge', 'exclusion', 'inherit'],
+}

@@ -50,6 +50,16 @@
           "default": [],
           "markdownDescription": "不再提示的名字(动作、元素、style、scene),用于压掉插件或动态名字带来的噪音。\n\nNames ignored by diagnostics."
         },
+        "krpano.lsp.diagnostics.unknownAttributes": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "是否提示未在 krpano 文档中列出的属性(样式模板类元素自动放行)。\n\nReport attributes that are not documented for the element."
+        },
+        "krpano.lsp.diagnostics.versionMismatch": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "是否提示属性与 `<krpano version=\"...\">` 声明版本不匹配、或可能已废弃。\n\nReport attributes that need a newer krpano version than declared, or that are no longer documented."
+        },
         "krpano.lsp.diagnostics.undefinedActions": {
           "type": "string",
           "enum": [
@@ -202,6 +212,7 @@
     "build": "tsup src/extension.ts src/lsp/client.ts src/lsp/server.ts --dts --external=vscode",
     "dev": "npm run build -- --watch",
     "release": "npx bumpp --commit --tag --push",
+    "typecheck": "tsc --noEmit",
     "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/symbols.ts src/lsp/references.ts src/lsp/actions.ts src/lsp/outline.ts src/lsp/workspace.ts src/shared/xml.ts src/shared/reindent.ts src/shared/layout.ts --format=cjs --out-dir=test/build --clean",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

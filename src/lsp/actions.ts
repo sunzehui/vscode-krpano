@@ -50,7 +50,7 @@ function inRange(text: string, range: PlainRange, offset: number): boolean {
 
 /** 简单的编辑距离,用于"是不是想写 xxx"的建议 */
 function editDistance(a: string, b: string): number {
-  const dp: number[][] = Array.from({ length: a.length + 1 }, () => Array.from({ length: b.length + 1 }).fill(0))
+  const dp: number[][] = Array.from({ length: a.length + 1 }, () => Array.from({ length: b.length + 1 }).fill(0) as number[])
   for (let i = 0; i <= a.length; i++)
     dp[i][0] = i
   for (let j = 0; j <= b.length; j++)
