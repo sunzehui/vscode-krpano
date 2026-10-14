@@ -66,6 +66,16 @@
 
 语言服务在独立进程里运行；启动失败只会在扩展宿主控制台打印日志，高亮与格式化不受影响。
 
+## 怎么关掉或调整诊断？
+
+`krpano.lsp.*` 三个设置:
+
+| 设置 | 作用 |
+| --- | --- |
+| `krpano.lsp.diagnostics.enable` | 关掉全部诊断(补全/悬停/跳转仍可用) |
+| `krpano.lsp.diagnostics.undefinedActions` | "未定义动作"的级别:`information`(默认)/ `warning` / `off` |
+| `krpano.lsp.diagnostics.ignoredNames` | 不再提示的名字(动作、元素、style、scene),用于压掉插件或动态名字的噪音 |
+
 ## 选区格式化（Format Selection）与整篇格式化有什么区别？
 
 整篇格式化（`Shift+Alt+F`）交给 xml-formatter 重排；**选区格式化**只按标签层级把选中行的缩进对齐（不重排属性、不拆行），注释与 CDATA 内部保持原样，落在 `xml.format.ignoredPaths`（默认 `action`）里的选区不做处理。

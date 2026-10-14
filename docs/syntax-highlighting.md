@@ -81,6 +81,16 @@ krpano 官方只支持 `type=""`（默认）、`type="Javascript"` 与 `type="js
 2. 打开 `sample/test.xml`，光标放到目标位置，命令面板执行 **Developer: Inspect Editor Tokens and Scopes**，查看命中的 scope 与语法规则。
 3. 修改 `syntaxes/*.json` 后，在扩展开发宿主里执行 **Developer: Reload Window** 即可生效，不需要重新构建（语法文件在运行时按需加载）。
 
+## 内嵌语言
+
+krpano XML 里可以承载其它语言,宿主语法会按元素/属性把正文交给对应的内嵌语法:
+
+| 位置 | 内嵌语法 | 说明 |
+| --- | --- | --- |
+| `<action type="Javascript"\|"js">` 正文 | `source.js` | CDATA 与内联两种写法;CDATA 标记单独标为标点 |
+| `<data>` 正文 | `source.json` | `<data>` 内容通常是 JSON(CDATA 包裹) |
+| `<cssstyles>` 内的 `<style>` 正文 | `source.css` | 圆括号外的 krpano `<style>` 元素仍按普通元素处理 |
+
 ## 现状说明（0.3.0）
 
 - `type="Javascript"`/`"js"` 的 action 正文按 VS Code 内置 JS 语法高亮，CDATA 标记单独标为 punctuation；krpano 不支持 TypeScript，`lang="ts"` 写法不再特殊处理。

@@ -5,7 +5,7 @@ krpano action high-light code, use textMate syntaxes.
 krpano 语法高亮插件，使用 textMate 语法。
 ![test](https://github.com/sunzehui/vscode-krpano/blob/master/doc/test.png?raw=true)
 
-- **语法高亮**:krpano XML 与 action 脚本(含 `type="Javascript"` 的 JS action)高亮
+- **语法高亮**:krpano XML、action 脚本(含 `type="Javascript"` 的 JS action)、`<data>` 里的 JSON、`<cssstyles>` 里的 CSS
 - **语言服务(LSP)**:元素/属性补全与悬停说明、标签配对与未知元素诊断、从 `action_name(...)` 跳转到定义(可跨 `<include>` 的文件)
 - **XML 格式化**:`Shift+Alt+F` 整篇格式化,或选中一段后 `Ctrl+K Ctrl+F` 只对齐缩进
 - **代码片段**:53 个常用写法片段(action、标签结构、image/scene/tour 等)
@@ -47,6 +47,14 @@ Here is the list of native vscode settings I pass to xml formatter which control
 - [常见问题](docs/faq.md)
 
 ## Release Notes
+
+### 0.7.0
+
+- 内嵌语言高亮:`<data>` 的 CDATA 正文按 JSON 着色,`<cssstyles>` 内的 `<style>` 正文按 CSS 着色(与 JS action 同一机制)
+- 新增 `krpano.lsp.*` 设置:开关诊断、调整"未定义动作"级别(information / warning / off)、忽略指定名字(压掉插件或动态名字的噪音)
+- 内建 action 清单改为同时从官方 Actions 文档生成(131 → 145,补入 `forall`、`renderloop`、`looktohotspot` 等)
+- 诊断加 250ms 去抖,配置变化时自动重新校验
+- 新增语法快照与文档一致性测试(片段/元素数量写死会立刻被测出来)
 
 ### 0.6.0
 

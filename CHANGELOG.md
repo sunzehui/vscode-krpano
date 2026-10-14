@@ -2,6 +2,19 @@
 
 All notable changes to the "krpano-lang" extension are documented in this file.
 
+## 0.7.0
+
+### Added
+
+- Embedded language highlighting: `<data>` bodies (CDATA) are highlighted as JSON and `<style>` entries inside `<cssstyles>` as CSS, next to the existing JavaScript actions.
+- `krpano.lsp.*` settings: `diagnostics.enable` (turn diagnostics off), `diagnostics.undefinedActions` (`information` / `warning` / `off`) and `diagnostics.ignoredNames` (names that should not be reported, e.g. plugin-provided actions).
+- The built-in action list is now generated from the official Actions documentation as well (145 actions, up from 131).
+
+### Changed
+
+- Diagnostics are debounced (250 ms) and re-read the `krpano.lsp` configuration when it changes.
+- New tests: grammar scope snapshot for `sample/*.xml`, documentation consistency (snippet/element counts) and language-server settings.
+
 ## 0.6.0
 
 ### Added
