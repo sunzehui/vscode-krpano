@@ -2,7 +2,7 @@
 
 ## 环境准备
 
-- **Node.js**：用于构建与运行 tsup（建议 16 及以上）。
+- **Node.js**：建议 22 及以上（构建用 tsup；lint 的 eslint-plugin-unicorn 74 用到 ES2025 的 `Set.prototype.union`，Node 20 会报 `mapTypes.union is not a function`）。CI 同样使用 Node 22。
 - **包管理器**：仓库含有 `pnpm-lock.yaml`，格式为 `lockfileVersion: '6.0'`（pnpm 8 生成）。**用更新版本的 pnpm（9+）直接 `pnpm install` 会报 `ERR_PNPM_LOCKFILE_BREAKING_CHANGE`**，可用 `npx pnpm@8 install --frozen-lockfile` 安装，或自行决定是否用 `--force` 重建锁文件（会产生锁文件改动）。`package.json` 中的脚本写作 `npm run …`，用 npm 同样可以。
 - **VS Code**：`engines.vscode` 为 `^1.52.0`。
 

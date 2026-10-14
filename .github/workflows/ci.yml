@@ -14,7 +14,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       # 打包依赖收集(vsce 内部走 npm)需要 npm 形态的 node_modules,因此 CI 用 npm 而非 pnpm
