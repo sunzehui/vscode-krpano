@@ -12,3 +12,5 @@ coverage/
 .zcode/
 .workbuddy/
 krpano-upgrade-plan.html
+test/integration/workspace/
+test/.tmp/

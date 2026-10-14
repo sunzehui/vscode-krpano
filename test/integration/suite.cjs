@@ -7,11 +7,32 @@ const path = require('node:path')
 const vscode = require('vscode')
 
 const EXTENSION_ID = 'sunzehui.krpano-lang'
-const WORKSPACE = path.resolve(__dirname, 'workspace')
+
+/** 把 TextEdit 列表按当前位置应用到文本上(校验格式化结果用) */
+function applyEdits(text, edits) {
+  const lineStarts = [0]
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '\n')
+      lineStarts.push(i + 1)
+  }
+  const toOffset = position => lineStarts[position.line] + position.character
+  const sorted = [...edits].sort((a, b) => toOffset(b.range.start) - toOffset(a.range.start))
+  let result = text
+  for (const edit of sorted)
+    result = result.slice(0, toOffset(edit.range.start)) + edit.newText + result.slice(toOffset(edit.range.end))
+  return result
+}
+
+/** 工作区目录 = 启动时打开的 test/.tmp/it-workspace */
+function workspaceDir() {
+  const folder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0]
+  assert.ok(folder, '集成测试需要把 test/.tmp/it-workspace 作为工作区打开')
+  return folder.uri.fsPath
+}
 
 async function openXml(name, content) {
-  const file = path.join(WORKSPACE, name)
-  fs.mkdirSync(WORKSPACE, { recursive: true })
+  const file = path.join(workspaceDir(), name)
+  fs.mkdirSync(path.dirname(file), { recursive: true })
   fs.writeFileSync(file, content)
   const document = await vscode.workspace.openTextDocument(file)
   await vscode.window.showTextDocument(document)
@@ -63,8 +84,11 @@ async function run() {
     const tour = await setLanguage(await openXml('tour.xml', '<krpano><view/><hotspot name="a" ath="0"/></krpano>'), 'krpano-xml')
     const edits = await vscode.commands.executeCommand('vscode.executeFormatDocumentProvider', tour.uri, { tabSize: 2, insertSpaces: true })
     console.log('[it] format edits =', JSON.stringify(edits))
-    assert.ok(Array.isArray(edits) && edits.length === 1, `应返回一次整文替换,实际:${JSON.stringify(edits)?.slice(0, 200)}`)
-    assert.ok(/\n\s+<view\/>/.test(edits[0].newText ?? ''), `格式化结果应换行缩进:${edits[0].newText}`)
+    assert.ok(Array.isArray(edits) && edits.length >= 1, `应返回格式化编辑,实际:${JSON.stringify(edits)?.slice(0, 200)}`)
+    // VS Code 会把整文替换拆成最小编辑,应用后校验最终文本
+    const formatted = applyEdits(tour.getText(), edits)
+    assert.ok(/\n {2}<view\/>/.test(formatted), `格式化结果应换行缩进:${JSON.stringify(formatted)}`)
+    assert.ok(formatted.includes('\n  <hotspot name="a" ath="0"/>'), formatted)
   })
 
   // 3) 命令:插入 scene 骨架
@@ -80,7 +104,7 @@ async function run() {
   // 4) 语言服务:诊断(未知元素 + 属性取值)
   let broken
   await step('语言服务:诊断', async () => {
-    broken = await setLanguage(await openXml('broken.xml', '<krpano>\n  <hotspott name="x" align="lef"/>\n  <hotspot name="y" ath="calc:(1+2"/>\n</krpano>\n'), 'krpano-xml')
+    broken = await setLanguage(await openXml('broken.xml', '<krpano>\n  <hotspott name="x"/>\n  <hotspot name="y" align="lef" ath="calc:(1+2"/>\n</krpano>\n'), 'krpano-xml')
     const diagnostics = await waitFor(
       () => {
         const found = vscode.languages.getDiagnostics(broken.uri)
@@ -114,9 +138,9 @@ async function run() {
     await openXml('wrong.xml', '<krpano><a></b></krpano>')
     const formattedCount = await vscode.commands.executeCommand('krpano.formatAllXml')
     assert.ok(formattedCount >= 1, `批量格式化应至少改写 1 个文件,实际 ${formattedCount}`)
-    const messy = fs.readFileSync(path.join(WORKSPACE, 'messy.xml'), 'utf8')
+    const messy = fs.readFileSync(path.join(workspaceDir(), 'messy.xml'), 'utf8')
     assert.ok(/\n\s+<view\/>/.test(messy), `messy.xml 应被格式化:${messy}`)
-    const wrong = fs.readFileSync(path.join(WORKSPACE, 'wrong.xml'), 'utf8')
+    const wrong = fs.readFileSync(path.join(workspaceDir(), 'wrong.xml'), 'utf8')
     assert.equal(wrong, '<krpano><a></b></krpano>', '结构会变的文件应保持原样')
   })
 

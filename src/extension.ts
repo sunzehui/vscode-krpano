@@ -106,9 +106,10 @@ export async function formatAllXml(): Promise<number> {
 
 function registerFormatter(context: vscode.ExtensionContext): void {
   const provider: vscode.DocumentFormattingEditProvider = {
-    async provideDocumentFormattingEdits(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
+    async provideDocumentFormattingEdits(document: vscode.TextDocument, formattingOptions?: vscode.FormattingOptions): Promise<vscode.TextEdit[]> {
       const fullText = document.getText()
-      const options = getOptions(vscode.workspace.getConfiguration())
+      // 格式化请求自带的缩进设置优先(与其它语言的格式化器行为一致)
+      const options = getOptions(vscode.workspace.getConfiguration(), formattingOptions)
       const result = beautify(fullText, options) // xml 格式化
 
       if (result.failed) {
@@ -145,11 +146,11 @@ function registerFormatter(context: vscode.ExtensionContext): void {
 
   // 选区格式化:只按标签层级对齐缩进(不重排属性、不拆行),落在 xml.format.ignoredPaths 内的选区不动
   const rangeProvider: vscode.DocumentRangeFormattingEditProvider = {
-    provideDocumentRangeFormattingEdits(document: vscode.TextDocument, range: vscode.Range): vscode.TextEdit[] {
+    provideDocumentRangeFormattingEdits(document: vscode.TextDocument, range: vscode.Range, formattingOptions?: vscode.FormattingOptions): vscode.TextEdit[] {
       const fullText = document.getText()
       const startOffset = document.offsetAt(range.start)
       const endOffset = document.offsetAt(range.end)
-      const options = getOptions(vscode.workspace.getConfiguration())
+      const options = getOptions(vscode.workspace.getConfiguration(), formattingOptions)
       const ignored = options.ignoredPaths ?? []
       if (ignored.length && enclosingElementNames(fullText, startOffset).some(name => ignored.includes(name)))
         return []

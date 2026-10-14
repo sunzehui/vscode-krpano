@@ -6,3 +6,7 @@
 2026-10-14 11:57:56.884 [info] update#setState disabled
 2026-10-14 11:57:56.885 [info] update#ctor - updates are disabled by the environment
 2026-10-14 11:58:00.541 [info] AgentHostProcessManager: agent host started
+2026-10-14 11:58:01.569 [error] [AgentHost:stderr] (node:53696) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `Code Helper --trace-deprecation ...` to show where the warning was created)
+
+2026-10-14 11:58:03.707 [info] Extension host with pid 53698 exited with code: 0, signal: unknown.

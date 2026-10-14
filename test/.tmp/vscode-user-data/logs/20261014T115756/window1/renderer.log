@@ -144,3 +144,53 @@ DELTA: authIssuers
 2026-10-14 11:57:59.235 [info] Settings Sync: Account status changed from uninitialized to unavailable
 2026-10-14 11:58:00.544 [info] [AgentHost:renderer] MessagePort acquired, creating client...
 2026-10-14 11:58:00.548 [info] Started local extension host with pid 53698.
+2026-10-14 11:58:01.577 [info] [RemoteAgentHostProtocol] Sending initialize: address=local clientId=14f5d254-725c-4f63-9cab-2cad3d8a274d requestId=1
+2026-10-14 11:58:01.620 [info] [RemoteAgentHostProtocol] Initialized: address=local clientId=14f5d254-725c-4f63-9cab-2cad3d8a274d durationMs=3812
+2026-10-14 11:58:01.621 [info] [AgentHost:renderer] Protocol connection established; clientId=14f5d254-725c-4f63-9cab-2cad3d8a274d
+2026-10-14 11:58:01.679 [warning] [CloudSandboxApi] No 'github' session with scopes [read:user, user:email, repo, workflow]
+2026-10-14 11:58:01.680 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.681 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.681 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.681 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.682 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.682 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.682 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.690 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.772 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.773 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.774 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.774 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.774 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.775 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.775 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.790 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.833 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.833 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.834 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.835 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.835 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.836 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.836 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.839 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com
+2026-10-14 11:58:01.855 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.855 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.855 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.855 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.856 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.856 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.856 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:01.856 [info] [AgentHost] No signed-in session resolved for resource: https://api.github.com/repos
+2026-10-14 11:58:02.341 [info] [ChatModelSelection] event=no-model-at-toolbar-build surface="workbench" sessionKey="local" conversationKey="vscode-chat-session://local/NTBjOTk2ZWEtYmRmZi00MDY2LTljM2MtNmZjMjk2YTJkMDEy" modelTarget=undefined storageKey="chat.currentLanguageModel.panel" widgetViewKind="view"
+2026-10-14 11:58:02.420 [info] [it] format edits = [{"range":[{"line":0,"character":8},{"line":0,"character":8}],"newText":"\n    "},{"range":[{"line":0,"character":15},{"line":0,"character":15}],"newText":"\n    "},{"range":[{"line":0,"character":42},{"line":0,"character":42}],"newText":"\n"}]
+2026-10-14 11:58:02.420 [info] [it] FAIL - 语言模式与格式化: 应返回一次整文替换,实际:[{"range":[{"line":0,"character":8},{"line":0,"character":8}],"newText":"\n    "},{"range":[{"line":0,"character":15},{"line":0,"character":15}],"newText":"\n    "},{"range":[{"line":0,"character":42}
+2026-10-14 11:58:02.620 [info] [it] ok   - 命令:插入 scene 骨架
+2026-10-14 11:58:03.459 [info] [it] FAIL - 语言服务:诊断: 应有枚举取值提示:Unknown krpano element <hotspott>. | Unbalanced parentheses in the attribute value.
+2026-10-14 11:58:03.508 [info] [it] hover = **name** — <hotspott> attribute (not documented for this element)  Name of the element. Names are referenced by actions 
+2026-10-14 11:58:03.509 [info] [it] ok   - 语言服务:补全与悬停
+2026-10-14 11:58:03.667 [info] [AccountPolicyGate] apply: state=inactive, reason=undefined, isRestricted=false
+2026-10-14 11:58:03.683 [info] [it] FAIL - 命令:批量格式化: 批量格式化应至少改写 1 个文件,实际 0
+2026-10-14 11:58:03.684 [error] Error: 集成测试失败 3 项:
+ - 语言模式与格式化: 应返回一次整文替换,实际:[{"range":[{"line":0,"character":8},{"line":0,"character":8}],"newText":"\n    "},{"range":[{"line":0,"character":15},{"line":0,"character":15}],"newText":"\n    "},{"range":[{"line":0,"character":42}
+ - 语言服务:诊断: 应有枚举取值提示:Unknown krpano element <hotspott>. | Unbalanced parentheses in the attribute value.
+ - 命令:批量格式化: 批量格式化应至少改写 1 个文件,实际 0
+	at Object.run (/Users/sunzehui/Documents/vscode-krpano/test/integration/suite.cjs:124:11)

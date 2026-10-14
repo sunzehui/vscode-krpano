@@ -1,2 +1,3 @@
-2026/10/14-11:44:59.779 1d473b1 Creating DB /Users/sunzehui/Documents/vscode-krpano/test/.tmp/vscode-user-data/Local Storage/leveldb since it was missing.
-2026/10/14-11:44:59.791 1d473b1 Reusing MANIFEST /Users/sunzehui/Documents/vscode-krpano/test/.tmp/vscode-user-data/Local Storage/leveldb/MANIFEST-000001
+2026/10/14-11:59:22.151 1d50366 Reusing MANIFEST /Users/sunzehui/Documents/vscode-krpano/test/.tmp/vscode-user-data/Local Storage/leveldb/MANIFEST-000001
+2026/10/14-11:59:22.157 1d50366 Recovering log #3
+2026/10/14-11:59:22.157 1d50366 Reusing old log /Users/sunzehui/Documents/vscode-krpano/test/.tmp/vscode-user-data/Local Storage/leveldb/000003.log 

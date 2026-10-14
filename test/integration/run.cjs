@@ -21,6 +21,10 @@ async function main() {
   const extensionTestsPath = path.resolve(__dirname, 'suite.cjs')
   // 用户数据目录放到临时位置,避免污染本机配置
   const userDataDir = path.resolve(extensionDevelopmentPath, 'test/.tmp/vscode-user-data')
+  // 独立的工作区目录:批量格式化只应影响这里,绝不碰仓库里的示例文件
+  const workspaceDir = path.resolve(extensionDevelopmentPath, 'test/.tmp/it-workspace')
+  fs.rmSync(workspaceDir, { recursive: true, force: true })
+  fs.mkdirSync(workspaceDir, { recursive: true })
   try {
     // 下载 VS Code 的默认超时是 15s,国内网络下经常不够;放宽到 10 分钟
     const downloaded = await downloadAndUnzipVSCode({ timeout: 600000 })
@@ -30,6 +34,7 @@ async function main() {
       // 已装好的 VS Code 可直接复用:VSCODE_EXECUTABLE_PATH=/path/to/Code
       vscodeExecutablePath: fixDarwinExecutable(process.env.VSCODE_EXECUTABLE_PATH || downloaded),
       launchArgs: [
+        workspaceDir,
         '--disable-gpu',
         '--disable-workspace-trust',
         '--skip-welcome',

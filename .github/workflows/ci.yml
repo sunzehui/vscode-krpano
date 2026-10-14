@@ -48,6 +48,21 @@ jobs:
       - name: Benchmark
         run: npm run bench
 
+      # 真实 VS Code 集成测试:下载 VS Code 后加载扩展跑一遍端到端用例
+      # (Linux 需要虚拟显示器;首次下载约 100MB,单独限时)
+      - name: Integration test (真实 VS Code)
+        if: runner.os == 'Linux'
+        timeout-minutes: 15
+        run: xvfb-run -a npm run test:integration
+
+      - name: Cache VS Code (for next runs)
+        if: runner.os == 'Linux'
+        uses: actions/cache@v4
+        with:
+          path: .vscode-test
+          key: vscode-test-${{ runner.os }}-${{ hashFiles('package.json') }}
+          restore-keys: vscode-test-${{ runner.os }}-
+
       - name: Package vsix
         run: npx --yes @vscode/vsce package --out krpano-lang.vsix
 
