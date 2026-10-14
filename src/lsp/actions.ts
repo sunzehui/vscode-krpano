@@ -190,7 +190,8 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
     const withinDefinition = !!definitionTag && offset >= definitionTag.start && offset <= definitionTag.end
     if (!withinDefinition && !inRange(text, duplicate.range, offset))
       continue
-    const usedNames = new Set(findDuplicateDefinitions(text).map(item => item.name))
+    // 候选名不能与文件里任何已有名字冲突(不只是重名的那几个)
+    const usedNames = new Set(collectDefinitions(text).map(item => item.name))
     let candidate = `${duplicate.name}_2`
     let index = 3
     while (usedNames.has(candidate)) {
@@ -251,8 +252,9 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
       const insertAt = insertBeforeClosingRoot(text)
       const remainingNames = tag.attributes.filter(attr => !extractable.includes(attr))
       const tagPrefix = text.slice(tag.start, tag.attributes[0].nameStart)
+      // 保留属性原文:无值属性(如开关属性)不能被重写成 name=""
       const rendered = remainingNames
-        .map(attr => `${attr.name}="${attr.value ?? ''}"`)
+        .map(attr => text.slice(attr.nameStart, attr.valueEnd !== undefined ? attr.valueEnd + (attr.quote ? 1 : 0) : attr.nameEnd))
         .join(' ')
       actions.push({
         title: t.extractStyle(styleName),
@@ -299,7 +301,7 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
   if (tag && tag.name.toLowerCase() === 'include') {
     const urlAttr = tag.attributes.find(attr => attr.name.toLowerCase() === 'url')
     const url = urlAttr?.value?.trim()
-    const unresolved = url && isLocalUrl(url) && (context.unresolvedIncludes ?? []).some(item => item.url === url)
+    const unresolved = url && isLocalUrl(url) && (context.unresolvedIncludes ?? []).some(item => item.url.trim() === url)
     if (unresolved) {
       actions.push({
         title: t.createFile(url),

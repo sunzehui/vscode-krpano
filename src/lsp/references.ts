@@ -226,33 +226,6 @@ export function indexContextAt(text: string, offset: number): { element: string,
   return { element: match[1], prefix }
 }
 
-/** 名字型属性的引用补全上下文:`style="` 或 `onclick="` 内 */
-export interface AttributeValueContext {
-  attribute: string
-  element: string
-  prefix: string
-}
-
-export function attributeValueContextAt(text: string, offset: number): AttributeValueContext | undefined {
-  const scan = scanXml(text)
-  for (const tag of scan.tags) {
-    if (tag.start > offset || tag.end < offset)
-      continue
-    for (const attr of tag.attributes) {
-      if (attr.value === undefined || attr.valueStart === undefined || attr.valueEnd === undefined)
-        continue
-      if (offset < attr.valueStart || offset > attr.valueEnd)
-        continue
-      return {
-        attribute: attr.name.toLowerCase(),
-        element: tag.name.toLowerCase(),
-        prefix: text.slice(attr.valueStart, offset),
-      }
-    }
-  }
-  return undefined
-}
-
 /** 处于 `动作名(` 的参数位置时的上下文(用于按元素类型补全名字) */
 export function callArgumentContextAt(text: string, offset: number): { action: string, element?: string, prefix: string } | undefined {
   const lineStart = text.lastIndexOf('\n', Math.max(0, offset - 1)) + 1

@@ -48,7 +48,7 @@ function splitPoints(line: string): number[] {
 }
 
 /** 拆分单行:保持首条语句的缩进,后续语句与首条对齐(可用 indentOverride 指定缩进) */
-function splitLine(line: string, includeTrailingSemicolon = true, indentOverride?: string): string {
+function splitLine(line: string, indentOverride?: string): string {
   const trimmedLine = line.trim()
   if (!trimmedLine)
     return line
@@ -63,7 +63,7 @@ function splitLine(line: string, includeTrailingSemicolon = true, indentOverride
   const statements: string[] = []
   let start = 0
   for (const point of cutPoints) {
-    const piece = body.slice(start, point + (includeTrailingSemicolon ? 1 : 0)).trim()
+    const piece = body.slice(start, point + 1).trim()
     if (piece)
       statements.push(piece)
     start = point + 1
@@ -92,7 +92,7 @@ export function splitActionStatements(text: string, indentation = '  '): Stateme
     // 正文首行与 <action> 同行时,续行缩进 = 标签缩进 + 一级
     const tagIndent = /^[ \t]*/.exec(text.slice(text.lastIndexOf('\n', match.index!) + 1, match.index!))?.[0] ?? ''
     const firstLineIndent = tagIndent + indentation
-    const rendered = body.split('\n').map((line, index) => splitLine(line, true, index === 0 ? firstLineIndent : undefined)).join('\n')
+    const rendered = body.split('\n').map((line, index) => splitLine(line, index === 0 ? firstLineIndent : undefined)).join('\n')
     if (rendered === body)
       continue
     const bodyStart = match.index! + match[0].indexOf(body)

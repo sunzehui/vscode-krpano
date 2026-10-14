@@ -1,0 +1,10 @@
+2026-10-14 11:45:03.245 [info] [main] Log level: Info
+2026-10-14 11:45:03.255 [info] [main] Validating found git in: "/usr/bin/git"
+2026-10-14 11:45:03.313 [info] [main] Using git "2.39.3 (Apple Git-146)" from "/usr/bin/git"
+2026-10-14 11:45:03.313 [info] [Model][doInitialScan] Initial repository scan started
+2026-10-14 11:45:03.315 [info] [Model][doInitialScan] Initial repository scan completed - repositories (0), closed repositories (0), parent repositories (0), unsafe repositories (0)
+2026-10-14 11:45:03.508 [info] > git rev-parse --show-toplevel [38ms]
+2026-10-14 11:45:03.580 [info] > git rev-parse --git-dir --git-common-dir --show-superproject-working-tree [70ms]
+2026-10-14 11:45:03.611 [info] [Model][openRepository] Opened repository (path): /Users/sunzehui/Documents/vscode-krpano
+2026-10-14 11:45:03.611 [info] [Model][openRepository] Opened repository (real path): /Users/sunzehui/Documents/vscode-krpano
+2026-10-14 11:45:03.611 [info] [Model][openRepository] Opened repository (kind): repository

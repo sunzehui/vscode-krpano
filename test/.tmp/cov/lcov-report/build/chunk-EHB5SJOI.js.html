@@ -1,0 +1,865 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for build/chunk-EHB5SJOI.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">build</a> chunk-EHB5SJOI.js</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>260/260</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">87.5% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>7/8</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>2/2</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>260/260</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line high'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a>
+<a name='L208'></a><a href='#L208'>208</a>
+<a name='L209'></a><a href='#L209'>209</a>
+<a name='L210'></a><a href='#L210'>210</a>
+<a name='L211'></a><a href='#L211'>211</a>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a>
+<a name='L216'></a><a href='#L216'>216</a>
+<a name='L217'></a><a href='#L217'>217</a>
+<a name='L218'></a><a href='#L218'>218</a>
+<a name='L219'></a><a href='#L219'>219</a>
+<a name='L220'></a><a href='#L220'>220</a>
+<a name='L221'></a><a href='#L221'>221</a>
+<a name='L222'></a><a href='#L222'>222</a>
+<a name='L223'></a><a href='#L223'>223</a>
+<a name='L224'></a><a href='#L224'>224</a>
+<a name='L225'></a><a href='#L225'>225</a>
+<a name='L226'></a><a href='#L226'>226</a>
+<a name='L227'></a><a href='#L227'>227</a>
+<a name='L228'></a><a href='#L228'>228</a>
+<a name='L229'></a><a href='#L229'>229</a>
+<a name='L230'></a><a href='#L230'>230</a>
+<a name='L231'></a><a href='#L231'>231</a>
+<a name='L232'></a><a href='#L232'>232</a>
+<a name='L233'></a><a href='#L233'>233</a>
+<a name='L234'></a><a href='#L234'>234</a>
+<a name='L235'></a><a href='#L235'>235</a>
+<a name='L236'></a><a href='#L236'>236</a>
+<a name='L237'></a><a href='#L237'>237</a>
+<a name='L238'></a><a href='#L238'>238</a>
+<a name='L239'></a><a href='#L239'>239</a>
+<a name='L240'></a><a href='#L240'>240</a>
+<a name='L241'></a><a href='#L241'>241</a>
+<a name='L242'></a><a href='#L242'>242</a>
+<a name='L243'></a><a href='#L243'>243</a>
+<a name='L244'></a><a href='#L244'>244</a>
+<a name='L245'></a><a href='#L245'>245</a>
+<a name='L246'></a><a href='#L246'>246</a>
+<a name='L247'></a><a href='#L247'>247</a>
+<a name='L248'></a><a href='#L248'>248</a>
+<a name='L249'></a><a href='#L249'>249</a>
+<a name='L250'></a><a href='#L250'>250</a>
+<a name='L251'></a><a href='#L251'>251</a>
+<a name='L252'></a><a href='#L252'>252</a>
+<a name='L253'></a><a href='#L253'>253</a>
+<a name='L254'></a><a href='#L254'>254</a>
+<a name='L255'></a><a href='#L255'>255</a>
+<a name='L256'></a><a href='#L256'>256</a>
+<a name='L257'></a><a href='#L257'>257</a>
+<a name='L258'></a><a href='#L258'>258</a>
+<a name='L259'></a><a href='#L259'>259</a>
+<a name='L260'></a><a href='#L260'>260</a>
+<a name='L261'></a><a href='#L261'>261</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">42x</span>
+<span class="cline-any cline-yes">42x</span>
+<span class="cline-any cline-yes">42x</span>
+<span class="cline-any cline-yes">42x</span>
+<span class="cline-any cline-yes">42x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">42x</span>
+<span class="cline-any cline-yes">42x</span>
+<span class="cline-any cline-yes">42x</span>
+<span class="cline-any cline-yes">210x</span>
+<span class="cline-any cline-yes">210x</span>
+<span class="cline-any cline-yes">210x</span>
+<span class="cline-any cline-yes">210x</span>
+<span class="cline-any cline-yes">210x</span>
+<span class="cline-any cline-yes">210x</span>
+<span class="cline-any cline-yes">70x</span>
+<span class="cline-any cline-yes">210x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">"use strict";Object.defineProperty(exports, "__esModule", {value: true});// src/lsp/krpanoDocs.ts
+var elementDocs = {
+  krpano: "Root element of a krpano XML file. All other XML elements must be defined inside it.",
+  include: "Includes another XML file at this position. Attributes of the target root element can be overridden.",
+  preview: "Low-resolution preview image, displayed while the full panorama is loading.",
+  image: "Panorama image definition. The type attribute selects cube, cubestrip, sphere, cylinder, flat or fisheye; its child element describes the image source.",
+  cube: "Cube panorama: a single image per cube side, or a multiresolution tile set.",
+  cubestrip: "Single panoramic strip image containing all cube sides (order set by striporder).",
+  level: "One resolution level of a multiresolution image.",
+  sphere: "Spherical (equirectangular) panorama image.",
+  cylinder: "Cylindrical panorama image.",
+  flat: "Flat / non-panoramic image.",
+  fisheye: "Fisheye panorama image.",
+  depthmap: "Depth map data for 3D model or depth-map based viewing.",
+  view: "Camera and view settings (fov, limits, distortion, stereo).",
+  area: "Position and size of the viewer area.",
+  display: "Global display and rendering settings (quality, fps, stereo, hardware scaling).",
+  control: "User input settings (mouse, touch, keyboard, drag behaviour).",
+  cursors: "Custom cursor images.",
+  autorotate: "Automatic camera rotation settings.",
+  contextmenu: "Context menu entries and behaviour.",
+  textstyle: 'Named text styles used by text displaying elements (defines arbitrary name="..." styles).',
+  cssstyles: 'Named CSS styles for HTML elements in text or layers (defines arbitrary name="..." styles).',
+  events: "Global event handlers (onstart, onloadcomplete, onnewscene, custom named events).",
+  action: "A named (or autorun) action containing krpano script or JavaScript code.",
+  data: "Arbitrary data stored in the XML, accessible from actions via the data[...] array.",
+  hotspot: "A hotspot inside the panorama (image, point, polygon or 3D model).",
+  layer: "A 2D screen layer element (image, text, container or HTML).",
+  plugin: "Legacy alias of the layer element (kept for older panos).",
+  style: "Named style: attributes defined here are copied to elements that reference it via the style attribute.",
+  scene: "A scene of a virtual tour. Scenes are loaded one at a time by loadscene().",
+  model: "3D model (for example an OBJ file) placed in the panorama.",
+  splats: "Gaussian splatting data."
+};
+var attributeDocs = {
+  name: "Name of the element. Names are referenced by actions and events.",
+  id: "Alternative identifier of the element (legacy).",
+  url: "Path or URL of the file to load.",
+  type: "Type of the element or of its content.",
+  content: "Inline content, alternative to loading from a url.",
+  style: "Name of a style whose attributes are applied to this element.",
+  keep: "Keep this element (even when it would be removed automatically, e.g. after a scene load).",
+  devices: "Special attribute: the element is only used on the listed devices (e.g. mobile, tablet, desktop).",
+  if: "Special attribute: the element is only used when the expression evaluates to true.",
+  enabled: "Enables or disables the element (and its interaction).",
+  visible: "Shows or hides the element.",
+  alpha: "Transparency: 1.0 fully opaque, 0.0 fully transparent.",
+  x: "Horizontal position in pixels, relative to the area set by align.",
+  y: "Vertical position in pixels, relative to the area set by align.",
+  zorder: "Stacking order for layers, hotspots and plugins (higher values are in front).",
+  align: "Alignment / reference point (e.g. lefttop, center, bottomright, or layer[style]).",
+  edge: "Preferred edge to keep the element inside the viewer area.",
+  width: "Width of the element in pixels (or percentage).",
+  height: "Height of the element in pixels (or percentage).",
+  scale: "Scaling factor of the element.",
+  rotate: "Rotation in degrees.",
+  bgcolor: "Background color (0xRRGGBB).",
+  bgalpha: "Background transparency.",
+  ath: "Horizontal position of a hotspot in degrees (-180 .. +180).",
+  atv: "Vertical position of a hotspot in degrees (-90 .. +90).",
+  onclick: "Action or event code that runs when the element is clicked.",
+  onloaded: "Action or event code that runs when the element has been loaded.",
+  onover: "Action or event code that runs when the pointer moves over the element.",
+  onout: "Action or event code that runs when the pointer moves out of the element.",
+  ondown: "Action or event code that runs when the mouse button / touch is pressed on the element.",
+  onup: "Action or event code that runs when the mouse button / touch is released on the element.",
+  onhover: "Action or event code that runs when the element is hovered.",
+  onstart: "Action or event code that runs at this point (e.g. after the pano has started).",
+  onloadcomplete: "Action or event code that runs when the panorama is fully loaded.",
+  onnewscene: "Action or event code that runs when a new scene is loaded.",
+  onenterfullscreen: "Action or event code that runs when fullscreen is entered.",
+  onexitfullscreen: "Action or event code that runs when fullscreen is exited.",
+  onkeydown: "Action or event code that runs on key down.",
+  onkeyup: "Action or event code that runs on key up.",
+  onresize: "Action or event code that runs when the viewer is resized.",
+  onidle: "Action or event code that runs when the viewer is idle.",
+  oninterrupt: "Action or event code that runs when the current movement is interrupted.",
+  args: "Names of the arguments passed to the action (comma separated).",
+  scope: "Variable scope of the action code: global, local or parent.",
+  autorun: "Run the action automatically: preinit (before the pano is built) or onstart (after).",
+  usestrictjs: "Enable or disable the JavaScript strict mode for this action.",
+  protect: "Protect the action code (obfuscate it when using protected viewing).",
+  secure: "Restrict the action code to the same domain.",
+  version: "Required krpano version of the file.",
+  basedir: "Base directory used to resolve all relative paths of this file.",
+  language: "Language of the pano (used by the [get(...)] text system).",
+  hlookat: "Horizontal look direction of the default view in degrees.",
+  vlookat: "Vertical look direction of the default view in degrees.",
+  camroll: "Roll of the camera in degrees.",
+  fov: "Field of view (zoom) of the camera in degrees.",
+  fovmin: "Minimum field of view (maximal zoom in).",
+  fovmax: "Maximum field of view (maximal zoom out).",
+  fovtype: "Interpretation of the fov value: MFOV, HFOV, VFOV, DFOV, SFOV.",
+  tiledimagewidth: "Total pixel width of a multiresolution image (tiled).",
+  tiledimageheight: "Total pixel height of a multiresolution image (tiled).",
+  tilesize: "Size of a single tile in pixels.",
+  multires: "Use multiresolution (tiled) images instead of a single image.",
+  crop: "Cropping rectangle of an image: x|y|width|height.",
+  frame: "Frame index of an image-strip / sprite sheet.",
+  frames: "Total number of frames of an image-strip / sprite sheet.",
+  alpha_hittest: "Use the image alpha channel for hit testing (pixel-perfect hotspots).",
+  hittest: "Defines whether the element can be clicked / catches the mouse / touch.",
+  handcursor: "Show the hand cursor when hovering the element.",
+  capture: "Capture all mouse / touch events of the element.",
+  group: "Elements with the same group name are handled exclusively (like radio buttons).",
+  linkedscene: "Scene to load when the element is clicked (tour hotspots).",
+  target: "Target element for movements or look-at actions.",
+  pixelwidth: "Size of the viewer area in pixels (read-only).",
+  pixelheight: "Size of the viewer area in pixels (read-only).",
+  pixelx: "Position of the viewer area in pixels (read-only).",
+  pixely: "Position of the viewer area in pixels (read-only).",
+  pressed: "Read-only: whether the mouse button / touch is currently pressed.",
+  ready: "Read-only: whether the element is ready (loaded and displayed).",
+  parent: "Read-only: the parent container element of this element.",
+  parentobject: "Read-only: the parent container element of this element.",
+  path: "Read-only: path of the element inside the krpano element tree.",
+  sourcewidth: "Read-only: pixel width of the source image (before cropping).",
+  sourceheight: "Read-only: pixel height of the source image (before cropping).",
+  scale9grid: '9-slice scaling grid for scalable background images, e.g. "0|0|10|10|0|0|10|10".',
+  scalechildren: "Scale the child elements together with this container.",
+  scalemode: "How the child elements are scaled with the container (e.g. none, zoom).",
+  sprite: "Use the image as sprite sheet (frame based animation).",
+  stagey: "Read-only: y position of the pointer in window (stage) coordinates.",
+  tabindex: "Tab index used for keyboard navigation of HTML layers.",
+  maskchildren: "Clip (mask) the child elements to the size of this container.",
+  ondestroy: "Action or event code that runs when the element is destroyed.",
+  onfocus: "Action or event code that runs when the element gets the keyboard focus.",
+  stopeventflow: "Stop the event propagation to other elements.",
+  linkstyle: "Style used for links inside text layers.",
+  striporder: 'Order of the cube sides inside a strip image (default "l|f|r|b|u|d").',
+  cubemapsize: "Size of the cube map texture used for rendering (power of two).",
+  prealign: "Transformation applied to the pano image before aligning: rx|ry|rz|tx|ty|tz.",
+  axis: 'Axis used by the element (for example the depthmap axis, e.g. "z").',
+  backgroundurl: "Url of the background image of this element.",
+  buildtime: "Read-only: krpano viewer build time.",
+  bytesize: "Read-only: size of the loaded file in bytes.",
+  count: "Number of entries in this element (read-only for most elements).",
+  index: "Index of the element inside its parent container (read-only).",
+  loaded: "Read-only: whether the element has been loaded completely.",
+  loading: "Read-only: whether the element is currently loading.",
+  loadedurl: "Read-only: the url that was actually loaded (after resolving placeholders).",
+  ishotspot: "Read-only: whether the element is a hotspot.",
+  hovering: "Read-only: whether the pointer is currently over the element.",
+  hitx: "Read-only: x position where the element was hit (element coordinate system).",
+  hity: "Read-only: y position where the element was hit (element coordinate system).",
+  alturl: "Alternative url: used when the main url cannot be loaded.",
+  imagewidth: "Read-only: pixel width of the loaded image.",
+  imageheight: "Read-only: pixel height of the loaded image.",
+  maxwidth: "Maximum width of the element (limits the size).",
+  maxheight: "Maximum height of the element (limits the size).",
+  minwidth: "Minimum width of the element.",
+  minheight: "Minimum height of the element.",
+  autowidth: "Automatically size the element to its content.",
+  autoheight: "Automatically size the element to its content.",
+  autoalpha: "Automatically fade the element in as soon as it is displayed.",
+  childmargin: "Margin used when arranging child elements (layout container).",
+  childorder: "Sort order used for the child elements (layout container).",
+  children: "Aspect ratio reserved for the child elements (layout container).",
+  flowchildren: "Flow direction used to arrange child elements (e.g. horizontal, vertical).",
+  enablechildren: "Enable or disable the child elements as well.",
+  safearea: "Keep the element inside the safe area (mobile notches and rounded corners).",
+  bg: "Draw an element background instead of a background image.",
+  bgborder: "Border size of the element background.",
+  bgroundedge: "Corner radius of the element background.",
+  bgshadow: "Drop shadow of the element background.",
+  bgcapture: "The element background captures pointer events (for hit testing).",
+  blendmode: "Blend mode used when drawing the element (normal, add, multiply, ...).",
+  capturefocus: "Capture the keyboard focus for the element.",
+  capturewheel: "Capture mouse wheel events for the element.",
+  cursor: "Cursor style shown while hovering the element (e.g. pointer, move).",
+  invert: "Invert the colors of the image.",
+  smoothing: "Enable image smoothing (interpolation) when scaling.",
+  quality: "Rendering quality of the element.",
+  renderer: "Renderer used for the element (e.g. css3d, webgl, html5).",
+  preload: "Preload the element before it is displayed.",
+  zoom: "Resize hotspots with the zoom level (by default hotspots keep their screen size).",
+  distorted: "Distort the hotspot to follow the panorama distortion.",
+  html: 'HTML content of the layer (type="text").',
+  css: 'CSS styles for the element, e.g. "data:text/css, ..." or a css file url.',
+  cssclass: "CSS class names applied to the HTML element.",
+  cssstyle: "Inline CSS styles applied to the HTML element.",
+  htmlautosize: "Resize the layer automatically to the size of its HTML content.",
+  htmloverflow: "Overflow behaviour of the HTML content (visible, hidden, ...).",
+  htmlscrollbars: "Show scrollbars inside the HTML content.",
+  nativecontextmenu: "Use the native browser context menu on the HTML element.",
+  onsingleclick: "Action or event code that runs on a single click.",
+  ondoubleclick: "Action or event code that runs on a double click.",
+  onwheel: "Action or event code that runs on mouse wheel.",
+  onblur: "Action or event code that runs when the element loses the focus.",
+  oncreate: "Action or event code that runs when the element is created.",
+  limitview: "Restrict the viewing range (auto, range, off, full).",
+  hlookatmin: "Lower limit of the horizontal look direction (limited view).",
+  hlookatmax: "Upper limit of the horizontal look direction (limited view).",
+  vlookatmin: "Lower limit of the vertical look direction (limited view).",
+  vlookatmax: "Upper limit of the vertical look direction (limited view).",
+  maxpixelzoom: "Maximum pixel zoom level (limits how far the image can be scaled up).",
+  hfov: "Horizontal field of view of the image (non-cube images).",
+  vfov: "Vertical field of view of the image (non-cube images).",
+  stereo: "Stereo rendering layout for VR (e.g. side-by-side, top-bottom).",
+  accuracy: "Read-only: GPS accuracy in meters (from the device).",
+  ox: "Position offset of the 3D model on the x axis.",
+  oy: "Position offset of the 3D model on the y axis.",
+  oz: "Position offset of the 3D model on the z axis.",
+  rx: "Rotation of the 3D model around the x axis (degrees).",
+  ry: "Rotation of the 3D model around the y axis (degrees).",
+  rz: "Rotation of the 3D model around the z axis (degrees).",
+  tx: "Translation of the 3D model on the x axis.",
+  ty: "Translation of the 3D model on the y axis.",
+  tz: "Translation of the 3D model on the z axis.",
+  rotationorder: "Order in which the rx/ry/rz rotations are applied.",
+  subdiv: "Subdivision level used when rendering the 3D model.",
+  aspreview: "Use this image level as preview while the full resolution is loading."
+};
+function docForElement(name, attributeCount) {
+  const doc = elementDocs[name];
+  const lines = [];
+  if (doc)
+    lines.push(doc);
+  else
+    lines.push("krpano XML element.");
+  lines.push("", `${attributeCount} attributes known.`);
+  return lines.join("\n");
+}
+function docForAttribute(element, attribute) {
+  const specific = attributeDocs[`${element}.${attribute}`];
+  if (specific)
+<span class="branch-0 cbranch-no" title="branch not covered" >    return specific;</span>
+  if (attributeDocs[attribute])
+    return attributeDocs[attribute];
+  return "krpano attribute (no description available).";
+}
+var attributeValueHints = {
+  align: "lefttop / left / leftbottom / top / center / bottom / righttop / right / rightbottom,\u6216 layer[...] / hotspot[...]",
+  edge: "lefttop / left / leftbottom / top / center / bottom / righttop / right / rightbottom",
+  fovtype: "MFOV(\u9ED8\u8BA4) / HFOV / VFOV / DFOV / SFOV",
+  blendmode: "normal / add / subtract / multiply / screen / lighten / darken / overlay / difference,\u4EE5\u53CA CSS \u7684\u5176\u5B83\u6DF7\u5408\u6A21\u5F0F",
+  alpha: "0.0(\u5168\u900F\u660E)\u20261.0(\u4E0D\u900F\u660E)",
+  ath: "-180 \u2026 +180(\u5EA6,\u6C34\u5E73\u65B9\u5411)",
+  atv: "-90 \u2026 +90(\u5EA6,\u5782\u76F4\u65B9\u5411)",
+  fov: "0 \u2026 179(\u5EA6)",
+  scale: "1.0 \u4E3A\u539F\u59CB\u5927\u5C0F",
+  rotate: "\u5EA6\u6570,\u53EF\u4E3A\u8D1F",
+  bgcolor: "0xRRGGBB \u6216 0xAARRGGBB",
+  zorder: "\u6574\u6570,\u8D8A\u5927\u8D8A\u9760\u524D"
+};
+var attributeEnums = {
+  align: ["lefttop", "left", "leftbottom", "top", "center", "bottom", "righttop", "right", "rightbottom"],
+  edge: ["lefttop", "left", "leftbottom", "top", "center", "bottom", "righttop", "right", "rightbottom"],
+  fovtype: ["MFOV", "HFOV", "VFOV", "DFOV", "SFOV"],
+  blendmode: ["normal", "add", "subtract", "multiply", "screen", "lighten", "darken", "overlay", "difference", "hardlight", "softlight", "colorburn", "colordodge", "exclusion", "inherit"]
+};
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+exports.elementDocs = elementDocs; exports.attributeDocs = attributeDocs; exports.docForElement = docForElement; exports.docForAttribute = docForAttribute; exports.attributeValueHints = attributeValueHints; exports.attributeEnums = attributeEnums;
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-10-14T03:56:03.824Z
+            </div>
+        <script src="../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../sorter.js"></script>
+        <script src="../block-navigation.js"></script>
+    </body>
+</html>
+    

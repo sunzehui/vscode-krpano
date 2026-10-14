@@ -124,8 +124,9 @@ export function isLocalRelativeUrl(url: string): boolean {
 }
 
 /** 把 include 的 url 解析为相对当前文件的路径(归一化 . 与 ..) */
-export function resolveIncludePath(fromPath: string, url: string): string | undefined {
-  if (!isLocalRelativeUrl(url))
+export function resolveIncludePath(fromPath: string | undefined, url: string): string | undefined {
+  // 未保存的文档(untitled)没有路径,无法解析相对 include
+  if (!fromPath || !isLocalRelativeUrl(url))
     return undefined
   const impl = fromPath.includes('\\') ? path.win32 : path.posix
   const cleaned = url.split(/[?#]/)[0]

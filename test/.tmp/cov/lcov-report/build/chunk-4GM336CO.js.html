@@ -1,0 +1,271 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for build/chunk-4GM336CO.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">build</a> chunk-4GM336CO.js</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>62/62</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>18/18</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">54.54% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>12/22</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>62/62</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line high'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">"use strict";Object.defineProperty(exports, "__esModule", {value: true});// src/lsp/messages.ts
+function localeOf(value) {
+  return value &amp;&amp; value.toLowerCase().startsWith("zh") ? "zh" : "en";
+}
+var tables = {
+  en: {
+    changeToTag: (tag) =&gt; `Change to &lt;${tag}&gt;`,
+    changeToJavascript: 'Change to type="Javascript"',
+    removeLangAttribute: "Remove the unsupported lang attribute",
+    createAction: (name) =&gt; `Create action "${name}"`,
+    renameDuplicate: (scope, name) =&gt; `Rename this duplicate (and ${scope}) to "${name}"`,
+    renameScopeScene: "its references in this scene",
+    renameScopeFile: "its references",
+    changeAttribute: (name) =&gt; `Change attribute to "${name}"`,
+    extractStyle: (name) =&gt; `Extract attributes to style "${name}"`,
+    extractAction: (name) =&gt; `Extract selection to action "${name}"`,
+    createFile: (url) =&gt; `Create file "${url}"`,
+    serverStarting: "krpano: starting the language service...",
+    serverStopped: "krpano: the language service stopped. Syntax highlighting and formatting keep working; see the log for details.",
+    serverStoppedDetail: <span class="fstat-no" title="function not covered" >(detail) =&gt; `krpano: the language service stopped (${detail}). Syntax highlighting and formatting keep working.`,</span>
+    serverFailedToLoad: "krpano: the language service failed to load. Syntax highlighting and formatting keep working.",
+    showLogs: "Show log",
+    noActiveEditor: "krpano: open an XML file first.",
+    notKrpanoDocument: 'krpano: this command works on krpano XML documents (language mode "krpano XML").',
+    sceneInserted: <span class="fstat-no" title="function not covered" >(name) =&gt; `krpano: inserted the scene skeleton "${name}".`,</span>
+    formattingAllXml: "krpano: formatting all XML files...",
+    noXmlFiles: "krpano: no XML files found in this workspace.",
+    formatAllXmlDone: <span class="fstat-no" title="function not covered" >(formatted, skipped) =&gt; `krpano: formatted ${formatted} file(s), skipped ${skipped}.`</span>
+  },
+  zh: {
+    changeToTag: (tag) =&gt; `\u6539\u4E3A &lt;${tag}&gt;`,
+    changeToJavascript: '\u6539\u4E3A type="Javascript"',
+    removeLangAttribute: "\u5220\u9664\u4E0D\u53D7\u652F\u6301\u7684 lang \u5C5E\u6027",
+    createAction: (name) =&gt; `\u521B\u5EFA\u52A8\u4F5C "${name}"`,
+    renameDuplicate: <span class="fstat-no" title="function not covered" >(scope, name) =&gt; `\u91CD\u547D\u540D\u8FD9\u4E2A\u91CD\u540D\u5B9A\u4E49(\u8FDE\u540C${scope})\u4E3A "${name}"`,</span>
+    renameScopeScene: "\u672C scene \u5185\u7684\u5F15\u7528",
+    renameScopeFile: "\u672C\u6587\u4EF6\u5185\u7684\u5F15\u7528",
+    changeAttribute: <span class="fstat-no" title="function not covered" >(name) =&gt; `\u6539\u4E3A\u5C5E\u6027 "${name}"`,</span>
+    extractStyle: (name) =&gt; `\u628A\u5C5E\u6027\u63D0\u53D6\u4E3A style "${name}"`,
+    extractAction: <span class="fstat-no" title="function not covered" >(name) =&gt; `\u628A\u9009\u533A\u63D0\u53D6\u4E3A action "${name}"`,</span>
+    createFile: <span class="fstat-no" title="function not covered" >(url) =&gt; `\u521B\u5EFA\u6587\u4EF6 "${url}"`,</span>
+    serverStarting: "krpano:\u6B63\u5728\u542F\u52A8\u8BED\u8A00\u670D\u52A1\u2026",
+    serverStopped: "krpano:\u8BED\u8A00\u670D\u52A1\u5DF2\u505C\u6B62\u3002\u9AD8\u4EAE\u4E0E\u683C\u5F0F\u5316\u4E0D\u53D7\u5F71\u54CD,\u8BE6\u60C5\u89C1\u65E5\u5FD7\u3002",
+    serverStoppedDetail: <span class="fstat-no" title="function not covered" >(detail) =&gt; `krpano:\u8BED\u8A00\u670D\u52A1\u5DF2\u505C\u6B62(${detail})\u3002\u9AD8\u4EAE\u4E0E\u683C\u5F0F\u5316\u4E0D\u53D7\u5F71\u54CD\u3002`,</span>
+    serverFailedToLoad: "krpano:\u8BED\u8A00\u670D\u52A1\u52A0\u8F7D\u5931\u8D25\u3002\u9AD8\u4EAE\u4E0E\u683C\u5F0F\u5316\u4E0D\u53D7\u5F71\u54CD\u3002",
+    showLogs: "\u67E5\u770B\u65E5\u5FD7",
+    noActiveEditor: "krpano:\u8BF7\u5148\u6253\u5F00\u4E00\u4E2A XML \u6587\u4EF6\u3002",
+    notKrpanoDocument: 'krpano:\u6B64\u547D\u4EE4\u4F5C\u7528\u4E8E krpano XML \u6587\u6863(\u8BED\u8A00\u6A21\u5F0F\u4E3A "krpano XML")\u3002',
+    sceneInserted: <span class="fstat-no" title="function not covered" >(name) =&gt; `krpano:\u5DF2\u63D2\u5165 scene \u9AA8\u67B6 "${name}"\u3002`,</span>
+    formattingAllXml: "krpano:\u6B63\u5728\u683C\u5F0F\u5316\u5DE5\u4F5C\u533A\u6240\u6709 XML \u6587\u4EF6\u2026",
+    noXmlFiles: "krpano:\u5DE5\u4F5C\u533A\u91CC\u6CA1\u6709\u627E\u5230 XML \u6587\u4EF6\u3002",
+    formatAllXmlDone: <span class="fstat-no" title="function not covered" >(formatted, skipped) =&gt; `krpano:\u5DF2\u683C\u5F0F\u5316 ${formatted} \u4E2A\u6587\u4EF6,\u8DF3\u8FC7 ${skipped} \u4E2A\u3002`</span>
+  }
+};
+function messagesFor(locale) {
+  return tables[locale === "zh" ? "zh" : "en"];
+}
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+exports.localeOf = localeOf; exports.messagesFor = messagesFor;
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-10-14T03:56:03.824Z
+            </div>
+        <script src="../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../sorter.js"></script>
+        <script src="../block-navigation.js"></script>
+    </body>
+</html>
+    

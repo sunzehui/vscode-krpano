@@ -117,8 +117,9 @@ export function reindentActionBodies(text: string, indentation: string): string 
     let depth = 0
     const rendered = lines.map((line) => {
       const trimmed = line.trim()
+      // 空白行保持原样:末尾那行是 </action> 前的缩进,不能被吃掉
       if (!trimmed)
-        return ''
+        return line
       const startsWithClose = trimmed.startsWith(')')
       const lineDepth = startsWithClose ? Math.max(0, depth - 1) : depth
       for (const char of trimmed) {

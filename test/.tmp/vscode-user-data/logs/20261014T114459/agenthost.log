@@ -1,0 +1,38 @@
+2026-10-14 11:45:01.711 [info] Agent Host process started successfully
+2026-10-14 11:45:01.763 [info] AgentService initialized
+2026-10-14 11:45:01.775 [info] Registering agent provider: copilotcli
+2026-10-14 11:45:01.777 [info] Registering agent provider: claude
+2026-10-14 11:45:01.782 [info] [Copilot] BYOK bridge changed; refreshing models
+2026-10-14 11:45:01.783 [info] [Copilot] BYOK bridge changed; refreshing models
+2026-10-14 11:45:01.809 [info] [Copilot] BYOK bridge changed; refreshing models
+2026-10-14 11:45:01.821 [info] [Claude] Models refreshed (merged). Count: 0, 
+2026-10-14 11:45:01.822 [info] [ProtocolServer] Initialize: clientId=64fb6ad2-f719-452f-bfb1-889b1d883706, protocolVersions=[0.10.0, 0.9.0, 0.7.0, 0.6.0, 0.5.2, 0.5.1]
+2026-10-14 11:45:01.854 [info] [AgentService] showExternalSessions changed 'none' -> 'last7Days'; queueing session list reconciliation
+2026-10-14 11:45:01.971 [info] [WebSocketProtocol] Server listening on socket /var/folders/fz/g1r4fgtd4tg4mv3rhd3j6kr40000gn/T/vscode-ah-676874a89c10/ZnXs05Hcqhxryh6VOZnZpg.sock
+2026-10-14 11:45:02.201 [info] [CommandAutoApprover] Tree-sitter initialized (bash=available, powershell=available)
+2026-10-14 11:45:02.230 [info] [node-compile-cache] agent-host: packaged cache inactive (status: disabled, configured: /Users/sunzehui/Documents/vscode-krpano/.vscode-test/vscode-darwin-arm64-1.141.1/Visual Studio Code.app/Contents/Resources/app/node-compile-cache/agent-host, active: none)
+2026-10-14 11:45:02.266 [info] [Copilot] Listing chats to migrate...
+2026-10-14 11:45:02.267 [info] [Copilot] Starting CopilotClient...
+2026-10-14 11:45:02.268 [info] [Copilot] Set CLI env: GITHUB_COPILOT_INTEGRATION_ID=vscode-chat
+2026-10-14 11:45:02.271 [info] [Copilot] Using bundled runtime path: /Users/sunzehui/Documents/vscode-krpano/.vscode-test/vscode-darwin-arm64-1.141.1/Visual Studio Code.app/Contents/Resources/app/node_modules.asar.unpacked/@github/copilot-sdk-darwin-arm64/prebuilds/darwin-arm64/copilot-runtime
+2026-10-14 11:45:02.287 [info] [Claude] SDK not downloaded yet; deferring the migratable chat list
+2026-10-14 11:45:02.404 [info] [Copilot] CopilotClient started successfully
+2026-10-14 11:45:02.408 [info] [Copilot] Listed 0 SDK session(s) for chats to migrate
+2026-10-14 11:45:02.408 [info] [Copilot] Found 0 legacy sessions
+2026-10-14 11:45:02.413 [info] [CopilotDiscovery] Started: maxCandidateWatches=32, maxConcurrentStats=4, coalesceMs=500
+2026-10-14 11:45:02.413 [info] [AgentService] sessions_v2 import for provider copilotcli: 0 synchronized, 0 current, 0 excluded, 0 stale exclusions, 0 incomplete, 0 failed, marker set in 637ms (0 db opens, 0 db stats)
+2026-10-14 11:45:02.418 [info] [CopilotDiscovery] Scan 1 started: initial=true, candidates=0, reasons={}, watched=0, pending=0, ignoredHostEvents=0
+2026-10-14 11:45:02.419 [info] [Copilot] Listing discoverable chats...
+2026-10-14 11:45:02.427 [info] [AgentService] pruned 0 stale external session row(s) older than 30 days
+2026-10-14 11:45:02.429 [info] [Claude] SDK not downloaded yet; deferring chat discovery
+2026-10-14 11:45:02.429 [info] [Copilot] Listed 0 SDK session(s) for discoverable chats
+2026-10-14 11:45:02.430 [info] [CopilotDiscovery] Scan 1 catalog: sdkSessions=0, candidates=0, listMs=11, classifyMs=1, published=0, external=0, legacy=0, known=0, disabledLegacy=0, archivedLegacy=0, missingCwd=0, unsupportedClient=0, stale=0, failed=0
+2026-10-14 11:45:02.431 [info] [CopilotDiscovery] Scan 1 finished: elapsedMs=13, completed=0, pending=0, watched=0, overflow=0, ignoredHostEvents=0
+2026-10-14 11:45:02.672 [info] [Claude] SDK not downloaded yet; deferring the migratable chat list
+2026-10-14 11:45:02.676 [info] [Claude] SDK not downloaded yet; deferring the migratable chat list
+2026-10-14 11:45:02.866 [info] [Copilot] Restarting CopilotClient (CAPI proxy configuration changed (proxy (none) -> http://127.0.0.1:7890, NO_PROXY changed))
+2026-10-14 11:45:03.640 [info] [ProtocolServer] Client disconnected: 64fb6ad2-f719-452f-bfb1-889b1d883706, subscriptions=1
+2026-10-14 11:45:03.641 [info] [Copilot] BYOK bridge changed; refreshing models
+2026-10-14 11:45:03.641 [info] [Copilot] BYOK bridge changed; refreshing models
+2026-10-14 11:45:03.642 [info] AgentService: shutting down all providers...
+2026-10-14 11:45:03.643 [info] [Copilot] Shutting down...
