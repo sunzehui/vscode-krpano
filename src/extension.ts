@@ -12,7 +12,96 @@ const isChinese = (): boolean => localeOf(vscode.env.language) === 'zh'
 
 export function activate(context: vscode.ExtensionContext): void {
   registerFormatter(context)
+  registerCommands(context)
   startLanguageServer(context)
+}
+
+/** 命令面板命令:插入 scene 骨架、格式化工作区内所有 XML */
+function registerCommands(context: vscode.ExtensionContext): void {
+  context.subscriptions.push(vscode.commands.registerCommand('krpano.insertSceneSkeleton', insertSceneSkeleton))
+  context.subscriptions.push(vscode.commands.registerCommand('krpano.formatAllXml', formatAllXml))
+}
+
+/** 场景名:取自文件名(去掉扩展名),只保留合法字符 */
+export function sceneNameFromPath(fsPath: string): string {
+  const base = fsPath.replace(/\\/g, '/').split('/').pop() ?? ''
+  const name = base.replace(/\.xml$/i, '').replace(/[^\w-]+/g, '_').replace(/^_+|_+$/g, '')
+  return name || 'scene1'
+}
+
+/** 在光标处插入一份 <scene> 骨架(view + preview + cube 占位) */
+export async function insertSceneSkeleton(): Promise<boolean> {
+  const t = messagesFor(localeOf(vscode.env.language))
+  const editor = vscode.window.activeTextEditor
+  if (!editor) {
+    void vscode.window.showWarningMessage(t.noActiveEditor)
+    return false
+  }
+  if (!FORMATTED_LANGUAGES.includes(editor.document.languageId)) {
+    void vscode.window.showWarningMessage(t.notKrpanoDocument)
+    return false
+  }
+  const name = sceneNameFromPath(editor.document.uri.fsPath)
+  const skeleton = [
+    '',
+    `<scene name="${name}" title="${name}">`,
+    '\t<view hlookat="0" vlookat="0" fovtype="MFOV" fov="90" fovmin="70" fovmax="140"/>',
+    '\t<preview url="preview.jpg" type="grid(2,2)"/>',
+    '\t<image>',
+    '\t\t<cube url="pano_%s_%l_%v_%h.jpg" multires="512,1024,2048"/>',
+    '\t</image>',
+    '</scene>',
+    '',
+  ].join('\n')
+  const ok = await editor.edit(builder => builder.insert(editor.selection.active, skeleton))
+  if (ok)
+    void vscode.window.showInformationMessage(t.sceneInserted(name))
+  return ok
+}
+
+/** 格式化工作区内所有 .xml:只应用"结构未变"的结果,避免静默改写标签结构 */
+export async function formatAllXml(): Promise<number> {
+  const t = messagesFor(localeOf(vscode.env.language))
+  const files = await vscode.workspace.findFiles('**/*.xml', '**/{node_modules,.git,out,dist}/**', 500)
+  if (!files.length) {
+    void vscode.window.showInformationMessage(t.noXmlFiles)
+    return 0
+  }
+  const options = getOptions(vscode.workspace.getConfiguration())
+  let formatted = 0
+  let skipped = 0
+  await vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Window, title: t.formattingAllXml },
+    async () => {
+      for (const uri of files) {
+        let document: vscode.TextDocument
+        try {
+          document = await vscode.workspace.openTextDocument(uri)
+        }
+        catch {
+          skipped++
+          continue
+        }
+        const original = document.getText()
+        const result = beautify(original, options)
+        if (result.failed || result.structureChanged || result.text === original) {
+          skipped++
+          continue
+        }
+        const edit = new vscode.WorkspaceEdit()
+        edit.replace(uri, new vscode.Range(document.positionAt(0), document.positionAt(original.length)), result.text)
+        if (await vscode.workspace.applyEdit(edit)) {
+          await document.save()
+          formatted++
+        }
+        else {
+          skipped++
+        }
+      }
+    },
+  )
+  void vscode.window.showInformationMessage(t.formatAllXmlDone(formatted, skipped))
+  return formatted
 }
 
 function registerFormatter(context: vscode.ExtensionContext): void {

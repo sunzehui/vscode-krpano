@@ -23,5 +23,6 @@ export default function getOptions(config: any): xmlOptions {
     handleRootNode: xmlFormat.handleRootNode,
     attributeLayout: xmlFormat.attributeLayout,
     actionIndentation: xmlFormat.actionIndentation,
+    scriptStatements: xmlFormat.scriptStatements,
   }
 }

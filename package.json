@@ -34,6 +34,18 @@
     "onLanguage:krpano"
   ],
   "contributes": {
+    "commands": [
+      {
+        "command": "krpano.insertSceneSkeleton",
+        "title": "%krpano.command.insertSceneSkeleton%",
+        "category": "krpano"
+      },
+      {
+        "command": "krpano.formatAllXml",
+        "title": "%krpano.command.formatAllXml%",
+        "category": "krpano"
+      }
+    ],
     "configuration": {
       "title": "krpano-lang",
       "properties": {
@@ -114,6 +126,11 @@
           "type": "string",
           "default": "",
           "markdownDescription": "缩进字符串(如 `\"  \"` 或 `\"\\t\"`)。留空时按 `editor.insertSpaces` / `editor.tabSize` 自动换算。\n\nIndentation string (e.g. `\"  \"` or `\"\\t\"`). Leave empty to derive it from `editor.insertSpaces` / `editor.tabSize`."
+        },
+        "xml.format.scriptStatements": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "是否把同一行里用 `;` 分隔的多条脚本语句拆到多行(仅普通 action,JS 动作不动)。\n\nSplit multiple krpano statements written on one line into separate lines (plain actions only)."
         },
         "xml.format.lineSeparator": {
           "type": "string",
@@ -213,7 +230,7 @@
     "dev": "npm run build -- --watch",
     "release": "npx bumpp --commit --tag --push",
     "typecheck": "tsc --noEmit",
-    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/messages.ts src/lsp/symbols.ts src/lsp/references.ts src/lsp/actions.ts src/lsp/outline.ts src/lsp/workspace.ts src/shared/xml.ts src/shared/reindent.ts src/shared/layout.ts --format=cjs --out-dir=test/build --clean",
+    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/messages.ts src/lsp/symbols.ts src/lsp/references.ts src/lsp/actions.ts src/lsp/outline.ts src/lsp/workspace.ts src/shared/xml.ts src/shared/reindent.ts src/shared/layout.ts src/shared/statements.ts --format=cjs --out-dir=test/build --clean",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "npm run build && npm run build:test && node --test test/*.test.mjs",

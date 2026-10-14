@@ -3,8 +3,8 @@ import { createRequire } from 'node:module'
 import { test } from 'node:test'
 
 const require = createRequire(import.meta.url)
-const { localeOf, messagesFor } = require('./build/lsp/messages.js')
 const { getCodeActions } = require('./build/lsp/actions.js')
+const { localeOf, messagesFor } = require('./build/lsp/messages.js')
 
 test('本地化:localeOf 判定与文案表', () => {
   assert.equal(localeOf('zh-cn'), 'zh')

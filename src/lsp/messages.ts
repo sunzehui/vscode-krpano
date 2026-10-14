@@ -24,6 +24,12 @@ interface Messages {
   serverStoppedDetail: (detail: string) => string
   serverFailedToLoad: string
   showLogs: string
+  noActiveEditor: string
+  notKrpanoDocument: string
+  sceneInserted: (name: string) => string
+  formattingAllXml: string
+  noXmlFiles: string
+  formatAllXmlDone: (formatted: number, skipped: number) => string
 }
 
 const tables: Record<Locale, Messages> = {
@@ -44,6 +50,12 @@ const tables: Record<Locale, Messages> = {
     serverStoppedDetail: detail => `krpano: the language service stopped (${detail}). Syntax highlighting and formatting keep working.`,
     serverFailedToLoad: 'krpano: the language service failed to load. Syntax highlighting and formatting keep working.',
     showLogs: 'Show log',
+    noActiveEditor: 'krpano: open an XML file first.',
+    notKrpanoDocument: 'krpano: this command works on krpano XML documents (language mode "krpano XML").',
+    sceneInserted: name => `krpano: inserted the scene skeleton "${name}".`,
+    formattingAllXml: 'krpano: formatting all XML files...',
+    noXmlFiles: 'krpano: no XML files found in this workspace.',
+    formatAllXmlDone: (formatted, skipped) => `krpano: formatted ${formatted} file(s), skipped ${skipped}.`,
   },
   zh: {
     changeToTag: tag => `改为 <${tag}>`,
@@ -62,6 +74,12 @@ const tables: Record<Locale, Messages> = {
     serverStoppedDetail: detail => `krpano:语言服务已停止(${detail})。高亮与格式化不受影响。`,
     serverFailedToLoad: 'krpano:语言服务加载失败。高亮与格式化不受影响。',
     showLogs: '查看日志',
+    noActiveEditor: 'krpano:请先打开一个 XML 文件。',
+    notKrpanoDocument: 'krpano:此命令作用于 krpano XML 文档(语言模式为 "krpano XML")。',
+    sceneInserted: name => `krpano:已插入 scene 骨架 "${name}"。`,
+    formattingAllXml: 'krpano:正在格式化工作区所有 XML 文件…',
+    noXmlFiles: 'krpano:工作区里没有找到 XML 文件。',
+    formatAllXmlDone: (formatted, skipped) => `krpano:已格式化 ${formatted} 个文件,跳过 ${skipped} 个。`,
   },
 }
 

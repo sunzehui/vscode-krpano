@@ -11,7 +11,7 @@ const EXTENSION = path.resolve('dist/extension.js')
 const FAKE_DIR = path.resolve('test/build/fake-vscode')
 const FAKE_MODULE = path.join(FAKE_DIR, 'index.js')
 
-const FAKE_SOURCE = `const state = { registered: {}, rangeProviders: {}, messages: [], config: null, modalAnswer: undefined }
+const FAKE_SOURCE = `const state = { registered: {}, rangeProviders: {}, commands: {}, messages: [], config: null, modalAnswer: undefined, inserted: [], appliedEdits: [], xmlFiles: [], documents: {}, activeEditor: undefined }
 class Range { constructor(start, end) { this.start = start; this.end = end } }
 module.exports = {
   state,
@@ -28,12 +28,44 @@ module.exports = {
     },
   },
   env: { language: 'en' },
-  workspace: { getConfiguration: () => state.config },
+  workspace: {
+    getConfiguration: () => state.config,
+    findFiles: () => Promise.resolve(state.xmlFiles),
+    openTextDocument: (uri) => {
+      const doc = state.documents[uri.fsPath]
+      return doc ? Promise.resolve(doc) : Promise.reject(new Error('not found'))
+    },
+    applyEdit: (edit) => {
+      state.appliedEdits.push(edit.edits)
+      return Promise.resolve(true)
+    },
+    createFileSystemWatcher: () => ({ dispose() {} }),
+  },
+  commands: {
+    registerCommand: (id, callback) => {
+      state.commands[id] = callback
+      return { dispose() {} }
+    },
+  },
+  ProgressLocation: { Window: 10 },
+  WorkspaceEdit: class {
+    constructor() { this.edits = [] }
+    replace(uri, range, text) { this.edits.push({ uri, range, text }) }
+  },
+  env: { language: 'en' },
   window: {
+    activeTextEditor: undefined,
     showWarningMessage: (msg, ...rest) => {
-      state.messages.push({ msg, modal: typeof rest[0] === 'object' })
+      state.messages.push({ msg, kind: 'warning', modal: typeof rest[0] === 'object' })
       return Promise.resolve(state.modalAnswer)
     },
+    showInformationMessage: (msg) => {
+      state.messages.push({ msg, kind: 'information' })
+      return Promise.resolve(undefined)
+    },
+    withProgress: (options, task) => Promise.resolve(task({ report() {} })),
+    createOutputChannel: () => ({ appendLine() {}, show() {}, dispose() {} }),
+    get activeTextEditor() { return state.activeEditor },
   },
 }
 `
@@ -135,6 +167,95 @@ test(
     assert.ok(
       vscode.state.messages.some(m => m.msg.includes('formatting failed')),
       '解析失败应给出警告',
+    )
+  },
+)
+
+test(
+  '打包产物:命令面板命令(scene 骨架 / 格式化工作区)',
+  { skip: existsSync(EXTENSION) ? false : 'dist/extension.js 未构建,先运行 npm run build' },
+  async () => {
+    const { extension } = loadWithFakeVscode()
+    const vscode = createRequire(import.meta.url)(FAKE_MODULE)
+    assert.equal(typeof extension.sceneNameFromPath, 'function')
+    assert.equal(extension.sceneNameFromPath('/pano/my tour-01.xml'), 'my_tour-01')
+    assert.equal(extension.sceneNameFromPath('C:\\pano\\scene.xml'), 'scene')
+    assert.equal(extension.sceneNameFromPath('/pano/中文.xml'), 'scene1', '非法字符全部剔除后回退默认名')
+
+    extension.activate({
+      subscriptions: [],
+      asAbsolutePath: relative => path.resolve(relative),
+    })
+
+    assert.deepEqual(
+      Object.keys(vscode.state.commands).sort(),
+      ['krpano.formatAllXml', 'krpano.insertSceneSkeleton'],
+      '命令应在激活时注册',
+    )
+
+    // 没有活动编辑器 / 非 krpano 文档 → 警告且不插入
+    vscode.state.messages.length = 0
+    assert.equal(await vscode.state.commands['krpano.insertSceneSkeleton'](), false)
+    assert.ok(vscode.state.messages.some(m => m.msg.includes('open an XML file first')), JSON.stringify(vscode.state.messages))
+
+    vscode.state.activeEditor = {
+      document: { languageId: 'plaintext', uri: { fsPath: '/pano/a.xml' } },
+      selection: { active: 0 },
+      edit: () => Promise.resolve(true),
+    }
+    assert.equal(await vscode.state.commands['krpano.insertSceneSkeleton'](), false)
+    assert.ok(vscode.state.messages.some(m => m.msg.includes('krpano XML documents')), JSON.stringify(vscode.state.messages))
+
+    // 正常插入骨架
+    vscode.state.messages.length = 0
+    const inserted = []
+    vscode.state.activeEditor = {
+      document: { languageId: 'krpano-xml', uri: { fsPath: '/pano/night_walk.xml' } },
+      selection: { active: 3 },
+      edit: (callback) => {
+        callback({ insert: (position, text) => inserted.push({ position, text }) })
+        return Promise.resolve(true)
+      },
+    }
+    assert.equal(await vscode.state.commands['krpano.insertSceneSkeleton'](), true)
+    assert.equal(inserted.length, 1)
+    assert.equal(inserted[0].position, 3)
+    assert.ok(inserted[0].text.includes('<scene name="night_walk"'), inserted[0].text)
+    assert.ok(inserted[0].text.includes('<preview url='), inserted[0].text)
+    assert.ok(inserted[0].text.includes('</scene>'), inserted[0].text)
+    assert.ok(vscode.state.messages.some(m => m.msg.includes('inserted the scene skeleton')), JSON.stringify(vscode.state.messages))
+
+    // 工作区没有 XML 文件
+    vscode.state.messages.length = 0
+    vscode.state.xmlFiles = []
+    assert.equal(await vscode.state.commands['krpano.formatAllXml'](), 0)
+    assert.ok(vscode.state.messages.some(m => m.msg.includes('no XML files')), JSON.stringify(vscode.state.messages))
+
+    // 两个文件:一个可格式化、一个结构会变(跳过)
+    vscode.state.messages.length = 0
+    vscode.state.config = { editor: { tabSize: 2, insertSpaces: true }, xml: { format: {} } }
+    const messy = '<krpano><view/><hotspot name="a"/></krpano>'
+    const broken = '<krpano><a></b></krpano>'
+    vscode.state.xmlFiles = [{ fsPath: '/pano/messy.xml' }, { fsPath: '/pano/broken.xml' }, { fsPath: '/pano/missing.xml' }]
+    vscode.state.documents = {
+      '/pano/messy.xml': {
+        getText: () => messy,
+        positionAt: offset => offset,
+        save: () => Promise.resolve(true),
+      },
+      '/pano/broken.xml': {
+        getText: () => broken,
+        positionAt: offset => offset,
+        save: () => Promise.resolve(true),
+      },
+    }
+    const formattedCount = await vscode.state.commands['krpano.formatAllXml']()
+    assert.equal(formattedCount, 1, '只有结构不变的文件会被改写')
+    assert.equal(vscode.state.appliedEdits.length, 1)
+    assert.ok(vscode.state.appliedEdits[0][0].text.includes('\n  <view/>'), vscode.state.appliedEdits[0][0].text)
+    assert.ok(
+      vscode.state.messages.some(m => m.msg.includes('formatted 1 file(s), skipped 2')),
+      JSON.stringify(vscode.state.messages.map(m => m.msg)),
     )
   },
 )

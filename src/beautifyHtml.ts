@@ -3,6 +3,7 @@ import type { xmlOptions as xmlOptionsType } from './types/options'
 import xmlFormat from 'xml-formatter'
 import { applyAttributeLayout } from './shared/layout'
 import { reindentActionBodies } from './shared/reindent'
+import { splitActionStatements } from './shared/statements'
 import { signaturesDiffer } from './shared/xml'
 
 export interface BeautifyResult {
@@ -66,12 +67,16 @@ export function beautify(originalText: string, xmlOptions: xmlOptionsType): Beau
     whiteSpaceAtEndOfSelfclosingTag: xmlOptions.whiteSpaceAtEndOfSelfclosingTag,
     attributeLayout: xmlOptions.attributeLayout,
     actionIndentation: xmlOptions.actionIndentation,
+    scriptStatements: xmlOptions.scriptStatements,
   }
 
   const applyPostProcessing = (formatted: string): string => {
     let result = formatted
     if (options.attributeLayout && options.attributeLayout !== 'preserve')
       result = applyAttributeLayout(result, options.attributeLayout, options.indentation || '  ')
+    // 先拆语句再按括号层级缩进,拆出来的行才能拿到一致的缩进
+    if (options.scriptStatements)
+      result = splitActionStatements(result, options.indentation || '  ').text
     if (options.actionIndentation)
       result = reindentActionBodies(result, options.indentation || '  ')
     return result

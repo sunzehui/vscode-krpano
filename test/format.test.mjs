@@ -204,3 +204,55 @@ test('项6:action 正文按括号层级缩进(默认关闭)', () => {
   const src = '<krpano><action name="a">if(x, set(y,1));</action></krpano>'
   assert.equal(beautify(src, { ...base, actionIndentation: true }).text, beautify(src, base).text, '单行脚本不受影响')
 })
+
+test('语句拆分:同一行的多条脚本语句拆到多行(opt-in)', async () => {
+  const { splitActionStatements } = require('./build/shared/statements.js')
+  const text = '<krpano>\n\tset(v1, 1); set(v2, 2); trace("a;b");\n\t</krpano>'
+
+  const single = '<krpano>\n  <action name="a">set(v1, 1); set(v2, 2);</action>\n</krpano>'
+  const result = splitActionStatements(single)
+  assert.equal(result.changed, true)
+  assert.equal(
+    result.text,
+    '<krpano>\n  <action name="a">set(v1, 1);\n    set(v2, 2);</action>\n</krpano>',
+    result.text,
+  )
+
+  // 字符串与括号内的 ";" 不拆
+  const quoted = '<krpano>\n  <action name="a">trace("a;b"); set(x, calc(1;2));</action>\n</krpano>'
+  const quotedResult = splitActionStatements(quoted)
+  assert.equal(
+    quotedResult.text,
+    '<krpano>\n  <action name="a">trace("a;b");\n    set(x, calc(1;2));</action>\n</krpano>',
+    quotedResult.text,
+  )
+
+  // JS 动作不动
+  const js = '<krpano>\n  <action name="a" type="Javascript">let a = 1; let b = 2;</action>\n</krpano>'
+  assert.equal(splitActionStatements(js).changed, false)
+  assert.equal(splitActionStatements(js).text, js)
+
+  // 已经一行一条时不改动
+  const done = '<krpano>\n  <action name="a">set(a, 1);\n    set(b, 2);\n  </action>\n</krpano>'
+  assert.equal(splitActionStatements(done).changed, false)
+
+  // 行内有标签(注释等)时不拆
+  const commented = '<krpano>\n  <action name="a">set(a, 1); <!-- 说明 --> set(b, 2);</action>\n</krpano>'
+  assert.equal(splitActionStatements(commented).changed, false)
+
+  void text
+})
+
+test('语句拆分:与格式化选项联动(scriptStatements)', () => {
+  const legacyFormat = require('./build/beautifyHtml.js')
+  const beautify = legacyFormat.beautify ?? legacyFormat.default
+  const input = '<krpano><action name="a">set(a, 1); set(b, 2);</action></krpano>'
+
+  const preserved = beautify(input, { indentation: '  ', handleRootNode: false })
+  assert.ok(!preserved.text.includes('set(b, 2);\n'))
+
+  const split = beautify(input, { indentation: '  ', handleRootNode: false, scriptStatements: true })
+  assert.ok(split.text.includes('\n'), split.text)
+  assert.ok(/set\(a, 1\);[\t\v\f\r \xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]*\n\s*set\(b, 2\);/.test(split.text), split.text)
+  assert.equal(split.failed, false)
+})
