@@ -46,7 +46,13 @@ jobs:
         run: npm test
 
       - name: Package vsix
-        run: npx --yes @vscode/vsce package --out krpano-lang.vsix
+        run: |
+          # vsce 要求预发布包在打包时也带 --pre-release,否则发布会被拒绝
+          if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then
+            npx --yes @vscode/vsce package --pre-release --out krpano-lang.vsix
+          else
+            npx --yes @vscode/vsce package --out krpano-lang.vsix
+          fi
 
       - name: Publish to Marketplace (stable)
         if: env.VSCE_PAT != '' && steps.version.outputs.prerelease == 'false'

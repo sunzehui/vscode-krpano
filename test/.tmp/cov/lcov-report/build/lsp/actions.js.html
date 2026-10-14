@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">94.8% </span>
+                <span class="strong">94.81% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>383/404</span>
+                <span class='fraction'>384/405</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">94.8% </span>
+                <span class="strong">94.81% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>383/404</span>
+                <span class='fraction'>384/405</span>
             </div>
         
             
@@ -467,7 +467,9 @@
 <a name='L402'></a><a href='#L402'>402</a>
 <a name='L403'></a><a href='#L403'>403</a>
 <a name='L404'></a><a href='#L404'>404</a>
-<a name='L405'></a><a href='#L405'>405</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">3x</span>
+<a name='L405'></a><a href='#L405'>405</a>
+<a name='L406'></a><a href='#L406'>406</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
@@ -878,14 +880,14 @@
 &nbsp;
 &nbsp;
 &nbsp;
-var _chunkYMRO2FEGjs = require('../chunk-YMRO2FEG.js');
+var _chunkZDFHHQGWjs = require('../chunk-ZDFHHQGW.js');
 require('../chunk-EHB5SJOI.js');
 &nbsp;
 &nbsp;
 var _chunk4GM336COjs = require('../chunk-4GM336CO.js');
 &nbsp;
 &nbsp;
-var _chunk5F22CWEJjs = require('../chunk-5F22CWEJ.js');
+var _chunkTNN6XOUEjs = require('../chunk-TNN6XOUE.js');
 &nbsp;
 &nbsp;
 var _chunkLPYKW6FBjs = require('../chunk-LPYKW6FB.js');
@@ -894,9 +896,10 @@ var _chunkLPYKW6FBjs = require('../chunk-LPYKW6FB.js');
 &nbsp;
 &nbsp;
 var _chunkYZBAXBBEjs = require('../chunk-YZBAXBBE.js');
+require('../chunk-UDTI34JV.js');
 &nbsp;
 // src/lsp/actions.ts
-var elementNames = Object.keys(_chunkYMRO2FEGjs.krpanoData_default.elements);
+var elementNames = Object.keys(_chunkZDFHHQGWjs.krpanoData_default.elements);
 function rangeOf(text, start, end) {
   return { start: _chunkYZBAXBBEjs.offsetToPosition.call(void 0, text, start), end: _chunkYZBAXBBEjs.offsetToPosition.call(void 0, text, end) };
 }
@@ -1007,7 +1010,7 @@ function getCodeActions(text, range, context = {}, locale) {
       }
     }
   }
-  for (const reference of _chunkYMRO2FEGjs.findUndefinedReferences.call(void 0, text, context)) {
+  for (const reference of _chunkZDFHHQGWjs.findUndefinedReferences.call(void 0, text, context)) {
     if (!inRange(text, reference.range, offset))
       continue;
     if (reference.form !== "call")
@@ -1020,7 +1023,7 @@ function getCodeActions(text, range, context = {}, locale) {
       });
     }
   }
-  for (const duplicate of _chunkYMRO2FEGjs.findDuplicateDefinitions.call(void 0, text)) {
+  for (const duplicate of _chunkZDFHHQGWjs.findDuplicateDefinitions.call(void 0, text)) {
     const definitionTag = scan.tags.find((item) =&gt; {
       var _a2;
       const nameAttr = item.attributes.find((attr) =&gt; attr.name.toLowerCase() === "name");
@@ -1037,7 +1040,7 @@ function getCodeActions(text, range, context = {}, locale) {
       index++;
     }
     const containerRange = duplicate.container ? findElementRange(text, "scene", duplicate.container) : void 0;
-    const related = _chunk5F22CWEJjs.collectReferences.call(void 0, text).filter((reference) =&gt; {
+    const related = _chunkTNN6XOUEjs.collectReferences.call(void 0, text).filter((reference) =&gt; {
       if (reference.name !== duplicate.name)
 <span class="branch-0 cbranch-no" title="branch not covered" >        return false;</span>
       return containerRange ? rangeContains(containerRange, reference.range) <span class="branch-0 cbranch-no" title="branch not covered" >: true;</span>
@@ -1054,9 +1057,9 @@ function getCodeActions(text, range, context = {}, locale) {
   }
   if (tag) {
     const element = tag.name.toLowerCase();
-    const documented = _chunkYMRO2FEGjs.krpanoAttributes[element];
-    if (documented &amp;&amp; !_chunkYMRO2FEGjs.krpanoCustomAttributeElements.has(element)) {
-      const unknown = tag.attributes.filter((attr) =&gt; !documented.includes(attr.name.toLowerCase()) &amp;&amp; !_chunkYMRO2FEGjs.krpanoSpecialAttributes.includes(attr.name.toLowerCase()) &amp;&amp; attr.valueStart !== void 0);
+    const documented = _chunkZDFHHQGWjs.krpanoAttributes[element];
+    if (documented &amp;&amp; !_chunkZDFHHQGWjs.krpanoCustomAttributeElements.has(element)) {
+      const unknown = tag.attributes.filter((attr) =&gt; !documented.includes(attr.name.toLowerCase()) &amp;&amp; !_chunkZDFHHQGWjs.krpanoSpecialAttributes.includes(attr.name.toLowerCase()) &amp;&amp; attr.valueStart !== void 0);
       const target = (_f = unknown.find((attr) =&gt; offset &gt;= attr.nameStart &amp;&amp; offset &lt;= attr.nameEnd)) != null ? _f : unknown.length === 1 ? unknown[0] : void 0;
       if (target) {
         const suggestion = closestAttribute(documented, target.name);
@@ -1282,7 +1285,7 @@ exports.editDistance = editDistance; exports.getCodeActions = getCodeActions;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-10-14T03:56:03.824Z
+                at 2026-10-14T04:09:21.330Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

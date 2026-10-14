@@ -42,8 +42,14 @@ jobs:
       - name: Test
         run: npm test
 
+      # 覆盖率阈值只在 Linux 上卡(win32/posix 路径分支在不同平台上覆盖数略有差异)
       - name: Coverage (纯逻辑模块,带阈值)
+        if: runner.os == 'Linux'
         run: npm run coverage
+
+      - name: Coverage report (其它平台,不设阈值)
+        if: runner.os != 'Linux'
+        run: npm run coverage:report
 
       - name: Benchmark
         run: npm run bench

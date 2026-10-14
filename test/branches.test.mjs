@@ -670,3 +670,60 @@ test('分支:零散兜底(非字符串缩进、等号两侧空白、空选区)',
   // 空选区(起点在文首)不越界
   assert.deepEqual(selectionLineBounds('abc', 0, 0), { start: 0, end: 3 })
 })
+
+test('分支:跨文件上下文抑制索引与动作提示', () => {
+  const external = {
+    externalDefinitions: new Map([
+      ['ghost', { uri: 'file:///a.xml', range: { start: { line: 0, character: 0 }, end: { line: 0, character: 1 } }, element: 'hotspot' }],
+    ]),
+  }
+  const indexed = '<krpano>\n  <action name="a">hotspot[ghost].visible = false; ghost();</action>\n</krpano>'
+  assert.deepEqual(
+    getDiagnostics(indexed, external).map(d => d.message),
+    [],
+    'include 链里已定义的名字不应再提示(索引与动作调用)',
+  )
+  assert.ok(getDiagnostics(indexed).some(d => d.message.includes('ghost')), '没有上下文时应提示')
+
+  // CDATA 包裹的动作体属于跳过区域:里面的调用与索引不参与引用收集
+  const cdata = '<krpano>\n  <action name="a"><![CDATA[foo(); layer[bar].visible = false;]]></action>\n</krpano>'
+  assert.deepEqual(collectReferences(cdata).filter(r => r.form === 'call' || r.form === 'index'), [])
+
+  // 参数不全的名字参数调用不产生引用
+  const shortArgs = '<krpano>\n  <action name="a">callwith(a); loadscene();</action>\n</krpano>'
+  assert.deepEqual(collectReferences(shortArgs).filter(r => r.form === 'argument'), [])
+})
+
+test('分支:签名帮助的未收录动作与嵌套括号', () => {
+  // 没有签名数据的动作:返回 undefined 而不是抛异常
+  const unknownSig = '<krpano>\n  <action name="a">addevent('
+  assert.equal(getSignatureHelp(unknownSig, unknownSig.length), undefined)
+
+  // 嵌套括号:参数里的 calc((...)) 不改变"当前是第几个参数"的判断
+  const nested = '<krpano>\n  <action name="a">screentosphere(calc((1+2)), '
+  const help = getSignatureHelp(nested, nested.length)
+  assert.equal(help.name, 'screentosphere')
+  assert.equal(help.activeParameter, 1, '第二个参数位置')
+  assert.deepEqual(help.params.map(p => p.name), ['x', 'y'])
+
+  // 调用已闭合:不再给签名
+  const closed = '<krpano>\n  <action name="a">tween(x)'
+  assert.equal(getSignatureHelp(closed, closed.length), undefined)
+})
+
+test('分支:format off 没有配对的 on 时不保护后续内容', () => {
+  const { beautify } = require('./build/beautifyHtml.js')
+  const unpaired = '<krpano>\n  <!-- krpano-lang-format: off -->\n<view   fov="90"/>\n</krpano>'
+  const result = beautify(unpaired, { indentation: '  ' })
+  assert.equal(result.failed, false)
+  assert.ok(result.text.includes('<view fov="90"/>'), `缺少 on 时内容照常格式化:${result.text}`)
+})
+
+test('分支:取值补全没有候选时返回空', () => {
+  // style= 前缀匹配不到任何已定义名字
+  const styleText = '<krpano>\n  <hotspot name="h" style="zz'
+  assert.deepEqual(getCompletions(styleText, styleText.length), [])
+  // 事件属性里的动作名:没有定义时也不报错
+  const eventText = '<krpano>\n  <hotspot name="h" onclick="zz'
+  assert.deepEqual(getCompletions(eventText, eventText.length), [])
+})

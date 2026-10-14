@@ -234,6 +234,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "npm run build && npm run build:test && node --test test/*.test.mjs",
+    "coverage:report": "npm run build:test && c8 --include='test/build/**' --exclude='' --exclude 'test/build/fake-vscode/**' --exclude 'test/build/lsp/workspace.js' --reporter=text-summary node --test test/*.test.mjs",
     "coverage": "npm run build:test && c8 --include='test/build/**' --exclude='' --exclude='test/build/fake-vscode/**' --exclude='test/build/lsp/workspace.js' --reporter=text --reporter=text-summary --check-coverage --lines 90 --functions 88 --branches 90 node --test test/*.test.mjs",
     "test:integration": "node test/integration/run.cjs",
     "bench": "npm run build:test && node scripts/bench.mjs"
