@@ -166,3 +166,65 @@ test('跨文件:跳转到 include 文件中的定义', () => {
   const local = getDefinition(sameName, offsetOf(sameName, 'from_include', 2) + 2, externalContext())
   assert.ok(local && local.uri === undefined, '同文件定义应优先且不带 uri')
 })
+
+test('诊断:同一容器内重复 name,不同 scene 之间不报', () => {
+  const duplicated = '<krpano>\n<scene name="a">\n<hotspot name="hs"/>\n<hotspot name="hs"/>\n</scene>\n</krpano>'
+  assert.ok(
+    messages(duplicated).some(m => m.includes('Duplicate hotspot name "hs"')),
+    messages(duplicated).join(' | '),
+  )
+  const separate = '<krpano>\n<scene name="a">\n<hotspot name="hs"/>\n</scene>\n<scene name="b">\n<hotspot name="hs"/>\n</scene>\n</krpano>'
+  assert.ok(!messages(separate).some(m => m.includes('Duplicate')), messages(separate).join(' | '))
+})
+
+test('诊断:linkedscene 与 style 引用不存在时提示', () => {
+  const text = [
+    '<krpano>',
+    '  <style name="known_style"/>',
+    '  <scene name="room1"/>',
+    '  <hotspot name="h1" style="known_style" linkedscene="room1"/>',
+    '  <hotspot name="h2" style="ghost_style" linkedscene="ghost_scene"/>',
+    '</krpano>',
+  ].join('\n')
+  const diagnostics = getDiagnostics(text)
+  assert.ok(
+    diagnostics.some(d => d.severity === 'warning' && d.message.includes('ghost_scene')),
+    diagnostics.map(d => `${d.severity}:${d.message}`).join(' | '),
+  )
+  assert.ok(
+    diagnostics.some(d => d.severity === 'information' && d.message.includes('ghost_style')),
+    diagnostics.map(d => `${d.severity}:${d.message}`).join(' | '),
+  )
+  assert.ok(!diagnostics.some(d => d.message.includes('known_style')), '已定义的 style 不应报')
+  assert.ok(!diagnostics.some(d => d.message.includes('"room1"')), '已定义的 scene 不应报')
+})
+
+test('诊断:include 链中的 style/scene 视为已定义', () => {
+  const text = '<krpano>\n  <hotspot name="h" style="skin_style" linkedscene="remote_scene"/>\n</krpano>'
+  const context = {
+    externalDefinitions: new Map([
+      ['skin_style', { uri: 'file:///pano/skin.xml', range: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } }, element: 'style' }],
+      ['remote_scene', { uri: 'file:///pano/scenes.xml', range: { start: { line: 2, character: 0 }, end: { line: 2, character: 0 } }, element: 'scene' }],
+    ]),
+  }
+  const diagnostics = getDiagnostics(text, context)
+  assert.ok(!diagnostics.some(d => d.message.includes('skin_style') || d.message.includes('remote_scene')), diagnostics.map(d => d.message).join(' | '))
+})
+
+test('补全:style / linkedscene 取值与事件属性里的动作名', () => {
+  const text = [
+    '<krpano>',
+    '  <style name="s1"/>',
+    '  <style name="s2"/>',
+    '  <scene name="room1"/>',
+    '  <action name="act_a"/>',
+    '  <hotspot name="h" style="" linkedscene="" onclick=""/>',
+    '</krpano>',
+  ].join('\n')
+  const styleAt = text.indexOf('style=""') + 'style="'.length
+  assert.deepEqual(getCompletions(text, styleAt).map(i => i.label).sort(), ['s1', 's2'])
+  const sceneAt = text.indexOf('linkedscene=""') + 'linkedscene="'.length
+  assert.deepEqual(getCompletions(text, sceneAt).map(i => i.label), ['room1'])
+  const onclickAt = text.indexOf('onclick=""') + 'onclick="'.length
+  assert.deepEqual(getCompletions(text, onclickAt).map(i => i.label), ['act_a'])
+})

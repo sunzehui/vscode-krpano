@@ -103,7 +103,7 @@ connection.onCompletion((params) => {
   if (!document)
     return []
   const offset = document.offsetAt(params.position)
-  return getCompletions(document.getText(), offset).map(item => ({
+  return getCompletions(document.getText(), offset, projectContext(document)).map(item => ({
     label: item.label,
     kind: item.kind === 'element'
       ? CompletionItemKind.Class

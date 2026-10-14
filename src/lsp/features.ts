@@ -2,9 +2,10 @@
 import krpanoData from './krpanoData.json'
 import { docForAttribute, docForElement } from './krpanoDocs'
 import { collectDefinitions } from './symbols'
+import type { SymbolDefinition } from './symbols'
 import { attributeAtOffset, offsetToPosition, scanXml, tagAtOffset } from '../shared/xml'
 import type { XmlTag } from '../shared/xml'
-import type { PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
+import type { ExternalDefinition, PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
 
 export type { PlainCompletion, PlainDiagnostic, PlainHover, PlainLocation, PlainRange, ProjectContext } from './types'
 
@@ -146,8 +147,9 @@ export function getDiagnostics(text: string, context: ProjectContext = {}): Plai
   }
 
   // 4) 未定义的动作引用(本文件 + include 链;仍可能是插件提供的,故用 information)
-  const declared = new Set(collectDefinitions(text).map(definition => definition.name))
-  const external = context.externalDefinitions ?? new Map()
+  const definitions = collectDefinitions(text)
+  const declared = new Set(definitions.map(definition => definition.name))
+  const external: Map<string, ExternalDefinition> = context.externalDefinitions ?? new Map()
   const reportReference = (name: string, start: number, end: number) => {
     if (declared.has(name) || external.has(name) || builtins.has(name) || name in elements)
       return
@@ -192,7 +194,55 @@ export function getDiagnostics(text: string, context: ProjectContext = {}): Plai
     }
   }
 
-  // 5) include 目标不存在(相对当前文件解析;krpano 同样会因此报错)
+  // 5) 同一容器内重复的 name(不同 scene 之间同名是合法的)
+  const seenDefinitions = new Map<string, SymbolDefinition>()
+  for (const definition of definitions) {
+    const key = `${definition.container ?? ''}|${definition.element}|${definition.name}`
+    const first = seenDefinitions.get(key)
+    if (first) {
+      diagnostics.push({
+        message: `Duplicate ${definition.element} name "${definition.name}" (already defined on line ${first.range.start.line + 1}).`,
+        severity: 'warning',
+        range: definition.range,
+        source: SOURCE,
+      })
+      continue
+    }
+    seenDefinitions.set(key, definition)
+  }
+
+  // 6) linkedscene / style 引用是否能在本文件或 include 链中找到
+  const hasDefinition = (element: string, name: string): boolean =>
+    definitions.some(definition => definition.element === element && definition.name === name)
+    || [...external.entries()].some(([key, value]) => key === name && (value.element === undefined || value.element === element))
+  for (const tag of scan.tags) {
+    for (const attr of tag.attributes) {
+      if (!attr.value || attr.valueStart === undefined || attr.valueEnd === undefined)
+        continue
+      const attrName = attr.name.toLowerCase()
+      const target = attr.value.trim()
+      if (!target || target.includes('%'))
+        continue
+      if (attrName === 'linkedscene' && !hasDefinition('scene', target)) {
+        diagnostics.push({
+          message: `Scene "${target}" is not defined in this file or in the files it includes.`,
+          severity: 'warning',
+          range: rangeOf(text, attr.valueStart, attr.valueEnd),
+          source: SOURCE,
+        })
+      }
+      else if (attrName === 'style' && !hasDefinition('style', target)) {
+        diagnostics.push({
+          message: `Style "${target}" is not defined in this file or in the files it includes (it may come from a skin or plugin).`,
+          severity: 'information',
+          range: rangeOf(text, attr.valueStart, attr.valueEnd),
+          source: SOURCE,
+        })
+      }
+    }
+  }
+
+  // 7) include 目标不存在(相对当前文件解析;krpano 同样会因此报错)
   for (const item of context.unresolvedIncludes ?? []) {
     diagnostics.push({
       message: `Included file "${item.url}" was not found (include paths are resolved relative to this file).`,
@@ -225,9 +275,23 @@ function wordBefore(text: string, offset: number): string {
   return text.slice(start, offset)
 }
 
-export function getCompletions(text: string, offset: number): PlainCompletion[] {
+export function getCompletions(text: string, offset: number, context: ProjectContext = {}): PlainCompletion[] {
   const scan = scanXml(text)
   const tag = tagAtOffset(scan, offset)
+
+  /** 本文件 + include 链中某一类元素定义的名字 */
+  const namesOfElement = (element: string): string[] => {
+    const names = new Set<string>()
+    for (const definition of collectDefinitions(text)) {
+      if (definition.element === element)
+        names.add(definition.name)
+    }
+    for (const [name, definition] of (context.externalDefinitions ?? new Map<string, ExternalDefinition>())) {
+      if (definition.element === undefined || definition.element === element)
+        names.add(name)
+    }
+    return [...names].sort()
+  }
 
   const elementCompletions = (prefix: string): PlainCompletion[] => {
     const lower = prefix.toLowerCase()
@@ -259,7 +323,8 @@ export function getCompletions(text: string, offset: number): PlainCompletion[] 
   if (attr) {
     // 属性值内部:只对 action 的 type 给出取值建议
     if (attr.valueStart !== undefined && attr.valueEnd !== undefined && offset >= attr.valueStart && offset <= attr.valueEnd) {
-      if (name === 'action' && attr.name.toLowerCase() === 'type') {
+      const attrName = attr.name.toLowerCase()
+      if (name === 'action' && attrName === 'type') {
         return ['Javascript', 'js'].map(value => ({
           label: value,
           kind: 'value' as const,
@@ -267,6 +332,36 @@ export function getCompletions(text: string, offset: number): PlainCompletion[] 
           documentation: value === 'js' ? 'Short form of "Javascript".' : 'JavaScript action code (krpano script when empty).',
           insertText: value,
         }))
+      }
+      // 名字引用型属性:补全本文件/include 链里定义的名字
+      const referenceKind = attrName === 'style'
+        ? 'style'
+        : attrName === 'linkedscene' ? 'scene' : undefined
+      if (referenceKind) {
+        const prefix = text.slice(attr.valueStart, offset)
+        return namesOfElement(referenceKind)
+          .filter(candidate => candidate.startsWith(prefix))
+          .map(candidate => ({
+            label: candidate,
+            kind: 'value' as const,
+            detail: `krpano ${referenceKind}`,
+            documentation: `Name of a ${referenceKind} defined in this file or in the files it includes.`,
+            insertText: candidate,
+          }))
+      }
+      // 事件属性:补全动作名
+      if (/^on[a-z]+$/.test(attrName)) {
+        const prefix = text.slice(attr.valueStart, offset)
+        const word = /[\w-]*$/.exec(prefix)?.[0] ?? ''
+        return namesOfElement('action')
+          .filter(candidate => candidate.startsWith(word))
+          .map(candidate => ({
+            label: candidate,
+            kind: 'value' as const,
+            detail: 'krpano action',
+            documentation: 'Action defined in this file or in the files it includes.',
+            insertText: candidate,
+          }))
       }
       return []
     }

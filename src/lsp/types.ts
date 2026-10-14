@@ -31,10 +31,16 @@ export interface PlainLocation {
   range: PlainRange
 }
 
+/** include 链中其它文件里的定义 */
+export interface ExternalDefinition extends PlainLocation {
+  /** 定义它的元素名(小写),用于按类型补全与校验 */
+  element?: string
+}
+
 /** 当前文件之外(include 链)的上下文 */
 export interface ProjectContext {
   /** 其它文件中定义的名字 → 定义位置 */
-  externalDefinitions?: Map<string, PlainLocation>
+  externalDefinitions?: Map<string, ExternalDefinition>
   /** 无法解析的 <include url="..."> 目标 */
   unresolvedIncludes?: Array<{ url: string, range: PlainRange }>
 }

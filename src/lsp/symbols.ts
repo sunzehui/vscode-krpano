@@ -1,7 +1,7 @@
 // krpano 文件的符号提取与 <include> 依赖解析(纯逻辑,文件读取通过参数注入,便于测试)。
 import path from 'node:path'
 import { offsetToPosition, scanXml } from '../shared/xml'
-import type { PlainLocation, PlainRange } from './types'
+import type { ExternalDefinition, PlainRange } from './types'
 
 /** 可以定义 name 的元素(其名字可被动作/事件引用) */
 export const NAME_DEFINING_ELEMENTS = ['action', 'hotspot', 'layer', 'plugin', 'scene', 'style', 'events', 'data']
@@ -10,6 +10,8 @@ export interface SymbolDefinition {
   name: string
   /** 定义它的元素名(小写) */
   element: string
+  /** 所属容器:scene 的名字(不在 scene 内时为空 = krpano 根) */
+  container?: string
   range: PlainRange
 }
 
@@ -33,21 +35,45 @@ function rangeOf(text: string, start: number, end: number): PlainRange {
   return { start: offsetToPosition(text, start), end: offsetToPosition(text, end) }
 }
 
-/** 收集文件中所有 name 定义(action/hotspot/layer/plugin/scene/style/events/data) */
+/** 收集文件中所有 name 定义(action/hotspot/layer/plugin/scene/style/events/data),
+ *  并记录它所属的容器(scene 名字;不在 scene 内则为 krpano 根) */
 export function collectDefinitions(text: string): SymbolDefinition[] {
   const definitions: SymbolDefinition[] = []
+  const stack: Array<{ element: string, name?: string }> = []
+
+  const currentContainer = (): string | undefined => {
+    for (let i = stack.length - 1; i >= 0; i--) {
+      if (stack[i].element === 'scene')
+        return stack[i].name ?? ''
+    }
+    return undefined
+  }
+
   for (const tag of scanXml(text).tags) {
     const element = tag.name.toLowerCase()
-    if (!NAME_DEFINING_ELEMENTS.includes(element))
+    if (tag.kind === 'close') {
+      // 弹出匹配的祖先标签(对未闭合标签保持宽容)
+      for (let i = stack.length - 1; i >= 0; i--) {
+        if (stack[i].element === element) {
+          stack.length = i
+          break
+        }
+      }
       continue
+    }
     const nameAttr = tag.attributes.find(attr => attr.name.toLowerCase() === 'name')
-    if (!nameAttr?.value?.trim() || nameAttr.valueStart === undefined)
-      continue
-    definitions.push({
-      name: nameAttr.value,
-      element,
-      range: rangeOf(text, nameAttr.valueStart, nameAttr.valueEnd ?? nameAttr.valueStart),
-    })
+    const name = nameAttr?.value?.trim()
+    if (NAME_DEFINING_ELEMENTS.includes(element) && name && nameAttr?.valueStart !== undefined) {
+      definitions.push({
+        name,
+        element,
+        container: currentContainer(),
+        range: rangeOf(text, nameAttr.valueStart, nameAttr.valueEnd ?? nameAttr.valueStart),
+      })
+    }
+    // 只有 scene / krpano 会改变名字的作用域
+    if (tag.kind === 'open' && (element === 'scene' || element === 'krpano'))
+      stack.push({ element, name: name || undefined })
   }
   return definitions
 }
@@ -144,16 +170,17 @@ export function buildIncludeIndex(entryPath: string, readFile: ReadFile, maxDept
 
 /** 把索引里"非当前文件"的定义整理成 features 需要的上下文 */
 export function contextForFile(index: IncludeIndex, currentPath: string, currentUri: string): {
-  externalDefinitions: Map<string, PlainLocation>
+  externalDefinitions: Map<string, ExternalDefinition>
   unresolvedIncludes: Array<{ url: string, range: PlainRange }>
 } {
-  const externalDefinitions = new Map<string, PlainLocation>()
+  const externalDefinitions = new Map<string, ExternalDefinition>()
   for (const [name, definition] of index.definitions) {
     if (definition.path === currentPath)
       continue
     externalDefinitions.set(name, {
       uri: pathToUri(definition.path),
       range: definition.range,
+      element: definition.element,
     })
   }
   const unresolvedIncludes = index.unresolved
