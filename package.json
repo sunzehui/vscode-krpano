@@ -2,12 +2,24 @@
   "publisher": "sunzehui",
   "name": "krpano-lang",
   "displayName": "krpano-lang",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "a krpano high-light plugin",
   "repository": {
     "type": "git",
     "url": "https://github.com/sunzehui/vscode-krpano.git"
   },
+  "keywords": [
+    "krpano",
+    "pano",
+    "panorama",
+    "vtour",
+    "virtual tour",
+    "xml",
+    "360",
+    "language-server",
+    "syntax-highlighting",
+    "snippets"
+  ],
   "categories": [
     "Programming Languages",
     "Snippets"
@@ -47,6 +59,21 @@
           ],
           "default": "information",
           "markdownDescription": "未定义动作调用的提示级别。插件或动态生成的动作可设为 `off`。\n\nSeverity for action calls that are not defined in the file or in its includes."
+        },
+        "xml.format.actionIndentation": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "按括号层级重新缩进 `<action>` 正文(不重排语句;JavaScript 动作不受影响)。注意:开启后 action 内容即使列在 `ignoredPaths` 中也会被调整缩进。\n\nRe-indent `<action>` bodies by parenthesis depth (opt-in)."
+        },
+        "xml.format.attributeLayout": {
+          "type": "string",
+          "enum": [
+            "preserve",
+            "one-per-line",
+            "align"
+          ],
+          "default": "preserve",
+          "markdownDescription": "属性排版:保持原样 / 每个属性一行 / 每行一个并对齐等号(krpano 官方示例风格)。\n\nAttribute layout: keep as-is, one attribute per line, or one per line with aligned `=` signs."
         },
         "xml.format.collapseContent": {
           "type": "boolean",
@@ -175,7 +202,7 @@
     "build": "tsup src/extension.ts src/lsp/client.ts src/lsp/server.ts --dts --external=vscode",
     "dev": "npm run build -- --watch",
     "release": "npx bumpp --commit --tag --push",
-    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/symbols.ts src/lsp/references.ts src/lsp/actions.ts src/lsp/outline.ts src/lsp/workspace.ts src/shared/xml.ts src/shared/reindent.ts --format=cjs --out-dir=test/build --clean",
+    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/symbols.ts src/lsp/references.ts src/lsp/actions.ts src/lsp/outline.ts src/lsp/workspace.ts src/shared/xml.ts src/shared/reindent.ts src/shared/layout.ts --format=cjs --out-dir=test/build --clean",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "npm run build && npm run build:test && node --test test/*.test.mjs",

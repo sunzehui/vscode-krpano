@@ -154,3 +154,53 @@ test('项12:没有配对 on 标记时不保护也不报错', () => {
   assert.equal(r.failed, false)
   assert.ok(r.text.includes('<hotspot name="a"/>'))
 })
+
+test('项5:属性排版 one-per-line / align', () => {
+  const { applyAttributeLayout } = require('./build/shared/layout.js')
+  const formatted = '<krpano>\n  <hotspot name="h" ath="0" atv="10"/>\n  <layer name="l">text</layer>\n</krpano>'
+  const onePerLine = applyAttributeLayout(formatted, 'one-per-line', '  ')
+  assert.equal(onePerLine, [
+    '<krpano>',
+    '  <hotspot name="h"',
+    '    ath="0"',
+    '    atv="10"',
+    '  />',
+    '  <layer name="l">text</layer>',
+    '</krpano>',
+  ].join('\n'))
+
+  const aligned = applyAttributeLayout('<krpano>\n  <hotspot name="h" ath="0" atv="10"/>\n</krpano>', 'align', '  ')
+  assert.equal(aligned, ['<krpano>', '  <hotspot name="h"', '    ath ="0"', '    atv ="10"', '  />', '</krpano>'].join('\n'), aligned)
+
+  assert.equal(applyAttributeLayout(formatted, 'preserve', '  '), formatted, 'preserve 不改动')
+})
+
+test('项5:beautify 应用属性排版选项', () => {
+  const src = '<krpano><hotspot name="h" ath="0" atv="10"/></krpano>'
+  const r = beautify(src, { ...base, attributeLayout: 'one-per-line' })
+  assert.equal(r.failed, false)
+  assert.ok(r.text.includes('<hotspot name="h"\n    ath="0"'), r.text)
+  assert.equal(Boolean(r.structureChanged), false, '属性排版不应被当作结构变化')
+})
+
+test('项6:action 正文按括号层级缩进(默认关闭)', () => {
+  const { reindentActionBodies } = require('./build/shared/reindent.js')
+  const text = [
+    '<krpano>',
+    '\t<action name="a">',
+    '\t\tif(x,',
+    '\t\tset(y, 1);',
+    '\t\t);',
+    '\t</action>',
+    '\t<action name="js" type="Javascript">',
+    '\tconsole.log(1);',
+    '\t</action>',
+    '</krpano>',
+  ].join('\n')
+  const indented = reindentActionBodies(text, '\t')
+  assert.ok(indented.includes('\t\tif(x,\n\t\t\tset(y, 1);\n\t\t);'), indented)
+  assert.ok(indented.includes('\tconsole.log(1);'), 'JS 动作不应被重排')
+
+  const src = '<krpano><action name="a">if(x, set(y,1));</action></krpano>'
+  assert.equal(beautify(src, { ...base, actionIndentation: true }).text, beautify(src, base).text, '单行脚本不受影响')
+})

@@ -21,5 +21,7 @@ export default function getOptions(config: any): xmlOptions {
     forceSelfClosingEmptyTag: xmlFormat.forceSelfClosingEmptyTag,
     // 自定义选项
     handleRootNode: xmlFormat.handleRootNode,
+    attributeLayout: xmlFormat.attributeLayout,
+    actionIndentation: xmlFormat.actionIndentation,
   }
 }

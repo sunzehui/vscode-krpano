@@ -9,7 +9,8 @@ export function startLanguageClient(context: vscode.ExtensionContext): void {
     'krpano-lang',
     {
       run: { module: serverModule, transport: TransportKind.ipc },
-      debug: { module: serverModule, transport: TransportKind.ipc },
+      // 调试时给服务器进程挂 --inspect;配合 .vscode/launch.json 的 "Attach to Language Server"
+      debug: { module: serverModule, transport: TransportKind.ipc, options: { execArgv: ['--inspect=6011'] } },
     },
     {
       documentSelector: [{ language: 'krpano-xml' }, { language: 'krpano' }],

@@ -15,6 +15,14 @@
         "${workspaceFolder}/sample"
       ],
       "preLaunchTask": "npm: dev"
+    },
+    {
+      "name": "Attach to Language Server",
+      "type": "node",
+      "request": "attach",
+      "port": 6011,
+      "restart": true,
+      "sourceMaps": true
     }
   ]
 }

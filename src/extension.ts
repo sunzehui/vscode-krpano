@@ -6,6 +6,9 @@ import { enclosingElementNames, reindentLines, selectionLineBounds } from './sha
 // krpano-xml 用于 .xml 文件;krpano 用于手动切换到脚本语言模式的场景
 const FORMATTED_LANGUAGES = ['krpano-xml', 'krpano']
 
+/** 少量面向用户的提示文案:按 VS Code 显示语言选择 */
+const isChinese = (): boolean => vscode.env.language.toLowerCase().startsWith('zh')
+
 export function activate(context: vscode.ExtensionContext): void {
   registerFormatter(context)
   startLanguageServer(context)
@@ -20,7 +23,9 @@ function registerFormatter(context: vscode.ExtensionContext): void {
 
       if (result.failed) {
         const detail = result.reason ? ` (${result.reason})` : ''
-        vscode.window.showWarningMessage(`krpano: formatting failed${detail} - content kept unchanged.`)
+        vscode.window.showWarningMessage(isChinese()
+          ? `krpano:格式化失败${detail},内容保持不变。`
+          : `krpano: formatting failed${detail} - content kept unchanged.`)
         return []
       }
       if (result.text === fullText)
@@ -30,7 +35,9 @@ function registerFormatter(context: vscode.ExtensionContext): void {
       if (result.structureChanged) {
         const proceed = 'Format anyway'
         const answer = await vscode.window.showWarningMessage(
-          'krpano: the document contains unclosed or mismatched XML tags. Formatting will repair the tag structure; please review the diff afterwards.',
+          isChinese()
+            ? 'krpano:文档存在未闭合或错配的 XML 标签,格式化会修复标签结构,请之后检查差异。'
+            : 'krpano: the document contains unclosed or mismatched XML tags. Formatting will repair the tag structure; please review the diff afterwards.',
           { modal: true },
           proceed,
         )

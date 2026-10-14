@@ -1,6 +1,8 @@
 'use strict'
 import type { xmlOptions as xmlOptionsType } from './types/options'
 import xmlFormat from 'xml-formatter'
+import { applyAttributeLayout } from './shared/layout'
+import { reindentActionBodies } from './shared/reindent'
 import { signaturesDiffer } from './shared/xml'
 
 export interface BeautifyResult {
@@ -62,6 +64,17 @@ export function beautify(originalText: string, xmlOptions: xmlOptionsType): Beau
     forceSelfClosingEmptyTag: xmlOptions.forceSelfClosingEmptyTag,
     throwOnFailure: true,
     whiteSpaceAtEndOfSelfclosingTag: xmlOptions.whiteSpaceAtEndOfSelfclosingTag,
+    attributeLayout: xmlOptions.attributeLayout,
+    actionIndentation: xmlOptions.actionIndentation,
+  }
+
+  const applyPostProcessing = (formatted: string): string => {
+    let result = formatted
+    if (options.attributeLayout && options.attributeLayout !== 'preserve')
+      result = applyAttributeLayout(result, options.attributeLayout, options.indentation || '  ')
+    if (options.actionIndentation)
+      result = reindentActionBodies(result, options.indentation || '  ')
+    return result
   }
 
   // 空文档没有格式化的意义,也不应作为解析失败提示
@@ -70,7 +83,7 @@ export function beautify(originalText: string, xmlOptions: xmlOptionsType): Beau
 
   try {
     const protectedRegions = protectFormatOffRegions(originalText)
-    const formatted = restoreFormatOffRegions(xmlFormat(protectedRegions.text, options), protectedRegions)
+    const formatted = applyPostProcessing(restoreFormatOffRegions(xmlFormat(protectedRegions.text, options), protectedRegions))
     return { text: formatted, failed: false, structureChanged: signaturesDiffer(originalText, formatted) }
   }
   catch (e: any) {
@@ -80,7 +93,7 @@ export function beautify(originalText: string, xmlOptions: xmlOptionsType): Beau
       const body = prolog ? originalText.slice(prolog[0].length) : originalText
       try {
         const protectedRegions = protectFormatOffRegions(body)
-        const formatted = restoreFormatOffRegions(xmlFormat(`<krpano>${protectedRegions.text}</krpano>`, options), protectedRegions)
+        const formatted = applyPostProcessing(restoreFormatOffRegions(xmlFormat(`<krpano>${protectedRegions.text}</krpano>`, options), protectedRegions))
         // 补根本身会新增一层 krpano 标签,不做结构差异比较
         return { text: prolog ? `${prolog[0].trim()}\n${formatted}` : formatted, failed: false }
       }

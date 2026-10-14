@@ -95,3 +95,47 @@ export function reindentLines(text: string, startOffset: number, endOffset: numb
   const result = out.join('\n')
   return { text: result, changed: result !== block }
 }
+
+/** 按括号层级重新缩进 <action> 正文(不重排语句;JS 动作不动) */
+export function reindentActionBodies(text: string, indentation: string): string {
+  const edits: Array<{ start: number, end: number, text: string }> = []
+  const actionRe = /<action\b([^>]*)>([\s\S]*?)<\/action>/g
+  for (const match of text.matchAll(actionRe)) {
+    const typeMatch = /\btype\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(match[1])
+    const type = (typeMatch?.[1] ?? typeMatch?.[2] ?? '').toLowerCase()
+    if (type === 'javascript' || type === 'js')
+      continue
+    const body = match[2]
+    if (!body.includes('\n'))
+      continue
+    const bodyStart = match.index! + match[0].indexOf(body)
+    const tagLineStart = text.lastIndexOf('\n', match.index!) + 1
+    const tagIndent = /^[ \t]*/.exec(text.slice(tagLineStart, match.index!))?.[0] ?? ''
+    const baseIndent = tagIndent + indentation
+
+    const lines = body.split('\n')
+    let depth = 0
+    const rendered = lines.map((line) => {
+      const trimmed = line.trim()
+      if (!trimmed)
+        return ''
+      const startsWithClose = trimmed.startsWith(')')
+      const lineDepth = startsWithClose ? Math.max(0, depth - 1) : depth
+      for (const char of trimmed) {
+        if (char === '(')
+          depth++
+        else if (char === ')')
+          depth = Math.max(0, depth - 1)
+      }
+      return baseIndent + indentation.repeat(lineDepth) + trimmed
+    })
+    const newBody = rendered.join('\n')
+    if (newBody !== body)
+      edits.push({ start: bodyStart, end: bodyStart + body.length, text: newBody })
+  }
+
+  let out = text
+  for (const edit of edits.sort((a, b) => b.start - a.start))
+    out = out.slice(0, edit.start) + edit.text + out.slice(edit.end)
+  return out
+}

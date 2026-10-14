@@ -76,6 +76,10 @@
 | `krpano.lsp.diagnostics.undefinedActions` | "未定义动作"的级别:`information`(默认)/ `warning` / `off` |
 | `krpano.lsp.diagnostics.ignoredNames` | 不再提示的名字(动作、元素、style、scene),用于压掉插件或动态名字的噪音 |
 
+## 怎么让 action 里的脚本也有缩进？
+
+开启 `xml.format.actionIndentation` 后，格式化会按括号层级重排 `<action>` 正文的缩进（只动空白，不重排语句；`type="Javascript"` 的动作不受影响）。属性排版则用 `xml.format.attributeLayout`：`one-per-line` 或 `align`（等号对齐，krpano 官方示例风格）。
+
 ## 怎么让某段内容不被格式化？
 
 在不想被触碰的区域两侧写上注释标记，格式化时会逐字保留其中的内容（跨多个元素也有效）：

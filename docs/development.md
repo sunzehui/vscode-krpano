@@ -85,7 +85,8 @@ npx @vscode/vsce publish
 | 代码片段 | `snippets/krpano.code-snippets` |
 | 注释、折叠、括号配对等编辑器行为 | `language-configuration.json` |
 | 格式化选项与默认值 | `src/getOptions.ts`、`src/beautifyHtml.ts`、`src/types/options.ts` |
-| 选区格式化（缩进对齐） | `src/shared/reindent.ts`（纯函数，断言见 `test/reindent.test.mjs`） |
+| 选区格式化 / action 缩进 | `src/shared/reindent.ts`（纯函数，断言见 `test/reindent.test.mjs`） |
+| 属性排版（每行一个 / 对齐） | `src/shared/layout.ts`（纯函数，断言见 `test/format.test.mjs`） |
 | 语法 scope 断言 / 格式化断言 / LSP 断言 | `test/grammar.test.mjs`、`test/format.test.mjs`、`test/lsp.test.mjs`、`test/xml.test.mjs`（改行为时同步补用例） |
 | 打包产物行为断言 | `test/artifact.test.mjs`（假 vscode API 加载 `dist/extension.js`）、`test/server.test.mjs`（语言服务器进程） |
 | 语言服务能力（诊断/补全/悬停/跳转） | `src/lsp/features.ts`（纯函数）；服务器接线在 `src/lsp/server.ts` |
@@ -109,7 +110,7 @@ npx @vscode/vsce publish
 - include 索引在每次校验时重建（磁盘文件有 mtime 缓存与按文件版本增量解析、校验有 250ms 去抖；offset→行列位置已改为行索引 + 二分）。
 - 覆盖率只统计 `src/` 纯逻辑模块（扩展宿主与语言服务器进程内的代码由冒烟测试覆盖，不计入百分比）；测试构建产物在 `test/build/`（V8 覆盖率不采集 `test/` 下的文件）。
 - 变量类型推断、`get:`/`calc:` 表达式校验未做：属性值的 `calc:`/`get:`/`link:` 前缀与 `%s` 占位符只在 `<action>` 标签的属性里着色，其它标签由内置 XML 语法处理（避免自研标签解析带来的回归）。
-- 未实现（评估后放弃或不划算）：属性排版选项（每行一个属性 + 等号对齐）、krpano 脚本语句重排缩进、LSP 消息本地化（设置项说明已是中英双写）、真实 VS Code 集成测试（`@vscode/test-electron`，CI 成本与稳定性待评估）。
+- 未实现（评估后放弃或不划算）：krpano 脚本**语句**重排（只做了缩进）、语言服务器的诊断/悬停文案本地化（扩展宿主提示已按显示语言切换，服务端仍是英文）、真实 VS Code 集成测试（`@vscode/test-electron`，CI 成本与稳定性待评估）。
 - 版本感知基于 v1.21–v1.24 四份官方文档的差分：声明更早/更晚版本的文件才会得到提示；如需更细粒度，把更多版本页放进 `/tmp` 并扩展 `DOC_VERSIONS`。
 - `krpano` 模式（脚本-only）未内嵌 XML 标签处理（原因见 [syntax-highlighting.md](./syntax-highlighting.md#现状说明030)）；XML 文档统一用 `krpano-xml`。
 - 元素/属性数据来自官方文档的抽取脚本，只在升级 krpano 版本后需要重跑（页面需先 `curl` 到本地，见脚本头部注释）。

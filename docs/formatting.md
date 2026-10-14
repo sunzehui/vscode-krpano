@@ -53,6 +53,8 @@
 | `xml.format.whiteSpaceAtEndOfSelfclosingTag` | 不传（库默认 `false`） | 自闭合标签 `/>` 前是否加空格 |
 | `xml.format.forceSelfClosingEmptyTag` | 不传（库默认 `false`） | 空元素是否强制写成自闭合形式 |
 | `xml.format.handleRootNode` | `true` | **本扩展自定义**：解析失败且原因是多根节点时，自动包裹 `<krpano>…</krpano>` 重试 |
+| `xml.format.attributeLayout` | `preserve` | **本扩展自定义**：`one-per-line` 每个属性一行；`align` 每行一个并把 `=` 对齐（krpano 官方示例风格） |
+| `xml.format.actionIndentation` | `false` | **本扩展自定义**：按括号层级重新缩进 `<action>` 正文；开启后 action 内容即使列在 `ignoredPaths` 里也会被调整缩进，JS 动作不受影响 |
 
 各选项的完整语义以 [xml-formatter 文档](https://github.com/chrisbottin/xml-formatter#options) 为准。两点补充说明：
 

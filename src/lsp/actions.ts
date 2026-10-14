@@ -11,6 +11,7 @@ import {
 // 纯逻辑:只计算编辑内容,由服务器翻译成 LSP 的 WorkspaceEdit。
 import krpanoData from './krpanoData.json'
 import { collectReferences } from './references'
+import { collectDefinitions } from './symbols'
 
 export interface PlainTextEdit {
   range: PlainRange
@@ -234,6 +235,63 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
     }
   }
 
+  // 7) 提取为 style:把标签样式类属性抽到 <style>,标签保留 name/定位属性
+  if (tag && ['hotspot', 'layer', 'plugin'].includes(tag.name.toLowerCase()) && tag.attributes.length >= 3 && tag.kind !== 'close') {
+    const keep = new Set(['name', 'ath', 'atv', 'x', 'y', 'align', 'edge'])
+    const extractable = tag.attributes.filter(attr => !keep.has(attr.name.toLowerCase()) && attr.valueEnd !== undefined)
+    if (extractable.length >= 2) {
+      const styleName = nextFreeName(text, 'style', `${tag.name.toLowerCase()}_style`)
+      const styleAttributes = extractable
+        .map(attr => `${attr.name}="${attr.value ?? ''}"`)
+        .join(' ')
+      const styleLine = `\t<style name="${styleName}" ${styleAttributes}/>\n`
+      const insertAt = insertBeforeClosingRoot(text)
+      const remainingNames = tag.attributes.filter(attr => !extractable.includes(attr))
+      const tagPrefix = text.slice(tag.start, tag.attributes[0].nameStart)
+      const rendered = remainingNames
+        .map(attr => `${attr.name}="${attr.value ?? ''}"`)
+        .join(' ')
+      actions.push({
+        title: `Extract attributes to style "${styleName}"`,
+        edit: {
+          changes: [{
+            edits: [
+              { range: rangeOf(text, insertAt, insertAt), newText: styleLine },
+              {
+                range: rangeOf(text, tag.attributes[0].nameStart, tag.end - (tag.kind === 'self' ? 2 : 1)),
+                newText: `${rendered} style="${styleName}"`,
+              },
+            ],
+          }],
+        },
+      })
+      void tagPrefix
+    }
+  }
+
+  // 8) 提取为 action:把选中的脚本片段抽成新 action,原位置替换为调用
+  if (range.start.line !== range.end.line || range.start.character !== range.end.character) {
+    const startOffset = offsetAtPosition(text, range.start)
+    const endOffset = offsetAtPosition(text, range.end)
+    const inner = text.slice(startOffset, endOffset)
+    if (inner.trim() && isInsideActionBody(text, startOffset) && !inner.includes('</action>')) {
+      const actionName = nextFreeName(text, 'action', 'extracted_action')
+      const insertAt = insertBeforeClosingRoot(text)
+      const indentedBody = inner.split('\n').map(line => (line.trim() ? `\t\t${line.trim()}` : '')).join('\n')
+      actions.push({
+        title: `Extract selection to action "${actionName}"`,
+        edit: {
+          changes: [{
+            edits: [
+              { range: rangeOf(text, insertAt, insertAt), newText: `\t<action name="${actionName}">\n${indentedBody}\n\t</action>\n` },
+              { range: { start: range.start, end: range.end }, newText: `${actionName}();` },
+            ],
+          }],
+        },
+      })
+    }
+  }
+
   // 5) include 目标缺失 → 新建文件(只对调用方确认解析不到的目标提供)
   if (tag && tag.name.toLowerCase() === 'include') {
     const urlAttr = tag.attributes.find(attr => attr.name.toLowerCase() === 'url')
@@ -359,4 +417,46 @@ function rangeContains(a: PlainRange, b: PlainRange): boolean {
   const startsBefore = a.start.line < b.start.line || (a.start.line === b.start.line && a.start.character <= b.start.character)
   const endsAfter = a.end.line > b.end.line || (a.end.line === b.end.line && a.end.character >= b.end.character)
   return startsBefore && endsAfter
+}
+
+/** 生成一个未被占用的名字(style / action 提取用) */
+function nextFreeName(text: string, element: string, base: string): string {
+  const existing = new Set(collectDefinitions(text).filter(definition => definition.element === element).map(definition => definition.name))
+  if (!existing.has(base))
+    return base
+  for (let index = 2; index < 100; index++) {
+    const candidate = `${base}_${index}`
+    if (!existing.has(candidate))
+      return candidate
+  }
+  return `${base}_x`
+}
+
+/** 插入位置:最后一个 </krpano> 之前;没有根节点时放在文本末尾 */
+function insertBeforeClosingRoot(text: string): number {
+  const closeIndex = text.lastIndexOf('</krpano>')
+  if (closeIndex === -1)
+    return text.length
+  return text.lastIndexOf('\n', closeIndex - 1) + 1
+}
+
+/** 偏移是否位于 <action> 正文内(krpano 脚本) */
+function isInsideActionBody(text: string, offset: number): boolean {
+  const stack: string[] = []
+  let inside = false
+  for (const tag of scanXml(text).tags) {
+    if (tag.start >= offset)
+      break
+    const name = tag.name.toLowerCase()
+    if (tag.kind === 'open') {
+      stack.push(name)
+    }
+    else if (tag.kind === 'close') {
+      const index = stack.lastIndexOf(name)
+      if (index !== -1)
+        stack.length = index
+    }
+    inside = stack.includes('action')
+  }
+  return inside
 }

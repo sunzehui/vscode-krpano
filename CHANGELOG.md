@@ -2,6 +2,20 @@
 
 All notable changes to the "krpano-lang" extension are documented in this file.
 
+## 0.12.0
+
+### Added
+
+- Formatting options: `xml.format.attributeLayout` (`preserve` / `one-per-line` / `align`) rewrites multi-attribute tags in the krpano documentation style, and `xml.format.actionIndentation` re-indents `<action>` bodies by parenthesis depth (opt-in; the script statements themselves are never reordered).
+- Quick fixes for refactoring: "Extract attributes to style" (keeps `name`/positioning attributes on the element) and "Extract selection to action" (replaces the selection with a call and inserts a new `<action>`).
+- Debugging the language server: `debug` transport now starts the server with `--inspect=6011`, and `.vscode/launch.json` gained an "Attach to Language Server" configuration.
+- User-facing messages of the extension host (formatting warnings) follow the display language of VS Code (Chinese/English).
+- Marketplace metadata: keywords and README badges.
+
+### Changed
+
+- Documentation: the maintenance notes list what remains open (full server-message localization, a real VS Code integration test) after this round.
+
 ## 0.11.0
 
 ### Added

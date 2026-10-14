@@ -73,3 +73,36 @@ test('快速修复:缺失的 include → 新建文件', () => {
   assert.equal(create.edit.createFile.url, 'actions.xml')
   assert.ok(create.edit.createFile.content.includes('<krpano>'))
 })
+
+test('快速修复:提取为 style', () => {
+  const text = '<krpano>\n  <hotspot name="hs" ath="0" atv="0" bgcolor="0xFFFFFF" bgalpha="0.8" scale="0.5"/>\n</krpano>'
+  const actions = getCodeActions(text, lineRange(text, 'bgcolor'))
+  const extract = actions.find(a => a.title.startsWith('Extract attributes to style'))
+  assert.ok(extract, actions.map(a => a.title).join(' | '))
+  const edits = extract.edit.changes[0].edits
+  const styleEdit = edits.find(edit => edit.newText.includes('<style'))
+  assert.ok(styleEdit.newText.includes('<style name="hotspot_style" bgcolor="0xFFFFFF" bgalpha="0.8" scale="0.5"/>'), styleEdit.newText)
+  const tagEdit = edits.find(edit => edit.newText.includes('style='))
+  assert.equal(tagEdit.newText, 'name="hs" ath="0" atv="0" style="hotspot_style"', tagEdit.newText)
+})
+
+test('快速修复:选中的脚本片段提取为 action', () => {
+  const text = [
+    '<krpano>',
+    '  <action name="a" autorun="onstart">',
+    '    set(x, 1);',
+    '    inc(x);',
+    '  </action>',
+    '</krpano>',
+  ].join('\n')
+  const range = lineRange(text, 'set(x, 1);')
+  const actions = getCodeActions(text, range)
+  const extract = actions.find(a => a.title.startsWith('Extract selection to action'))
+  assert.ok(extract, actions.map(a => a.title).join(' | '))
+  const edits = extract.edit.changes[0].edits
+  const actionEdit = edits.find(edit => edit.newText.includes('<action'))
+  assert.ok(actionEdit.newText.includes('<action name="extracted_action">'), actionEdit.newText)
+  assert.ok(actionEdit.newText.includes('set(x, 1);'), actionEdit.newText)
+  const callEdit = edits.find(edit => edit.newText.includes('();'))
+  assert.equal(callEdit.newText, 'extracted_action();')
+})

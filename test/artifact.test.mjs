@@ -27,6 +27,7 @@ module.exports = {
       return { dispose() {} }
     },
   },
+  env: { language: 'en' },
   workspace: { getConfiguration: () => state.config },
   window: {
     showWarningMessage: (msg, ...rest) => {
