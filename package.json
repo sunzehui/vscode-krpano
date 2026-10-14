@@ -213,7 +213,7 @@
     "dev": "npm run build -- --watch",
     "release": "npx bumpp --commit --tag --push",
     "typecheck": "tsc --noEmit",
-    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/symbols.ts src/lsp/references.ts src/lsp/actions.ts src/lsp/outline.ts src/lsp/workspace.ts src/shared/xml.ts src/shared/reindent.ts src/shared/layout.ts --format=cjs --out-dir=test/build --clean",
+    "build:test": "tsup src/getOptions.ts src/beautifyHtml.ts src/lsp/features.ts src/lsp/messages.ts src/lsp/symbols.ts src/lsp/references.ts src/lsp/actions.ts src/lsp/outline.ts src/lsp/workspace.ts src/shared/xml.ts src/shared/reindent.ts src/shared/layout.ts --format=cjs --out-dir=test/build --clean",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "npm run build && npm run build:test && node --test test/*.test.mjs",

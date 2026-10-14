@@ -1,13 +1,14 @@
 import * as vscode from 'vscode'
 import { beautify } from './beautifyHtml'
 import getOptions from './getOptions'
+import { localeOf, messagesFor } from './lsp/messages'
 import { enclosingElementNames, reindentLines, selectionLineBounds } from './shared/reindent'
 
 // krpano-xml 用于 .xml 文件;krpano 用于手动切换到脚本语言模式的场景
 const FORMATTED_LANGUAGES = ['krpano-xml', 'krpano']
 
 /** 少量面向用户的提示文案:按 VS Code 显示语言选择 */
-const isChinese = (): boolean => vscode.env.language.toLowerCase().startsWith('zh')
+const isChinese = (): boolean => localeOf(vscode.env.language) === 'zh'
 
 export function activate(context: vscode.ExtensionContext): void {
   registerFormatter(context)
@@ -90,5 +91,6 @@ function startLanguageServer(context: vscode.ExtensionContext): void {
   }
   catch (error) {
     console.error('[krpano-lang] language server failed to load:', error)
+    void vscode.window.showWarningMessage(messagesFor(localeOf(vscode.env.language)).serverFailedToLoad)
   }
 }

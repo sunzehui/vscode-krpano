@@ -100,6 +100,12 @@ test(
       logged.some(line => line.includes('language server failed to load')),
       '语言服务在缺少 vscode API 时应被捕获,不应中断激活',
     )
+    assert.ok(
+      vscode.state.messages.some(m => m.msg.includes('language service failed to load')),
+      '语言服务加载失败应提示用户(高亮与格式化不受影响)',
+    )
+    // 激活阶段的提示与实际格式化行为无关,清空以免干扰后续断言
+    vscode.state.messages.length = 0
 
     const provider = vscode.state.registered['krpano-xml']
     const document = text => ({ getText: () => text, positionAt: offset => offset })

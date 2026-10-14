@@ -28,6 +28,7 @@ import {
 } from 'vscode-languageserver/node'
 import { getCodeActions } from './actions'
 import { getCompletions, getDefinition, getDiagnostics, getHover, getSignatureHelp } from './features'
+import { localeOf } from './messages'
 import { getDocumentSymbols } from './outline'
 import { collectReferences, nameAtOffset } from './references'
 import { buildIncludeIndex, contextForFile, extractIncludes, pathToUri, resolveIncludePath, uriToPath } from './symbols'
@@ -397,7 +398,7 @@ connection.onCodeAction((params) => {
   const actions = getCodeActions(text, params.range, {
     ...context,
     unresolvedIncludes: context.unresolvedIncludes,
-  })
+  }, localeOf(clientLocale))
   return toCodeActions(document, actions)
 })
 

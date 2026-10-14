@@ -1,3 +1,4 @@
+import type { Locale } from './messages'
 import type { PlainRange, ProjectContext } from './types'
 import { offsetToPosition, scanXml, tagAtOffset } from '../shared/xml'
 import {
@@ -10,6 +11,7 @@ import {
 // 快速修复(Code Actions):针对诊断给出可一键应用的修改。
 // 纯逻辑:只计算编辑内容,由服务器翻译成 LSP 的 WorkspaceEdit。
 import krpanoData from './krpanoData.json'
+import { messagesFor } from './messages'
 import { collectReferences } from './references'
 import { collectDefinitions } from './symbols'
 
@@ -102,8 +104,9 @@ function findClosingTagName(text: string, openTagStart: number): PlainRange | un
 }
 
 /** 计算可用的快速修复 */
-export function getCodeActions(text: string, range: PlainRange, context: ProjectContext = {}): PlainCodeAction[] {
+export function getCodeActions(text: string, range: PlainRange, context: ProjectContext = {}, locale?: Locale): PlainCodeAction[] {
   const actions: PlainCodeAction[] = []
+  const t = messagesFor(locale)
   const scan = scanXml(text)
   const offset = offsetAtPosition(text, range.start)
   const tag = tagAtOffset(scan, offset)
@@ -120,7 +123,7 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
           if (closing)
             edits.push({ range: closing, newText: suggestion })
         }
-        actions.push({ title: `Change to <${suggestion}>`, edit: { changes: [{ edits }] } })
+        actions.push({ title: t.changeToTag(suggestion), edit: { changes: [{ edits }] } })
       }
     }
 
@@ -131,7 +134,7 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
       if (langAttr && langAttr.valueStart !== undefined && langAttr.valueEnd !== undefined) {
         if (value === 'ts' || value === 'typescript') {
           actions.push({
-            title: `Change to type="Javascript"`,
+            title: t.changeToJavascript,
             edit: {
               changes: [{
                 edits: [{
@@ -144,7 +147,7 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
         }
         else {
           actions.push({
-            title: `Remove the unsupported lang attribute`,
+            title: t.removeLangAttribute,
             edit: {
               changes: [{
                 edits: [{
@@ -168,7 +171,7 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
     const insert = buildActionSkeleton(text, reference.name)
     if (insert) {
       actions.push({
-        title: `Create action "${reference.name}"`,
+        title: t.createAction(reference.name),
         edit: { changes: [{ edits: [insert] }] },
       })
     }
@@ -205,9 +208,9 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
       { range: duplicate.range, newText: candidate },
       ...related.map(reference => ({ range: reference.range, newText: candidate })),
     ]
-    const scope = duplicate.container ? `its references in this scene` : 'its references'
+    const scope = duplicate.container ? t.renameScopeScene : t.renameScopeFile
     actions.push({
-      title: `Rename this duplicate (and ${scope}) to "${candidate}"`,
+      title: t.renameDuplicate(scope, candidate),
       edit: { changes: [{ edits }] },
     })
   }
@@ -227,7 +230,7 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
         const suggestion = closestAttribute(documented, target.name)
         if (suggestion) {
           actions.push({
-            title: `Change attribute to "${suggestion}"`,
+            title: t.changeAttribute(suggestion),
             edit: { changes: [{ edits: [{ range: rangeOf(text, target.nameStart, target.nameEnd), newText: suggestion }] }] },
           })
         }
@@ -252,7 +255,7 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
         .map(attr => `${attr.name}="${attr.value ?? ''}"`)
         .join(' ')
       actions.push({
-        title: `Extract attributes to style "${styleName}"`,
+        title: t.extractStyle(styleName),
         edit: {
           changes: [{
             edits: [
@@ -279,7 +282,7 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
       const insertAt = insertBeforeClosingRoot(text)
       const indentedBody = inner.split('\n').map(line => (line.trim() ? `\t\t${line.trim()}` : '')).join('\n')
       actions.push({
-        title: `Extract selection to action "${actionName}"`,
+        title: t.extractAction(actionName),
         edit: {
           changes: [{
             edits: [
@@ -299,7 +302,7 @@ export function getCodeActions(text: string, range: PlainRange, context: Project
     const unresolved = url && isLocalUrl(url) && (context.unresolvedIncludes ?? []).some(item => item.url === url)
     if (unresolved) {
       actions.push({
-        title: `Create file "${url}"`,
+        title: t.createFile(url),
         edit: { changes: [{ edits: [] }], createFile: { url, content: '<krpano>\n\t\n</krpano>\n' } },
       })
     }
