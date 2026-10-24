@@ -45,8 +45,34 @@ function isNameChar(ch: string): boolean {
   return ch !== undefined && NAME_CHAR.test(ch)
 }
 
-/** 扫描整个文本,返回标签与属性(位置为 0 基偏移) */
+/**
+ * 按文本内容复用解析结果:同一份文档在补全/悬停/诊断等多次请求间不会重新解析。
+ *  server 逐请求串行处理,返回结果不可变,共享对象是安全的;缓存条数有限,不会随文档增长。
+ */
+export function memoizeByText<R>(parse: (text: string) => R): (text: string) => R {
+  const cache = new Map<string, R>()
+  return (text) => {
+    if (cache.has(text))
+      return cache.get(text)!
+    const parsed = parse(text)
+    if (cache.size >= 16) {
+      const oldest = cache.keys().next().value
+      if (oldest !== undefined)
+        cache.delete(oldest)
+    }
+    cache.set(text, parsed)
+    return parsed
+  }
+}
+
+const scanXmlMemoized = memoizeByText(parseXml)
+
+/** 扫描整个文本,返回标签与属性(位置为 0 基偏移;同一文本重复调用时复用结果) */
 export function scanXml(text: string): XmlDocumentScan {
+  return scanXmlMemoized(text)
+}
+
+function parseXml(text: string): XmlDocumentScan {
   const tags: XmlTag[] = []
   const skipped: XmlDocumentScan['skipped'] = []
   let i = 0

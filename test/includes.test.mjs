@@ -62,6 +62,7 @@ test('索引:沿 include 链收集定义,处理嵌套、缺失与环', () => {
   assert.equal(index.definitions.get('deep_action').path, '/pano/helpers/more.xml')
   assert.deepEqual(index.unresolved.map(u => u.url), ['nope.xml'], '缺失的 include 应被记录')
   assert.equal(index.unresolved[0].path, '/pano/tour.xml')
+  assert.deepEqual(index.visitedPaths.slice().sort(), ['/pano/actions.xml', '/pano/helpers/more.xml', '/pano/tour.xml'], '应记录链上访问过的文件')
 })
 
 test('索引:深度上限防止异常结构', () => {

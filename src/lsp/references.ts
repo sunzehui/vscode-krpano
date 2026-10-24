@@ -1,7 +1,8 @@
+import type { XmlDocumentScan } from '../shared/xml'
 import type { PlainRange } from './types'
 // 引用解析:在一段 krpano 文本里找出某个名字被引用的位置。
 // 纯逻辑(不依赖 fs / vscode),供查找引用、重命名、括号索引补全与校验共用。
-import { createLineIndex, offsetToPosition, scanXml } from '../shared/xml'
+import { createLineIndex, memoizeByText, offsetToPosition, scanXml } from '../shared/xml'
 import { collectDefinitions } from './symbols'
 
 /** krpano 里可以用 [name] 索引的元素类型 */
@@ -34,6 +35,8 @@ export interface NameReference {
   form: 'index' | 'attribute' | 'call' | 'argument'
   /** 引用涉及的元素名(索引与属性形式可用) */
   element?: string
+  /** 引用所在的 scene(与 collectDefinitions 的 container 同语义:根为 undefined,无名 scene 为 '') */
+  container?: string
 }
 
 function isPlainName(value: string): boolean {
@@ -52,12 +55,43 @@ function isJavascriptAction(tag: { attributes: Array<{ name: string, value?: str
 
 interface SkipRegion { start: number, end: number }
 
-/** 收集文本里所有可能的 name 引用(跳过注释、CDATA 与 JS 动作体) */
-export function collectReferences(text: string): NameReference[] {
+/** scene 元素的范围(open 起点 → 匹配 close 结束),用于判断引用所属容器(与 collectDefinitions 的作用域一致) */
+function collectSceneRanges(scan: XmlDocumentScan): Array<{ start: number, end: number, name: string }> {
+  const ranges: Array<{ start: number, end: number, name: string }> = []
+  const stack: Array<{ name?: string, start: number }> = []
+  for (const tag of scan.tags) {
+    if (tag.name.toLowerCase() !== 'scene')
+      continue
+    if (tag.kind === 'close') {
+      const open = stack.pop()
+      if (open)
+        ranges.push({ start: open.start, end: tag.end, name: open.name ?? '' })
+      continue
+    }
+    if (tag.kind !== 'open')
+      continue
+    const name = tag.attributes.find(attr => attr.name.toLowerCase() === 'name')?.value?.trim()
+    stack.push({ name: name || undefined, start: tag.start })
+  }
+  return ranges
+}
+
+function collectReferencesParse(text: string): NameReference[] {
   const scan = scanXml(text)
   const lineIndex = createLineIndex(text)
   const skip: SkipRegion[] = scan.skipped.map(region => ({ start: region.start, end: region.end }))
   const references: NameReference[] = []
+
+  // 引用所在的 scene:同名定义可能分属不同 scene,重命名时按容器精确配对
+  const sceneRanges = collectSceneRanges(scan)
+  const containerAt = (offset: number): string | undefined => {
+    let best: { start: number, name: string } | undefined
+    for (const range of sceneRanges) {
+      if (range.start <= offset && offset < range.end && (!best || range.start > best.start))
+        best = { start: range.start, name: range.name }
+    }
+    return best?.name
+  }
 
   // 动作体范围:用于跳过 JS 动作、并作为脚本引用的扫描范围
   const scriptRanges: SkipRegion[] = []
@@ -85,7 +119,7 @@ export function collectReferences(text: string): NameReference[] {
       const offset = start + (match.index ?? 0) + match[0].length - raw.length - 1
       if (isSkipped(offset))
         continue
-      references.push({ name: raw, range: rangeOf(lineIndex, offset, offset + raw.length), form: 'index', element: match[1] })
+      references.push({ name: raw, range: rangeOf(lineIndex, offset, offset + raw.length), form: 'index', element: match[1], container: containerAt(offset) })
     }
   }
 
@@ -96,7 +130,7 @@ export function collectReferences(text: string): NameReference[] {
       const offset = start + (match.index ?? 0) + match[0].length - name.length - 1
       if (isSkipped(offset))
         continue
-      references.push({ name, range: rangeOf(lineIndex, offset, offset + name.length), form: 'call' })
+      references.push({ name, range: rangeOf(lineIndex, offset, offset + name.length), form: 'call', container: containerAt(offset) })
     }
     const argRe = new RegExp(`(?<![\\w.$])(${Object.keys(NAME_ARGUMENT_ACTIONS).join('|')})[ \\t]*\\(([^)]*)`, 'g')
     for (const match of slice.matchAll(argRe)) {
@@ -112,7 +146,7 @@ export function collectReferences(text: string): NameReference[] {
       const offset = base + target.indexOf(trimmed)
       if (isSkipped(offset))
         continue
-      references.push({ name: trimmed, range: rangeOf(lineIndex, offset, offset + trimmed.length), form: 'argument', element: NAME_ARGUMENT_ACTIONS[action] })
+      references.push({ name: trimmed, range: rangeOf(lineIndex, offset, offset + trimmed.length), form: 'argument', element: NAME_ARGUMENT_ACTIONS[action], container: containerAt(offset) })
     }
   }
 
@@ -130,7 +164,7 @@ export function collectReferences(text: string): NameReference[] {
         const trimmed = attr.value.trim()
         if (isPlainName(trimmed)) {
           const offset = attr.valueStart + attr.value.indexOf(trimmed)
-          references.push({ name: trimmed, range: rangeOf(lineIndex, offset, offset + trimmed.length), form: 'attribute', element: name === 'linkedscene' ? 'scene' : 'style' })
+          references.push({ name: trimmed, range: rangeOf(lineIndex, offset, offset + trimmed.length), form: 'attribute', element: name === 'linkedscene' ? 'scene' : 'style', container: containerAt(offset) })
         }
       }
       pushIndexes(attr.valueStart, valueEnd)
@@ -147,6 +181,9 @@ export function collectReferences(text: string): NameReference[] {
 
   return dedupeReferences(references)
 }
+
+/** 收集文本里所有可能的 name 引用(跳过注释、CDATA 与 JS 动作体;按文本缓存) */
+export const collectReferences = memoizeByText(collectReferencesParse)
 
 function dedupeReferences(references: NameReference[]): NameReference[] {
   const seen = new Set<string>()
@@ -177,6 +214,8 @@ export interface NameAtOffset {
   kind: 'definition' | 'reference'
   /** 定义/引用所属的元素名 */
   element?: string
+  /** 所属 scene(根为 undefined,无名 scene 为 '';重命名时用于与定义精确配对) */
+  container?: string
 }
 
 function offsetInRange(text: string, range: PlainRange, offset: number): boolean {
@@ -190,7 +229,7 @@ function offsetInRange(text: string, range: PlainRange, offset: number): boolean
 export function nameAtOffset(text: string, offset: number): NameAtOffset | undefined {
   for (const definition of collectDefinitions(text)) {
     if (offsetInRange(text, definition.range, offset))
-      return { name: definition.name, range: definition.range, kind: 'definition', element: definition.element }
+      return { name: definition.name, range: definition.range, kind: 'definition', element: definition.element, container: definition.container }
   }
 
   let start = offset
@@ -205,7 +244,7 @@ export function nameAtOffset(text: string, offset: number): NameAtOffset | undef
 
   for (const reference of findReferences(text, word)) {
     if (offsetInRange(text, reference.range, offset))
-      return { name: word, range: reference.range, kind: 'reference', element: reference.element }
+      return { name: word, range: reference.range, kind: 'reference', element: reference.element, container: reference.container }
   }
   return undefined
 }

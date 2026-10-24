@@ -255,21 +255,14 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
     }
   }
 
-  // 5) 同一容器内重复的 name(不同 scene 之间同名是合法的)
-  const seenDefinitions = new Map<string, SymbolDefinition>()
-  for (const definition of definitions) {
-    const key = `${definition.container ?? ''}|${definition.element}|${definition.name}`
-    const first = seenDefinitions.get(key)
-    if (first) {
-      diagnostics.push({
-        message: `Duplicate ${definition.element} name "${definition.name}" (already defined on line ${first.range.start.line + 1}).`,
-        severity: 'warning',
-        range: definition.range,
-        source: SOURCE,
-      })
-      continue
-    }
-    seenDefinitions.set(key, definition)
+  // 5) 同一容器内重复的 name(不同 scene 之间同名是合法的;与快速修复共用同一份逻辑)
+  for (const duplicate of findDuplicateDefinitions(text)) {
+    diagnostics.push({
+      message: `Duplicate ${duplicate.element} name "${duplicate.name}" (already defined on line ${duplicate.firstLine + 1}).`,
+      severity: 'warning',
+      range: duplicate.range,
+      source: SOURCE,
+    })
   }
 
   // 6) linkedscene / style 引用是否能在本文件或 include 链中找到
@@ -380,7 +373,7 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
     }
   }
 
-  // 12) 属性校验:未知属性 + 版本差异提示(数据来自官方文档,以及 v1.21–v1.24 的差分)
+  // 11) 属性校验:未知属性 + 版本差异提示(数据来自官方文档,以及 v1.21–v1.24 的差分)
   const rootVersion = (() => {
     const root = scan.tags.find(tag => tag.name.toLowerCase() === 'krpano')
     const versionAttr = root?.attributes.find(attr => attr.name.toLowerCase() === 'version')
@@ -473,7 +466,7 @@ export function getDiagnostics(text: string, context: ProjectContext = {}, setti
     }
   }
 
-  // 11) include 目标不存在(相对当前文件解析;krpano 同样会因此报错)
+  // 12) include 目标不存在(相对当前文件解析;krpano 同样会因此报错)
   for (const item of context.unresolvedIncludes ?? []) {
     diagnostics.push({
       message: `Included file "${item.url}" was not found (include paths are resolved relative to this file).`,

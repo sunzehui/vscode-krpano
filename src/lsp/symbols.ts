@@ -1,7 +1,7 @@
 import type { ExternalDefinition, PlainRange } from './types'
 // krpano 文件的符号提取与 <include> 依赖解析(纯逻辑,文件读取通过参数注入,便于测试)。
 import path from 'node:path'
-import { createLineIndex, scanXml } from '../shared/xml'
+import { createLineIndex, memoizeByText, scanXml } from '../shared/xml'
 
 /** 可以定义 name 的元素(其名字可被动作/事件引用) */
 export const NAME_DEFINING_ELEMENTS = ['action', 'hotspot', 'layer', 'plugin', 'scene', 'style', 'events', 'data']
@@ -26,6 +26,8 @@ export interface IncludeIndex {
   definitions: Map<string, { path: string, range: PlainRange, element: string, container?: string }>
   /** 解析不到的 include 目标 */
   unresolved: Array<{ path: string, url: string, range: PlainRange }>
+  /** 沿链访问过的文件(含入口;编辑其中任一文件时用于反查受影响文档) */
+  visitedPaths: string[]
 }
 
 /** 单个文件的读取结果:内容 + 版本(用于增量解析) */
@@ -51,11 +53,7 @@ function rangeOf(lineIndex: ReturnType<typeof createLineIndex>, start: number, e
   return { start: lineIndex.toPosition(start), end: lineIndex.toPosition(end) }
 }
 
-/**
- * 收集文件中所有 name 定义(action/hotspot/layer/plugin/scene/style/events/data),
- *  并记录它所属的容器(scene 名字;不在 scene 内则为 krpano 根)
- */
-export function collectDefinitions(text: string): SymbolDefinition[] {
+function collectDefinitionsParse(text: string): SymbolDefinition[] {
   const definitions: SymbolDefinition[] = []
   const stack: Array<{ element: string, name?: string }> = []
   const lineIndex = createLineIndex(text)
@@ -97,8 +95,14 @@ export function collectDefinitions(text: string): SymbolDefinition[] {
   return definitions
 }
 
-/** 收集 <include url="..."> 引用 */
-export function extractIncludes(text: string): IncludeReference[] {
+/**
+ * 收集文件中所有 name 定义(action/hotspot/layer/plugin/scene/style/events/data),
+ *  并记录它所属的容器(scene 名字;不在 scene 内则为 krpano 根)。
+ *  按文本缓存:同一份文档在诊断/补全/重命名等多次请求间不会重扫。
+ */
+export const collectDefinitions = memoizeByText(collectDefinitionsParse)
+
+function extractIncludesParse(text: string): IncludeReference[] {
   const includes: IncludeReference[] = []
   const lineIndex = createLineIndex(text)
   for (const tag of scanXml(text).tags) {
@@ -111,6 +115,9 @@ export function extractIncludes(text: string): IncludeReference[] {
   }
   return includes
 }
+
+/** 收集 <include url="..."> 引用(按文本缓存) */
+export const extractIncludes = memoizeByText(extractIncludesParse)
 
 /** url 是否可以在本地解析(krpano 占位符、http、绝对路径等交给 krpano 自己处理) */
 export function isLocalRelativeUrl(url: string): boolean {
@@ -170,7 +177,6 @@ export function buildIncludeIndex(entryPath: string, readFile: ReadFile, maxDept
   const unresolved: IncludeIndex['unresolved'] = []
   const visited = new Set<string>()
   let frontier: Array<{ path: string, depth: number }> = [{ path: entryPath, depth: 0 }]
-
   while (frontier.length) {
     const next: typeof frontier = []
     for (const { path, depth } of frontier) {
@@ -205,7 +211,7 @@ export function buildIncludeIndex(entryPath: string, readFile: ReadFile, maxDept
     frontier = next
   }
 
-  return { definitions, unresolved }
+  return { definitions, unresolved, visitedPaths: [...visited] }
 }
 
 /** 把索引里"非当前文件"的定义整理成 features 需要的上下文 */

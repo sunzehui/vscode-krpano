@@ -73,6 +73,9 @@ let workspaceRoots: string[] = []
 let clientLocale = 'en'
 let workspaceIndex: WorkspaceIndex | undefined
 
+/** 打开文档路径 → 它 include 链上的文件(编辑链上文件时,反查需要刷新诊断的文档) */
+const includeDependents = new Map<string, Set<string>>()
+
 function getWorkspaceIndex(): WorkspaceIndex {
   workspaceIndex ??= new WorkspaceIndex(readFileCached)
   return workspaceIndex
@@ -100,11 +103,17 @@ function nameLocations(document: TextDocument, target: NameAtOffset): NameOccurr
   }
 
   // 光标落在定义上时只算光标的那个定义(同名定义在别的 scene 里时不会被牵连);
-  // 落在引用上时按名字补上本文件的定义 —— 引用不记录所属容器,无法更精确地对应
+  // 落在引用上时优先配对同一 scene 内的同名定义,没有容器匹配时退回全部同名定义 ——
+  // 引用也可能指向根作用域(全局 action),此时按名字匹配与跨文件行为保持一致
   const local = entryFor(document.uri)
-  local.definitions.push(...(target.kind === 'definition'
-    ? [target.range]
-    : collectDefinitions(text).filter(definition => definition.name === target.name).map(definition => definition.range)))
+  if (target.kind === 'definition') {
+    local.definitions.push(target.range)
+  }
+  else {
+    const sameName = collectDefinitions(text).filter(definition => definition.name === target.name)
+    const inContainer = sameName.filter(definition => definition.container === target.container)
+    local.definitions.push(...(inContainer.length ? inContainer : sameName).map(definition => definition.range))
+  }
   local.references.push(...collectReferences(text)
     .filter(reference => reference.name === target.name)
     .map(reference => reference.range))
@@ -177,13 +186,41 @@ async function refreshSettings(): Promise<void> {
   scheduleValidateAll()
 }
 
-/** 数组加去抖:频繁输入时合并校验 */
+/** 待校验的文档(去抖合并;键入时只校验变更文档与受 include 影响的文档,配置变化/磁盘变化时校验全部) */
+const pendingValidation = new Map<string, TextDocument>()
+
+/** 任一文档或 include 目标变化后,重新校验所有打开的文档 */
 function scheduleValidateAll(): void {
+  for (const document of documents.all())
+    pendingValidation.set(document.uri, document)
+  flushPendingValidation()
+}
+
+/** 键入后的校验:变更文档 + include 链包含它的其它打开文档(编辑 include 目标时依赖方保持最新) */
+function scheduleValidate(document: TextDocument): void {
+  pendingValidation.set(document.uri, document)
+  const changedPath = uriToPath(document.uri)
+  if (changedPath) {
+    for (const open of documents.all()) {
+      const openPath = uriToPath(open.uri)
+      if (openPath && openPath !== changedPath && includeDependents.get(openPath)?.has(changedPath))
+        pendingValidation.set(open.uri, open)
+    }
+  }
+  flushPendingValidation()
+}
+
+function flushPendingValidation(): void {
   if (validateTimer)
     clearTimeout(validateTimer)
   validateTimer = setTimeout(() => {
     validateTimer = undefined
-    validateAll()
+    for (const pending of pendingValidation.values()) {
+      // 排除防抖期间被关闭的文档
+      if (documents.get(pending.uri) === pending)
+        validate(pending)
+    }
+    pendingValidation.clear()
   }, 250)
 }
 
@@ -220,6 +257,8 @@ function projectContext(document: TextDocument): ProjectContext {
   if (!documentPath)
     return {}
   const index = buildIncludeIndex(documentPath, readFileCached, 16, parseCache)
+  // 记录 include 链:编辑链上任一文件时,scheduleValidate 据此刷新依赖方
+  includeDependents.set(documentPath, new Set(index.visitedPaths))
   const context = contextForFile(index, documentPath, document.uri)
 
   const knownUnresolved = new Set((context.unresolvedIncludes ?? []).map(item => item.url))
@@ -273,13 +312,6 @@ function validate(document: TextDocument): void {
   void connection.sendDiagnostics({ uri: document.uri, diagnostics })
 }
 
-/** 任一文档或 include 目标变化后,重新校验所有打开的文档 */
-function validateAll(): void {
-  fileCache.clear()
-  for (const document of documents.all())
-    validate(document)
-}
-
 connection.onInitialize(async (params) => {
   const options = params.initializationOptions as { locale?: string } | undefined
   clientLocale = options?.locale ?? 'en'
@@ -306,15 +338,21 @@ documents.onDidChangeContent((change) => {
   const changedPath = uriToPath(change.document.uri)
   if (changedPath)
     workspaceIndex?.invalidate(changedPath)
-  scheduleValidateAll()
+  scheduleValidate(change.document)
 })
 
 documents.onDidClose((event) => {
+  pendingValidation.delete(event.document.uri)
+  const closedPath = uriToPath(event.document.uri)
+  if (closedPath)
+    includeDependents.delete(closedPath)
   void connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] })
 })
 
-// 磁盘上的 xml 变化(例如编辑了 include 的动作文件)也要刷新诊断
+// 磁盘上的 xml 变化(例如编辑了 include 的动作文件)也要刷新诊断;
+// 磁盘内容可能绕过内存中的缓存,先清掉再全量重算
 connection.onDidChangeWatchedFiles(() => {
+  fileCache.clear()
   workspaceIndex = undefined
   scheduleValidateAll()
 })

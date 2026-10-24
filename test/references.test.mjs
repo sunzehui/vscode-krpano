@@ -98,6 +98,30 @@ test('大纲:场景树与范围', () => {
   assert.ok(nested[0].range.end.line >= 3, '成对标签的 range 应覆盖到闭合标签')
 })
 
+test('引用:引用记录所属 scene(跨 scene 同名时用于重命名精确配对)', () => {
+  const scoped = [
+    '<krpano>',
+    '  <scene name="s1">',
+    '    <hotspot name="hs" onclick="tween(hotspot[hs].ath);"/>',
+    '  </scene>',
+    '  <scene name="s2">',
+    '    <layer name="info" onclick="tween(hotspot[hs].atv);"/>',
+    '  </scene>',
+    '</krpano>',
+  ].join('\n')
+  const refs = collectReferences(scoped).filter(r => r.form === 'index' && r.name === 'hs')
+  assert.equal(refs.length, 2)
+  assert.deepEqual(refs.map(r => r.container).sort(), ['s1', 's2'])
+
+  // scene 外的引用没有容器(与 collectDefinitions 的 undefined = 根 语义一致)
+  const root = '<krpano><layer name="info" onclick="tween(hotspot[hs].ath);"/></krpano>'
+  assert.equal(collectReferences(root).find(r => r.form === 'index').container, undefined)
+
+  // 无名 scene 内的容器是 ''(与 collectDefinitions 一致)
+  const unnamed = '<krpano><scene><layer name="info" onclick="tween(hotspot[hs].ath);"/></scene></krpano>'
+  assert.equal(collectReferences(unnamed).find(r => r.form === 'index').container, '')
+})
+
 test('引用:collectReferences 不重复计数', () => {
   const counted = collectReferences(text)
   const keys = counted.map(r => `${r.range.start.line}:${r.range.start.character}:${r.form}`)

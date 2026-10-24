@@ -12,19 +12,19 @@ const { getCompletions, getDiagnostics } = require('../test/build/lsp/features.j
 const { getDocumentSymbols } = require('../test/build/lsp/outline.js')
 const { WorkspaceIndex } = require('../test/build/lsp/workspace.js')
 
-/** 生成 n 个 scene、每个若干 hotspot/layer/action 的 XML */
-function generateTour(scenes, perScene) {
+/** 生成 n 个 scene、每个若干 hotspot/layer/action 的 XML;seed 让多次生成的文件内容互不相同 */
+function generateTour(scenes, perScene, seed = '') {
   const parts = ['<krpano bgcolor="0x000000">']
   for (let s = 0; s < scenes; s++) {
-    parts.push(`\t<scene name="scene_${s}" title="Scene ${s}">`)
+    parts.push(`\t<scene name="scene${seed}_${s}" title="Scene ${s}">`)
     parts.push(`\t\t<view hlookat="0" vlookat="0" fov="90"/>`)
-    parts.push(`\t\t<image><cube url="panos/scene_${s}_%s.jpg"/></image>`)
+    parts.push(`\t\t<image><cube url="panos/scene${seed}_${s}_%s.jpg"/></image>`)
     for (let i = 0; i < perScene; i++) {
-      parts.push(`\t\t<hotspot name="hs_${s}_${i}" ath="${(i * 7) % 180 - 90}" atv="${(i * 5) % 90 - 45}" onclick="action_${s}_${i}();" style="hs_style"/>`)
-      parts.push(`\t\t<layer name="layer_${s}_${i}" type="text" html="Layer ${s}/${i}" align="lefttop" x="${i * 4}" y="${i * 3}" bgalpha="0.5"/>`)
+      parts.push(`\t\t<hotspot name="hs${seed}_${s}_${i}" ath="${(i * 7) % 180 - 90}" atv="${(i * 5) % 90 - 45}" onclick="action${seed}_${s}_${i}();" style="hs_style"/>`)
+      parts.push(`\t\t<layer name="layer${seed}_${s}_${i}" type="text" html="Layer ${s}/${i}" align="lefttop" x="${i * 4}" y="${i * 3}" bgalpha="0.5"/>`)
     }
     for (let i = 0; i < Math.max(2, perScene / 2); i++)
-      parts.push(`\t\t<action name="action_${s}_${i}">set(layer[layer_${s}_${i}].visible, true); tween(view.fov, 80, 0.5); trace(%1);</action>`)
+      parts.push(`\t\t<action name="action${seed}_${s}_${i}">set(layer[layer${seed}_${s}_${i}].visible, true); tween(view.fov, 80, 0.5); trace(%1);</action>`)
     parts.push('\t</scene>')
   }
   parts.push('</krpano>')
@@ -49,7 +49,7 @@ time('文档大纲', () => getDocumentSymbols(tour))
 
 const dir = mkdtempSync(path.join(tmpdir(), 'krpano-bench-'))
 for (let i = 0; i < 200; i++)
-  writeFileSync(path.join(dir, `file_${i}.xml`), generateTour(10, 6))
+  writeFileSync(path.join(dir, `file_${i}.xml`), generateTour(10, 6, `w${i}`))
 const index = new WorkspaceIndex(p => ({ text: readFileSync(p, 'utf8'), version: String(Math.random()) }))
 const workspace = time('工作区索引(200 个文件)', () => {
   index.refresh([dir], true)
