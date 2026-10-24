@@ -10,9 +10,13 @@ All notable changes to the "krpano-lang" extension are documented in this file.
 - **注释与 CDATA 里的 `<action>` 被当作代码**:注释掉的旧动作不再产生"动作未定义""占位符越界"诊断;`xml.format.actionIndentation` 与 `xml.format.scriptStatements` 也不再重排注释里的内容(此前会改动注释正文)。
 - **非 krpano 的 XML 被当作 krpano 文档**:诊断与格式化先确认文件像 krpano(含 `<krpano>` 根或 `scene`、`hotspot`、`cube` 等专有元素),`pom.xml`、`AndroidManifest.xml` 之类不再出现 `Unknown krpano element`,也不会被整篇格式化或"格式化工作区所有 XML"改写;只含 `<action>` 等通用元素的片段文件把语言模式切到 `krpano` 即可参与诊断。
 - 路径含 `#` 或 `?` 时 `pathToUri` 未转义,跳转/重命名/工作区符号给出的 URI 会被当成 fragment 或查询串。
+- **重命名会误伤其它 scene 的同名定义**:引用现在记录所在的 scene,光标停在引用上按 `F2` 时优先只配对同一 scene 内的同名定义;引用指向根作用域(如全局 action)时仍按名字匹配,与跨文件行为一致。
 
 ### Changed
 
+- **语言服务性能**:XML 扫描与定义/引用收集按文本缓存——此前一次诊断要完整扫描文档 4 遍、引用收集跑 2 遍,0.91MB 文档的诊断从约 590ms 降到约 374ms、文档大纲从约 40ms 降到约 10ms;补全、悬停、跳转、重命名对同一文档版本不再重复解析。
+- **键入只校验受影响的文档**:改动文档只重新校验它自己和 include 链包含它的打开文档(此前每次键入都全量重算所有打开文档并清空文件缓存),include 目标保存到磁盘时才全量刷新。
+- `npm run bench` 的工作区基准改用内容各异的文件:此前 200 个合成文件内容完全相同,缓存类优化会被整体命中而高估收益。
 - 构建脚本改为 `tsup --clean` 并去掉无用的 `--dts`:哈希 chunk 与 `.d.ts` 不再随构建累积(此前 0.12.0 的 vsix 里带了两份 228KB 的历史 chunk),`.vscodeignore` 不再包含 `sample/`。
 - 文档同步实现:`docs/development.md` 的 engines 版本、CI 步骤、node_modules 打包说明与维护待办,README 的设置表(补上 6 个设置项)、适用范围说明与 TODO。
 
