@@ -250,7 +250,7 @@
     "typescript": "^4.2.3",
     "vscode-languageclient": "^7.0.0",
     "vscode-languageserver": "^7.0.0",
-    "vscode-languageserver-textdocument": "^1.0.15",
+    "vscode-languageserver-textdocument": "^1.0.16",
     "vscode-oniguruma": "^2.0.1",
     "vscode-textmate": "^9.3.2",
     "xml-formatter": "^3.6.2"
